@@ -174,6 +174,16 @@ module_param(aks_ep0_nop, bool, 0400);
 MODULE_PARM_DESC(aks_ep0_nop,
 	"Send one EP0 control NOP and wait for reply after start (research default: true)");
 
+static bool aks_discover = true;
+module_param(aks_discover, bool, 0400);
+MODULE_PARM_DESC(aks_discover,
+	"Passive 1s inbox listen after NOP for 0xfd/other ads (research default: true)");
+
+static bool aks_acm_canary = true;
+module_param(aks_acm_canary, bool, 0400);
+MODULE_PARM_DESC(aks_acm_canary,
+	"Register EP10 OOL and send ACM SCRD init as non-AKS canary (research default: true)");
+
 static bool register_acm;
 module_param(register_acm, bool, 0400);
 MODULE_PARM_DESC(register_acm,
@@ -377,6 +387,99 @@ static int t2_sep_ep0_nop(struct t2_sep_transport *sep)
 	}
 	dev_warn(&sep->pdev->dev,
 		 "research EP0 NOP timeout; msi0=%d msi1=%d\n",
+		 atomic_read(&sep->msi_inbox_count),
+		 atomic_read(&sep->msi_outbox_count));
+	return -ETIMEDOUT;
+}
+
+
+static int t2_sep_passive_discover(struct t2_sep_transport *sep)
+{
+	unsigned int elapsed_ms;
+	unsigned int idle_ms = 0;
+	unsigned int records = 0;
+	bool saw = false;
+
+	dev_info(&sep->pdev->dev,
+		 "research discovery: passive listen up to 1000 ms\n");
+	for (elapsed_ms = 0; elapsed_ms < 1000; elapsed_ms += 10) {
+		u32 inbox = readl(sep->bar + T2_SEP_INBOX_STATUS);
+		struct t2_sep_message msg;
+
+		if (inbox & T2_SEP_INBOX_EMPTY) {
+			if (saw && (idle_ms += 10) >= 100)
+				break;
+			msleep(10);
+			continue;
+		}
+		msg.word[0] = readl(sep->bar + T2_SEP_INBOX_DATA + 0x0);
+		msg.word[1] = readl(sep->bar + T2_SEP_INBOX_DATA + 0x4);
+		msg.word[2] = readl(sep->bar + T2_SEP_INBOX_DATA + 0x8);
+		msg.word[3] = readl(sep->bar + T2_SEP_INBOX_DATA + 0xc);
+		saw = true;
+		idle_ms = 0;
+		records++;
+		dev_info(&sep->pdev->dev,
+			 "research discovery rx %u: %08x %08x %08x %08x ep=%#x tag=%#x op=%#x id=%#x\n",
+			 records, msg.word[0], msg.word[1], msg.word[2],
+			 msg.word[3], msg.word[0] & 0xff,
+			 (msg.word[0] >> 8) & 0xff,
+			 (msg.word[0] >> 16) & 0xff,
+			 (msg.word[0] >> 24) & 0xff);
+		if (records >= 64)
+			break;
+	}
+	dev_info(&sep->pdev->dev,
+		 "research discovery done: records=%u saw=%u msi0=%d msi1=%d\n",
+		 records, saw, atomic_read(&sep->msi_inbox_count),
+		 atomic_read(&sep->msi_outbox_count));
+	return 0;
+}
+
+static int t2_sep_acm_scrd_canary(struct t2_sep_transport *sep)
+{
+	struct t2_sep_message request = { };
+	struct t2_sep_message reply;
+	unsigned int waited;
+	u32 inbox;
+	int ret;
+
+	if (!sep->acm_ool_in_registered || !sep->acm_ool_out_registered)
+		return -ENODEV;
+
+	memset(sep->acm_ool_in, 0, T2_SEP_OOL_SIZE);
+	memset(sep->acm_ool_out, 0, T2_SEP_OOL_SIZE);
+	memcpy(sep->acm_ool_in, "DRCS\n", 5);
+	((u8 *)sep->acm_ool_in)[5] = 0x28;
+	dma_wmb();
+
+	/* ACM envelope: ep | (msgtype<<8) | (len<<16). */
+	request.word[0] = T2_SEP_ACM_ENDPOINT | (1 << 8) | (8 << 16);
+	ret = t2_sep_send(sep, &request);
+	if (ret)
+		return ret;
+	dev_info(&sep->pdev->dev,
+		 "research ACM SCRD sent: req=%08x\n", request.word[0]);
+
+	for (waited = 0; waited < 5 * USEC_PER_SEC; waited += 1000) {
+		inbox = readl(sep->bar + T2_SEP_INBOX_STATUS);
+		if (!(inbox & T2_SEP_INBOX_EMPTY)) {
+			reply.word[0] = readl(sep->bar + T2_SEP_INBOX_DATA + 0x0);
+			reply.word[1] = readl(sep->bar + T2_SEP_INBOX_DATA + 0x4);
+			reply.word[2] = readl(sep->bar + T2_SEP_INBOX_DATA + 0x8);
+			reply.word[3] = readl(sep->bar + T2_SEP_INBOX_DATA + 0xc);
+			dev_info(&sep->pdev->dev,
+				 "research ACM SCRD rx: %08x %08x %08x %08x waited_us=%u msi0=%d msi1=%d\n",
+				 reply.word[0], reply.word[1], reply.word[2],
+				 reply.word[3], waited,
+				 atomic_read(&sep->msi_inbox_count),
+				 atomic_read(&sep->msi_outbox_count));
+			return 0;
+		}
+		usleep_range(1000, 2000);
+	}
+	dev_warn(&sep->pdev->dev,
+		 "research ACM SCRD timeout; msi0=%d msi1=%d\n",
 		 atomic_read(&sep->msi_inbox_count),
 		 atomic_read(&sep->msi_outbox_count));
 	return -ETIMEDOUT;
@@ -1461,6 +1564,13 @@ static int t2_sep_probe(struct pci_dev *pdev,
 				 "research EP0 NOP failed (%d); continuing\n",
 				 ret);
 	}
+	if (aks_discover) {
+		ret = t2_sep_passive_discover(sep);
+		if (ret)
+			dev_warn(&pdev->dev,
+				 "research discovery failed (%d); continuing\n",
+				 ret);
+	}
 
 	if (!register_ool) {
 		dev_info(&pdev->dev,
@@ -1505,15 +1615,17 @@ static int t2_sep_probe(struct pci_dev *pdev,
 			goto err_free_ool;
 		}
 	}
-	if (register_acm) {
+	if (register_acm || aks_acm_canary) {
+		gfp_t acm_gfp = GFP_KERNEL | (aks_ool_dma32 ? GFP_DMA32 : 0);
+
 		sep->acm_ool_in = dma_alloc_coherent(&pdev->dev,
-			T2_SEP_OOL_SIZE, &sep->acm_ool_in_dma, GFP_KERNEL);
+			T2_SEP_OOL_SIZE, &sep->acm_ool_in_dma, acm_gfp);
 		if (!sep->acm_ool_in) {
 			ret = -ENOMEM;
 			goto err_free_ool;
 		}
 		sep->acm_ool_out = dma_alloc_coherent(&pdev->dev,
-			T2_SEP_OOL_SIZE, &sep->acm_ool_out_dma, GFP_KERNEL);
+			T2_SEP_OOL_SIZE, &sep->acm_ool_out_dma, acm_gfp);
 		if (!sep->acm_ool_out) {
 			ret = -ENOMEM;
 			goto err_free_ool;
@@ -1541,7 +1653,7 @@ static int t2_sep_probe(struct pci_dev *pdev,
 		return 0;
 	}
 	sep->ool_out_registered = true;
-	if (register_acm) {
+	if (register_acm || aks_acm_canary) {
 		ret = t2_sep_control(sep, T2_SEP_ACM_ENDPOINT,
 				 T2_SEP_CMSG_SET_OOL_IN, 3,
 				 sep->acm_ool_in_dma, T2_SEP_OOL_SIZE);
@@ -1569,6 +1681,14 @@ static int t2_sep_probe(struct pci_dev *pdev,
 
 	dev_info(&pdev->dev,
 		 "registered 16 KiB endpoint-7 OOL input/output buffers\n");
+	if (aks_acm_canary) {
+		ret = t2_sep_acm_scrd_canary(sep);
+		if (ret)
+			dev_warn(&pdev->dev,
+				 "research ACM SCRD canary failed (%d); continuing\n",
+				 ret);
+	}
+
 	if (probe_capabilities) {
 		ret = t2_aks_probe_capabilities(sep);
 		if (ret) {

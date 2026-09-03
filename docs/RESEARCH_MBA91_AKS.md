@@ -118,3 +118,23 @@ Research defaults (also set in modprobe conf):
 
 Keep `aks_cap_variant=6` for this boot. Log lines: `research MSI`,
 `research CPU controls`, `research EP0 NOP`, timeout `msi0=`/`msi1=`.
+
+## Phase 5 results (2026-09-03)
+
+With MSI + startCPU + EP0 NOP:
+
+- Cold load finds SEP **stopped** (`+0x8028=0x7f`); start yields `0x7a` / `+0x8048=0x1`.
+- EP0 NOP replies in ~1 ms; both MSI vectors fire.
+- AKS OOL registration still succeeds.
+- `aks_cap_variant=6` and **variant 0** still true-silence on `0x4d`.
+
+Prior ABI matrix without startCPU is obsolete for conclusions about wire format alone.
+
+## Phase 6: discovery + ACM canary
+
+| Param | Default | Meaning |
+| --- | --- | --- |
+| `aks_discover` | true | 1s passive inbox listen after NOP |
+| `aks_acm_canary` | true | EP10 OOL + SCRD init (`DRCS\n` + `0x28`) before AKS capability |
+
+Look for `research discovery rx` / `research ACM SCRD rx` vs timeouts.
