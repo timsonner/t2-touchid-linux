@@ -98,3 +98,23 @@ version 2):
   (calendar_seconds zeros are *not* in the v1 digest input)
 
 `aks_cap_variant=6` reproduces that exact wire + digest (+ `dma_wmb`).
+
+## Phase 2 variant 6 result (2026-09-03)
+
+Bent-compat frame (`aks_cap_variant=6`) still timed out with
+`skipped=0 ool_out_nonzero=0`. Wire/digest parity with bent’s MBP probe is
+insufficient alone on MBA91.
+
+## Phase 5: MSI + startCPU + EP0 NOP
+
+Research defaults (also set in modprobe conf):
+
+| Param | Default | Meaning |
+| --- | --- | --- |
+| `aks_msi` | true | 2× MSI (inbox-nempty / outbox-empty) |
+| `aks_start_cpu` | true | Apple `_startCPUGated` at `0x8040/0x8048/0x8028` |
+| `aks_ep0_nop` | true | Control NOP (tag `0xfe`) before OOL |
+| (send path) | — | fence-read outbox status after commit word |
+
+Keep `aks_cap_variant=6` for this boot. Log lines: `research MSI`,
+`research CPU controls`, `research EP0 NOP`, timeout `msi0=`/`msi1=`.

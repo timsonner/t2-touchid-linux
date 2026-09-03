@@ -21,6 +21,7 @@
 #include <linux/ktime.h>
 #include <linux/miscdevice.h>
 #include <linux/mutex.h>
+#include <linux/interrupt.h>
 #include <linux/module.h>
 #include <linux/pci.h>
 #include <linux/unaligned.h>
@@ -45,6 +46,11 @@ static_assert(sizeof(struct t2_aks_ioc_exchange) == 32);
 #define T2_SEP_OUTBOX_DATA          0x0820
 #define T2_SEP_INBOX_EMPTY          BIT(17)
 #define T2_SEP_OUTBOX_FULL          BIT(16)
+/* AppleSEPIntelIOP gated CPU / interrupt controls (bent / KDK). */
+#define T2_SEP_CPU_CONTROL          0x8028
+#define T2_SEP_CPU_STOP             0x8024
+#define T2_SEP_CPU_RESET            0x8040
+#define T2_SEP_CPU_START            0x8048
 
 #define T2_SEP_ENDPOINT_MASK        GENMASK(4, 0)
 #define T2_SEP_CONTROL_ENDPOINT     0
@@ -74,6 +80,9 @@ struct t2_sep_message {
 struct t2_sep_transport {
 	struct pci_dev *pdev;
 	void __iomem *bar;
+	bool msi_enabled;
+	atomic_t msi_inbox_count;
+	atomic_t msi_outbox_count;
 	void *ool_in;
 	dma_addr_t ool_in_dma;
 	void *ool_out;
@@ -150,6 +159,21 @@ module_param(aks_ool_dma32, bool, 0400);
 MODULE_PARM_DESC(aks_ool_dma32,
 	"Force 32-bit coherent OOL buffers (research default: true; Air DMA hypothesis)");
 
+static bool aks_msi = true;
+module_param(aks_msi, bool, 0400);
+MODULE_PARM_DESC(aks_msi,
+	"Allocate Apple's two SEP MSI vectors before start/OOL (research default: true)");
+
+static bool aks_start_cpu = true;
+module_param(aks_start_cpu, bool, 0400);
+MODULE_PARM_DESC(aks_start_cpu,
+	"Issue Apple _startCPUGated MMIO sequence before OOL (research default: true)");
+
+static bool aks_ep0_nop = true;
+module_param(aks_ep0_nop, bool, 0400);
+MODULE_PARM_DESC(aks_ep0_nop,
+	"Send one EP0 control NOP and wait for reply after start (research default: true)");
+
 static bool register_acm;
 module_param(register_acm, bool, 0400);
 MODULE_PARM_DESC(register_acm,
@@ -214,6 +238,145 @@ static int t2_aks_stamp_verify_platform_data(struct t2_aks_header_v2 *header)
 	return 0;
 }
 
+
+static irqreturn_t t2_sep_msi_irq(int irq, void *data)
+{
+	atomic_inc(data);
+	return IRQ_HANDLED;
+}
+
+static void t2_sep_teardown_msi(struct t2_sep_transport *sep)
+{
+	struct pci_dev *pdev = sep->pdev;
+
+	if (!sep->msi_enabled)
+		return;
+	dev_info(&pdev->dev,
+		 "research MSI observations: vector0=%d vector1=%d\n",
+		 atomic_read(&sep->msi_inbox_count),
+		 atomic_read(&sep->msi_outbox_count));
+	free_irq(pci_irq_vector(pdev, 1), &sep->msi_outbox_count);
+	free_irq(pci_irq_vector(pdev, 0), &sep->msi_inbox_count);
+	pci_free_irq_vectors(pdev);
+	sep->msi_enabled = false;
+}
+
+static int t2_sep_setup_msi(struct t2_sep_transport *sep)
+{
+	struct pci_dev *pdev = sep->pdev;
+	int ret;
+
+	atomic_set(&sep->msi_inbox_count, 0);
+	atomic_set(&sep->msi_outbox_count, 0);
+	ret = pci_alloc_irq_vectors(pdev, 2, 2, PCI_IRQ_MSI);
+	if (ret < 0)
+		return ret;
+	if (ret != 2) {
+		pci_free_irq_vectors(pdev);
+		return -ENOSPC;
+	}
+	ret = request_irq(pci_irq_vector(pdev, 0), t2_sep_msi_irq, 0,
+			  "t2sep-inbox", &sep->msi_inbox_count);
+	if (ret)
+		goto err_vectors;
+	ret = request_irq(pci_irq_vector(pdev, 1), t2_sep_msi_irq, 0,
+			  "t2sep-outbox", &sep->msi_outbox_count);
+	if (ret)
+		goto err_irq0;
+	sep->msi_enabled = true;
+	dev_info(&pdev->dev, "research MSI allocated vectors %d and %d\n",
+		 pci_irq_vector(pdev, 0), pci_irq_vector(pdev, 1));
+	return 0;
+
+err_irq0:
+	free_irq(pci_irq_vector(pdev, 0), &sep->msi_inbox_count);
+err_vectors:
+	pci_free_irq_vectors(pdev);
+	return ret;
+}
+
+static void t2_sep_log_cpu_controls(struct t2_sep_transport *sep, const char *when)
+{
+	dev_info(&sep->pdev->dev,
+		 "research CPU controls %s: +0x8028=%#x +0x8040=%#x +0x8048=%#x\n",
+		 when,
+		 readl(sep->bar + T2_SEP_CPU_CONTROL),
+		 readl(sep->bar + T2_SEP_CPU_RESET),
+		 readl(sep->bar + T2_SEP_CPU_START));
+}
+
+static int t2_sep_apple_start_cpu(struct t2_sep_transport *sep)
+{
+	u32 inbox_before, outbox_before, inbox, outbox;
+	int i;
+
+	inbox_before = readl(sep->bar + T2_SEP_INBOX_STATUS);
+	outbox_before = readl(sep->bar + T2_SEP_OUTBOX_STATUS);
+	t2_sep_log_cpu_controls(sep, "before-start");
+
+	/* Exact ordering from AppleSEPIntelIOP::_startCPUGated(). */
+	writel(0, sep->bar + T2_SEP_CPU_RESET);
+	writel(1, sep->bar + T2_SEP_CPU_START);
+	writel(5, sep->bar + T2_SEP_CPU_CONTROL);
+	readl(sep->bar + T2_SEP_CPU_CONTROL);
+
+	for (i = 0; i < 100; i++) {
+		inbox = readl(sep->bar + T2_SEP_INBOX_STATUS);
+		outbox = readl(sep->bar + T2_SEP_OUTBOX_STATUS);
+		if (inbox != inbox_before || outbox != outbox_before)
+			break;
+		msleep(10);
+	}
+	dev_info(&sep->pdev->dev,
+		 "research Apple CPU-start after %d ms: inbox %#x -> %#x, outbox %#x -> %#x\n",
+		 i * 10, inbox_before, inbox, outbox_before, outbox);
+	t2_sep_log_cpu_controls(sep, "after-start");
+	return 0;
+}
+
+static int t2_sep_ep0_nop(struct t2_sep_transport *sep)
+{
+	struct t2_sep_message request = { };
+	struct t2_sep_message reply;
+	unsigned int waited;
+	u32 inbox;
+	int ret;
+
+	/* tag 0xfe avoids colliding with OOL registration tags 1/2. */
+	request.word[0] = T2_SEP_CONTROL_ENDPOINT | (0xfe << 8);
+	ret = t2_sep_send(sep, &request);
+	if (ret)
+		return ret;
+	dev_info(&sep->pdev->dev, "research EP0 NOP sent: req=%08x\n",
+		 request.word[0]);
+
+	for (waited = 0; waited < 5 * USEC_PER_SEC; waited += 1000) {
+		inbox = readl(sep->bar + T2_SEP_INBOX_STATUS);
+		if (!(inbox & T2_SEP_INBOX_EMPTY)) {
+			reply.word[0] = readl(sep->bar + T2_SEP_INBOX_DATA + 0x0);
+			reply.word[1] = readl(sep->bar + T2_SEP_INBOX_DATA + 0x4);
+			reply.word[2] = readl(sep->bar + T2_SEP_INBOX_DATA + 0x8);
+			reply.word[3] = readl(sep->bar + T2_SEP_INBOX_DATA + 0xc);
+			dev_info(&sep->pdev->dev,
+				 "research EP0 NOP rx: %08x %08x %08x %08x waited_us=%u msi0=%d msi1=%d\n",
+				 reply.word[0], reply.word[1], reply.word[2],
+				 reply.word[3], waited,
+				 atomic_read(&sep->msi_inbox_count),
+				 atomic_read(&sep->msi_outbox_count));
+			if ((reply.word[0] & 0xff) != T2_SEP_CONTROL_ENDPOINT ||
+			    ((reply.word[0] >> 8) & 0xff) != 0xfe)
+				return -EPROTO;
+			return 0;
+		}
+		usleep_range(1000, 2000);
+	}
+	dev_warn(&sep->pdev->dev,
+		 "research EP0 NOP timeout; msi0=%d msi1=%d\n",
+		 atomic_read(&sep->msi_inbox_count),
+		 atomic_read(&sep->msi_outbox_count));
+	return -ETIMEDOUT;
+}
+
 static int t2_sep_wait_outbox(struct t2_sep_transport *sep)
 {
 	unsigned int waited;
@@ -247,6 +410,8 @@ static int t2_sep_send(struct t2_sep_transport *sep,
 	writel(message->word[1], sep->bar + T2_SEP_OUTBOX_DATA + 0x4);
 	writel(message->word[2], sep->bar + T2_SEP_OUTBOX_DATA + 0x8);
 	writel(0, sep->bar + T2_SEP_OUTBOX_DATA + 0xc);
+	/* Flush posted PCI writes (bent intel-fifo / t2sep_probe). */
+	readl(sep->bar + T2_SEP_OUTBOX_STATUS);
 	return 0;
 }
 
@@ -1271,10 +1436,31 @@ static int t2_sep_probe(struct pci_dev *pdev,
 	dev_info(&pdev->dev, "mailbox inbox=%#x empty=%u outbox=%#x full=%u\n",
 		 inbox, !!(inbox & T2_SEP_INBOX_EMPTY),
 		 outbox, !!(outbox & T2_SEP_OUTBOX_FULL));
+	t2_sep_log_cpu_controls(sep, "probe-entry");
+
+	if (aks_msi) {
+		ret = t2_sep_setup_msi(sep);
+		if (ret)
+			return dev_err_probe(&pdev->dev, ret,
+					     "research MSI setup failed\n");
+	}
+	if (aks_start_cpu) {
+		ret = t2_sep_apple_start_cpu(sep);
+		if (ret)
+			goto err_msi;
+	}
+	if (aks_ep0_nop) {
+		ret = t2_sep_ep0_nop(sep);
+		if (ret)
+			dev_warn(&pdev->dev,
+				 "research EP0 NOP failed (%d); continuing\n",
+				 ret);
+	}
 
 	if (!register_ool) {
 		dev_info(&pdev->dev,
 			 "observation-only mode; no DMA allocation or MMIO writes\n");
+		t2_sep_teardown_msi(sep);
 		return 0;
 	}
 
@@ -1434,6 +1620,11 @@ err_free_ool:
 	sep->ool_in = NULL;
 	sep->ool_out = NULL;
 	pci_clear_master(pdev);
+	t2_sep_teardown_msi(sep);
+	return ret;
+
+err_msi:
+	t2_sep_teardown_msi(sep);
 	return ret;
 }
 
@@ -1441,7 +1632,10 @@ static void t2_sep_remove(struct pci_dev *pdev)
 {
 	struct t2_sep_transport *sep = pci_get_drvdata(pdev);
 
-	if (!sep || !register_ool)
+	if (!sep)
+		return;
+	t2_sep_teardown_msi(sep);
+	if (!register_ool)
 		return;
 	if (sep->misc_registered)
 		misc_deregister(&sep->aks_miscdev);
