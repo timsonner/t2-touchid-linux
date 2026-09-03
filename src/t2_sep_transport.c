@@ -239,6 +239,11 @@ static int t2_aks_stamp_verify_platform_data(struct t2_aks_header_v2 *header)
 }
 
 
+static int t2_sep_send(struct t2_sep_transport *sep,
+		       const struct t2_sep_message *message);
+static int t2_sep_receive(struct t2_sep_transport *sep,
+			  struct t2_sep_message *message);
+
 static irqreturn_t t2_sep_msi_irq(int irq, void *data)
 {
 	atomic_inc(data);
