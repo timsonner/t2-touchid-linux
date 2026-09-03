@@ -22,6 +22,7 @@ Module parameters (research defaults **on**):
 | `aks_cap_trace` | true | Log non-secret req/rx mailbox words, DMA addrs, status |
 | `aks_cap_accept_any_ep7` | true | Accept mismatched EP7 replies for diagnostics |
 | `aks_cap_timeout_sec` | 30 | Capability-only mailbox wait |
+| `aks_ool_dma32` | true | Force OOL buffers into 32-bit DMA |
 
 Do not commit keybags, catacomb, or `/etc` private config to this branch.
 
@@ -35,3 +36,8 @@ ls -l /dev/t2-aks
 ```
 
 Look for `research capability rx:` (SEP spoke) vs timeout-only.
+
+## Phase 1 result (2026-09-03)
+
+Cold power, zero_time=1, 30s wait: `skipped=0`, true EP7 silence. OOL DMA was
+`0x16753…` / `0x16752…` (above 4G). Next: `aks_ool_dma32=1`.

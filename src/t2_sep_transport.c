@@ -130,6 +130,11 @@ module_param(aks_cap_timeout_sec, uint, 0400);
 MODULE_PARM_DESC(aks_cap_timeout_sec,
 	"Mailbox wait seconds for capability probe only (research default: 30)");
 
+static bool aks_ool_dma32 = true;
+module_param(aks_ool_dma32, bool, 0400);
+MODULE_PARM_DESC(aks_ool_dma32,
+	"Force 32-bit coherent OOL buffers (research default: true; Air DMA hypothesis)");
+
 static bool register_acm;
 module_param(register_acm, bool, 0400);
 MODULE_PARM_DESC(register_acm,
@@ -1095,21 +1100,41 @@ static int t2_sep_probe(struct pci_dev *pdev,
 		return 0;
 	}
 
-	ret = dma_set_mask_and_coherent(&pdev->dev,
-					DMA_BIT_MASK(T2_SEP_DMA_BITS));
-	if (ret)
-		return dev_err_probe(&pdev->dev, ret, "no usable 44-bit DMA mask\n");
-	pci_set_master(pdev);
+	{
+		u64 dma_bits = aks_ool_dma32 ? 32 : T2_SEP_DMA_BITS;
+		gfp_t ool_gfp = GFP_KERNEL | (aks_ool_dma32 ? GFP_DMA32 : 0);
 
-	sep->ool_in = dma_alloc_coherent(&pdev->dev, T2_SEP_OOL_SIZE,
-					 &sep->ool_in_dma, GFP_KERNEL);
-	if (!sep->ool_in)
-		return -ENOMEM;
-	sep->ool_out = dma_alloc_coherent(&pdev->dev, T2_SEP_OOL_SIZE,
-					  &sep->ool_out_dma, GFP_KERNEL);
-	if (!sep->ool_out) {
-		ret = -ENOMEM;
-		goto err_free_ool;
+		ret = dma_set_mask_and_coherent(&pdev->dev,
+						DMA_BIT_MASK(dma_bits));
+		if (ret)
+			return dev_err_probe(&pdev->dev, ret,
+					     "no usable %llu-bit DMA mask\n",
+					     (unsigned long long)dma_bits);
+		pci_set_master(pdev);
+
+		sep->ool_in = dma_alloc_coherent(&pdev->dev, T2_SEP_OOL_SIZE,
+						 &sep->ool_in_dma, ool_gfp);
+		if (!sep->ool_in)
+			return -ENOMEM;
+		sep->ool_out = dma_alloc_coherent(&pdev->dev, T2_SEP_OOL_SIZE,
+						  &sep->ool_out_dma, ool_gfp);
+		if (!sep->ool_out) {
+			ret = -ENOMEM;
+			goto err_free_ool;
+		}
+		if (aks_cap_trace)
+			dev_info(&pdev->dev,
+				 "research OOL alloc: dma32=%u ool_in_dma=0x%llx ool_out_dma=0x%llx\n",
+				 aks_ool_dma32,
+				 (unsigned long long)sep->ool_in_dma,
+				 (unsigned long long)sep->ool_out_dma);
+		if (aks_ool_dma32 &&
+		    ((sep->ool_in_dma >> 32) || (sep->ool_out_dma >> 32))) {
+			dev_err(&pdev->dev,
+				"research OOL alloc not in 32-bit range; failing closed\n");
+			ret = -EFAULT;
+			goto err_free_ool;
+		}
 	}
 	if (register_acm) {
 		sep->acm_ool_in = dma_alloc_coherent(&pdev->dev,
