@@ -80,3 +80,21 @@ sudo /home/tim/Private/t2-touchid/rebuild-research-aks.sh
 # full power-off between variants
 journalctl -b -k | rg 't2_sep|research capability|AppleKeyStore|ool_out'
 ```
+
+## Phase 2 result (2026-09-03)
+
+`aks_cap_variant` 1–5 all timed out with `skipped=0 ool_out_nonzero=0` on cold
+boot. ABI framing A/B matrix falsified.
+
+## Phase 5 / bent-compat (variant 6)
+
+Bent’s working MBP probe uses a **different** capability frame than stock
+upstream V1 (92 bytes / prefix `0x48`) and our variant 2 (prefix `0x50` /
+version 2):
+
+- mailbox length `0x00640000` (100 bytes)
+- length prefix `0x50`, **version field still 1**
+- digest = SHA-256 truncated over header_tail `0x38` + body at offset `0x54`
+  (calendar_seconds zeros are *not* in the v1 digest input)
+
+`aks_cap_variant=6` reproduces that exact wire + digest (+ `dma_wmb`).

@@ -137,11 +137,13 @@ MODULE_PARM_DESC(aks_cap_timeout_sec,
  * 3 = mailbox length in low 16 bits of word[1] (framing A/B)
  * 4 = mailbox declared length = full OOL (0x4000)
  * 5 = transaction tag 3 instead of 1
+ * 6 = bent-compat: prefix=0x50 version=1 total=100 mb=0x640000
+ *     digest header_tail=0x38 (bent t2sep_probe aks_protect v1)
  */
 static uint aks_cap_variant;
 module_param(aks_cap_variant, uint, 0400);
 MODULE_PARM_DESC(aks_cap_variant,
-	"Research capability ABI variant 0..5 (default: 0)");
+	"Research capability ABI variant 0..6 (default: 0)");
 
 static bool aks_ool_dma32 = true;
 module_param(aks_ool_dma32, bool, 0400);
@@ -368,6 +370,49 @@ static int t2_aks_digest(void *message, size_t length)
 		ret = crypto_shash_final(desc, digest);
 	if (!ret)
 		memcpy(header->digest, digest, sizeof(header->digest));
+
+	memzero_explicit(digest, sizeof(digest));
+	kfree(desc);
+	crypto_free_shash(tfm);
+	return ret;
+}
+
+
+/*
+ * Bent's capability protect (t2sep_probe): version-1 digest over a 0x50-prefixed
+ * 100-byte frame hashes only 0x38 bytes of header tail (not the trailing
+ * calendar_seconds), then the body starting at offset 0x54.
+ */
+static int t2_aks_digest_bent_cap_v1(void *message, size_t length)
+{
+	struct crypto_shash *tfm;
+	struct shash_desc *desc;
+	u8 digest[SHA256_DIGEST_SIZE];
+	u8 *wire = message;
+	int ret;
+
+	if (length < 0x54 + 16)
+		return -EINVAL;
+
+	tfm = crypto_alloc_shash("sha256", 0, 0);
+	if (IS_ERR(tfm))
+		return PTR_ERR(tfm);
+	desc = kmalloc(sizeof(*desc) + crypto_shash_descsize(tfm), GFP_KERNEL);
+	if (!desc) {
+		crypto_free_shash(tfm);
+		return -ENOMEM;
+	}
+	desc->tfm = tfm;
+
+	ret = crypto_shash_init(desc);
+	if (!ret)
+		ret = crypto_shash_update(desc, wire + 4 + 0x10, 0x38);
+	if (!ret)
+		ret = crypto_shash_update(desc, wire + 0x54, length - 0x54);
+	if (!ret)
+		ret = crypto_shash_final(desc, digest);
+	if (!ret)
+		memcpy(wire + 4, digest, 16);
 
 	memzero_explicit(digest, sizeof(digest));
 	kfree(desc);
@@ -933,6 +978,47 @@ static int t2_aks_probe_capabilities(struct t2_sep_transport *sep)
 		u64 selector = 1;
 		u32 mb_len;
 
+		if (aks_cap_variant == 6) {
+			/*
+			 * Exact bent t2sep_probe capabilities frame:
+			 * prefix 0x50, version 1, total 100, mb 0x00640000,
+			 * digest via header_tail 0x38 + body at 0x54.
+			 */
+			u8 *send = sep->ool_in;
+
+			memset(send, 0, 100);
+			put_unaligned_le32(T2_SEP_AKS_HEADER_V2_SIZE, send);
+			put_unaligned_le32(T2_SEP_AKS_HEADER_V1, send + 4 + 0x10);
+			if (!aks_cap_zero_time)
+				usec_time = ktime_get_boottime_ns() / NSEC_PER_USEC;
+			put_unaligned_le64(usec_time, send + 4 + 0x14);
+			put_unaligned_le64(1, send + 0x54 + 4);
+			ret = t2_aks_digest_bent_cap_v1(send, 100);
+			if (ret)
+				return ret;
+			dma_wmb();
+			request.word[0] = T2_SEP_AKS_ENDPOINT |
+				(T2_SEP_AKS_GET_CAPABILITIES << 8) |
+				(transaction << 16);
+			request.word[1] = 0x00640000;
+			header_size = T2_SEP_AKS_HEADER_V2_SIZE;
+			header_version = T2_SEP_AKS_HEADER_V1;
+			req_size = 100;
+			selector = 1;
+			if (aks_cap_trace)
+				dev_info(&sep->pdev->dev,
+					 "research capability probe: variant=%u zero_time=%u usec=%llu selector=%llu hdr_ver=%u req_size=%#x mb_word1=%#x ool_in_dma=0x%llx ool_out_dma=0x%llx timeout_us=%lu (bent-compat)\n",
+					 aks_cap_variant, aks_cap_zero_time,
+					 (unsigned long long)usec_time,
+					 (unsigned long long)selector,
+					 header_version, req_size,
+					 request.word[1],
+					 (unsigned long long)sep->ool_in_dma,
+					 (unsigned long long)sep->ool_out_dma,
+					 timeout_us);
+			goto bent_send;
+		}
+
 		if (aks_cap_variant == 1)
 			selector = 0;
 		else if (aks_cap_variant == 2) {
@@ -983,6 +1069,9 @@ static int t2_aks_probe_capabilities(struct t2_sep_transport *sep)
 				 (unsigned long long)sep->ool_out_dma,
 				 timeout_us);
 	}
+
+bent_send:
+	; /* variant 6 jumps here after building request words */
 
 	ret = t2_sep_send(sep, &request);
 	if (ret)
@@ -1062,7 +1151,16 @@ got_reply:
 	if (reply_length < T2_SEP_AKS_V1_WIRE_SIZE ||
 	    reply_length > T2_SEP_OOL_SIZE)
 		return -EPROTO;
-	{
+	if (aks_cap_variant == 6) {
+		u32 hdr = get_unaligned_le32(sep->ool_out);
+		u32 ver = get_unaligned_le32(sep->ool_out + sizeof(__le32) + 0x10);
+
+		/* Bent accepts compact 0x48 or 0x50 prefix with version 1. */
+		if ((hdr != T2_SEP_AKS_HEADER_V1_SIZE &&
+		     hdr != T2_SEP_AKS_HEADER_V2_SIZE) ||
+		    ver != T2_SEP_AKS_HEADER_V1)
+			return -EPROTO;
+	} else {
 		u32 expect_hdr = (aks_cap_variant == 2) ?
 			T2_SEP_AKS_HEADER_V2_SIZE : T2_SEP_AKS_HEADER_V1_SIZE;
 		u32 expect_ver = (aks_cap_variant == 2) ?
@@ -1089,12 +1187,20 @@ got_reply:
 	if (ret)
 		return ret;
 	{
-		u32 min_len = (aks_cap_variant == 2) ?
-			(T2_SEP_AKS_V2_WIRE_SIZE + sizeof(__le32) +
-			 sizeof(__le64) + sizeof(__le32)) :
-			T2_SEP_AKS_CAP_REQ_SIZE;
-		u32 wire = (aks_cap_variant == 2) ?
-			T2_SEP_AKS_V2_WIRE_SIZE : T2_SEP_AKS_V1_WIRE_SIZE;
+		u32 min_len;
+		u32 wire;
+
+		if (aks_cap_variant == 6) {
+			wire = sizeof(__le32) + get_unaligned_le32(sep->ool_out);
+			min_len = wire + 16;
+		} else if (aks_cap_variant == 2) {
+			wire = T2_SEP_AKS_V2_WIRE_SIZE;
+			min_len = wire + sizeof(__le32) + sizeof(__le64) +
+				sizeof(__le32);
+		} else {
+			wire = T2_SEP_AKS_V1_WIRE_SIZE;
+			min_len = T2_SEP_AKS_CAP_REQ_SIZE;
+		}
 
 		if (reply_length < min_len)
 			return -EPROTO;
