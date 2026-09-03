@@ -53,3 +53,30 @@ hypothesis falsified.
 1. On timeout, log whether `ool_out` was DMA-touched without a mailbox reply.
 2. Gate module load on successful `t2-biometric-port-refresh` (RSD warm), not ping alone.
 3. Phase 2 ABI matrix if still silent.
+
+## Phase 4 result (2026-09-03)
+
+RSD-warm gate + `ool_out` touch check on cold boot: timeout with
+`skipped=0 ool_out_len=0x0 ool_out_nonzero=0`. SEP neither wrote OOL nor rang
+mailbox. DMA-without-doorbell and RSD-warm hypotheses falsified.
+
+## Phase 2: `aks_cap_variant` matrix
+
+Module param `aks_cap_variant` (0..5), one cold boot each:
+
+| N | Meaning |
+| --- | --- |
+| 0 | baseline V1 selector=1 len=0x5c |
+| 1 | V1 selector=0 |
+| 2 | V2 envelope + selector=1 |
+| 3 | mailbox length in low 16 bits of word[1] |
+| 4 | mailbox declared length = full OOL 0x4000 |
+| 5 | transaction tag 3 |
+
+```bash
+# in /etc/modprobe.d/t2-sep-transport.conf options line, add e.g.:
+# aks_cap_variant=1
+sudo /home/tim/Private/t2-touchid/rebuild-research-aks.sh
+# full power-off between variants
+journalctl -b -k | rg 't2_sep|research capability|AppleKeyStore|ool_out'
+```

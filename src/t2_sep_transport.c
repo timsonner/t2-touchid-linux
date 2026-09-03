@@ -130,6 +130,19 @@ module_param(aks_cap_timeout_sec, uint, 0400);
 MODULE_PARM_DESC(aks_cap_timeout_sec,
 	"Mailbox wait seconds for capability probe only (research default: 30)");
 
+/* Research ABI matrix for Air EP7 silence (aks_cap_variant):
+ * 0 = stock V1 selector=1 len=0x5c (baseline)
+ * 1 = V1 selector=0
+ * 2 = V2 envelope + selector=1 (wire like later AKS ops)
+ * 3 = mailbox length in low 16 bits of word[1] (framing A/B)
+ * 4 = mailbox declared length = full OOL (0x4000)
+ * 5 = transaction tag 3 instead of 1
+ */
+static uint aks_cap_variant;
+module_param(aks_cap_variant, uint, 0400);
+MODULE_PARM_DESC(aks_cap_variant,
+	"Research capability ABI variant 0..5 (default: 0)");
+
 static bool aks_ool_dma32 = true;
 module_param(aks_ool_dma32, bool, 0400);
 MODULE_PARM_DESC(aks_ool_dma32,
@@ -911,34 +924,66 @@ static int t2_aks_probe_capabilities(struct t2_sep_transport *sep)
 
 	memset(sep->ool_in, 0, T2_SEP_OOL_SIZE);
 	memset(sep->ool_out, 0, T2_SEP_OOL_SIZE);
-	put_unaligned_le32(T2_SEP_AKS_HEADER_V1_SIZE, sep->ool_in);
-	header = sep->ool_in + sizeof(__le32);
-	header->version = cpu_to_le32(T2_SEP_AKS_HEADER_V1);
-	if (!aks_cap_zero_time)
-		usec_time = ktime_get_boottime_ns() / NSEC_PER_USEC;
-	header->usec_time = cpu_to_le64(usec_time);
 
-	/* Request payload: result=0, selector=1, empty input blob. */
-	payload = sep->ool_in + T2_SEP_AKS_V1_WIRE_SIZE;
-	put_unaligned_le32(0, payload);
-	put_unaligned_le64(1, payload + sizeof(__le32));
-	put_unaligned_le32(0, payload + sizeof(__le32) + sizeof(__le64));
-	ret = t2_aks_digest(sep->ool_in, T2_SEP_AKS_CAP_REQ_SIZE);
-	if (ret)
-		return ret;
+	{
+		u32 header_size = T2_SEP_AKS_HEADER_V1_SIZE;
+		u32 header_version = T2_SEP_AKS_HEADER_V1;
+		u32 wire_size = T2_SEP_AKS_V1_WIRE_SIZE;
+		u32 req_size = T2_SEP_AKS_CAP_REQ_SIZE;
+		u64 selector = 1;
+		u32 mb_len;
 
-	if (aks_cap_trace)
-		dev_info(&sep->pdev->dev,
-			 "research capability probe: zero_time=%u usec=%llu ool_in_dma=0x%llx ool_out_dma=0x%llx timeout_us=%lu\n",
-			 aks_cap_zero_time, (unsigned long long)usec_time,
-			 (unsigned long long)sep->ool_in_dma,
-			 (unsigned long long)sep->ool_out_dma,
-			 timeout_us);
+		if (aks_cap_variant == 1)
+			selector = 0;
+		else if (aks_cap_variant == 2) {
+			header_size = T2_SEP_AKS_HEADER_V2_SIZE;
+			header_version = T2_SEP_AKS_HEADER_V2;
+			wire_size = T2_SEP_AKS_V2_WIRE_SIZE;
+			/* length prefix + v2 header + result/selector/bloblen */
+			req_size = wire_size + sizeof(__le32) + sizeof(__le64) +
+				sizeof(__le32);
+		} else if (aks_cap_variant == 5)
+			transaction = 3;
 
-	/* EP7 descriptor: endpoint, operation, transaction, OOL length at +6. */
-	request.word[0] = T2_SEP_AKS_ENDPOINT |
-		(T2_SEP_AKS_GET_CAPABILITIES << 8) | (transaction << 16);
-	request.word[1] = T2_SEP_AKS_CAP_REQ_SIZE << 16;
+		put_unaligned_le32(header_size, sep->ool_in);
+		header = sep->ool_in + sizeof(__le32);
+		header->version = cpu_to_le32(header_version);
+		if (!aks_cap_zero_time)
+			usec_time = ktime_get_boottime_ns() / NSEC_PER_USEC;
+		header->usec_time = cpu_to_le64(usec_time);
+
+		/* Request payload: result=0, selector, empty input blob. */
+		payload = sep->ool_in + wire_size;
+		put_unaligned_le32(0, payload);
+		put_unaligned_le64(selector, payload + sizeof(__le32));
+		put_unaligned_le32(0, payload + sizeof(__le32) + sizeof(__le64));
+		ret = t2_aks_digest(sep->ool_in, req_size);
+		if (ret)
+			return ret;
+
+		mb_len = req_size;
+		if (aks_cap_variant == 4)
+			mb_len = T2_SEP_OOL_SIZE;
+
+		request.word[0] = T2_SEP_AKS_ENDPOINT |
+			(T2_SEP_AKS_GET_CAPABILITIES << 8) | (transaction << 16);
+		if (aks_cap_variant == 3)
+			request.word[1] = mb_len; /* length in low 16 (A/B) */
+		else
+			request.word[1] = mb_len << 16;
+
+		if (aks_cap_trace)
+			dev_info(&sep->pdev->dev,
+				 "research capability probe: variant=%u zero_time=%u usec=%llu selector=%llu hdr_ver=%u req_size=%#x mb_word1=%#x ool_in_dma=0x%llx ool_out_dma=0x%llx timeout_us=%lu\n",
+				 aks_cap_variant, aks_cap_zero_time,
+				 (unsigned long long)usec_time,
+				 (unsigned long long)selector, header_version,
+				 req_size, request.word[1],
+				 (unsigned long long)sep->ool_in_dma,
+				 (unsigned long long)sep->ool_out_dma,
+				 timeout_us);
+	}
+
 	ret = t2_sep_send(sep, &request);
 	if (ret)
 		return ret;
@@ -1017,10 +1062,17 @@ got_reply:
 	if (reply_length < T2_SEP_AKS_V1_WIRE_SIZE ||
 	    reply_length > T2_SEP_OOL_SIZE)
 		return -EPROTO;
-	if (get_unaligned_le32(sep->ool_out) != T2_SEP_AKS_HEADER_V1_SIZE ||
-	    get_unaligned_le32(sep->ool_out + sizeof(__le32) + 0x10) !=
-	    T2_SEP_AKS_HEADER_V1)
-		return -EPROTO;
+	{
+		u32 expect_hdr = (aks_cap_variant == 2) ?
+			T2_SEP_AKS_HEADER_V2_SIZE : T2_SEP_AKS_HEADER_V1_SIZE;
+		u32 expect_ver = (aks_cap_variant == 2) ?
+			T2_SEP_AKS_HEADER_V2 : T2_SEP_AKS_HEADER_V1;
+
+		if (get_unaligned_le32(sep->ool_out) != expect_hdr ||
+		    get_unaligned_le32(sep->ool_out + sizeof(__le32) + 0x10) !=
+		    expect_ver)
+			return -EPROTO;
+	}
 
 	/* Recompute in a scratch copy so malformed replies never look valid. */
 	{
@@ -1036,9 +1088,18 @@ got_reply:
 	}
 	if (ret)
 		return ret;
-	if (reply_length < T2_SEP_AKS_CAP_REQ_SIZE)
-		return -EPROTO;
-	payload = sep->ool_out + T2_SEP_AKS_V1_WIRE_SIZE;
+	{
+		u32 min_len = (aks_cap_variant == 2) ?
+			(T2_SEP_AKS_V2_WIRE_SIZE + sizeof(__le32) +
+			 sizeof(__le64) + sizeof(__le32)) :
+			T2_SEP_AKS_CAP_REQ_SIZE;
+		u32 wire = (aks_cap_variant == 2) ?
+			T2_SEP_AKS_V2_WIRE_SIZE : T2_SEP_AKS_V1_WIRE_SIZE;
+
+		if (reply_length < min_len)
+			return -EPROTO;
+		payload = sep->ool_out + wire;
+	}
 	if (get_unaligned_le32(payload)) {
 		dev_warn(&sep->pdev->dev,
 			 "AppleKeyStore capability query returned status %#x\n",
