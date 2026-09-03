@@ -41,3 +41,15 @@ Look for `research capability rx:` (SEP spoke) vs timeout-only.
 
 Cold power, zero_time=1, 30s wait: `skipped=0`, true EP7 silence. OOL DMA was
 `0x16753…` / `0x16752…` (above 4G). Next: `aks_ool_dma32=1`.
+
+## Phase 3 result (2026-09-03)
+
+`aks_ool_dma32=1` allocated `ool_in_dma=0x56c58000` / `ool_out_dma=0x56c5c000`
+(under 4G). Capability still timed out with `skipped=0` over 30s. DMA32
+hypothesis falsified.
+
+## Next (after DMA32 falsified)
+
+1. On timeout, log whether `ool_out` was DMA-touched without a mailbox reply.
+2. Gate module load on successful `t2-biometric-port-refresh` (RSD warm), not ping alone.
+3. Phase 2 ABI matrix if still silent.

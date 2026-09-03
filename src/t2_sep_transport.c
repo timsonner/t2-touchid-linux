@@ -995,10 +995,21 @@ static int t2_aks_probe_capabilities(struct t2_sep_transport *sep)
 	dev_warn(&sep->pdev->dev,
 		 "mailbox receive timeout: inbox=%#x outbox=%#x\n",
 		 inbox, outbox);
-	if (aks_cap_trace)
+	if (aks_cap_trace) {
+		u32 decl = get_unaligned_le32(sep->ool_out);
+		u32 nonzero = 0;
+		u32 i;
+
+		for (i = 0; i < T2_SEP_AKS_CAP_REQ_SIZE; i++) {
+			if (((u8 *)sep->ool_out)[i]) {
+				nonzero = 1;
+				break;
+			}
+		}
 		dev_warn(&sep->pdev->dev,
-			 "research capability timeout after %lu us (skipped=%u)\n",
-			 timeout_us, skipped);
+			 "research capability timeout after %lu us (skipped=%u ool_out_len=%#x ool_out_nonzero=%u)\n",
+			 timeout_us, skipped, decl, nonzero);
+	}
 	return -ETIMEDOUT;
 
 got_reply:
