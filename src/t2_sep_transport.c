@@ -184,6 +184,11 @@ module_param(aks_acm_canary, bool, 0400);
 MODULE_PARM_DESC(aks_acm_canary,
 	"Register EP10 OOL and send ACM SCRD init as non-AKS canary (research default: true)");
 
+static bool aks_device_state_canary = true;
+module_param(aks_device_state_canary, bool, 0400);
+MODULE_PARM_DESC(aks_device_state_canary,
+	"Send AKS get_device_state (0x19) before capabilities as EP7 canary (research default: true)");
+
 static bool register_acm;
 module_param(register_acm, bool, 0400);
 MODULE_PARM_DESC(register_acm,
@@ -482,6 +487,71 @@ static int t2_sep_acm_scrd_canary(struct t2_sep_transport *sep)
 		 "research ACM SCRD timeout; msi0=%d msi1=%d\n",
 		 atomic_read(&sep->msi_inbox_count),
 		 atomic_read(&sep->msi_outbox_count));
+	return -ETIMEDOUT;
+}
+
+
+static int t2_sep_aks_device_state_canary(struct t2_sep_transport *sep)
+{
+	struct t2_aks_header_v1 *header;
+	struct t2_sep_message request = { };
+	struct t2_sep_message reply;
+	u8 transaction = 5;
+	unsigned int waited;
+	u32 inbox;
+	u64 usec_time = 0;
+	int ret;
+
+	if (!sep->ool_in_registered || !sep->ool_out_registered)
+		return -ENODEV;
+
+	memset(sep->ool_in, 0, T2_SEP_OOL_SIZE);
+	memset(sep->ool_out, 0, T2_SEP_OOL_SIZE);
+	put_unaligned_le32(T2_SEP_AKS_HEADER_V1_SIZE, sep->ool_in);
+	header = sep->ool_in + sizeof(__le32);
+	header->version = cpu_to_le32(T2_SEP_AKS_HEADER_V1);
+	if (!aks_cap_zero_time)
+		usec_time = ktime_get_boottime_ns() / NSEC_PER_USEC;
+	header->usec_time = cpu_to_le64(usec_time);
+	/* Empty body beyond header for read-only device-state probe. */
+	ret = t2_aks_digest(sep->ool_in, T2_SEP_AKS_V1_WIRE_SIZE);
+	if (ret)
+		return ret;
+	dma_wmb();
+
+	request.word[0] = T2_SEP_AKS_ENDPOINT | (0x19 << 8) | (transaction << 16);
+	request.word[1] = T2_SEP_AKS_V1_WIRE_SIZE << 16;
+	ret = t2_sep_send(sep, &request);
+	if (ret)
+		return ret;
+	dev_info(&sep->pdev->dev,
+		 "research AKS 0x19 sent: req=%08x %08x usec=%llu\n",
+		 request.word[0], request.word[1],
+		 (unsigned long long)usec_time);
+
+	for (waited = 0; waited < 5 * USEC_PER_SEC; waited += 1000) {
+		inbox = readl(sep->bar + T2_SEP_INBOX_STATUS);
+		if (!(inbox & T2_SEP_INBOX_EMPTY)) {
+			reply.word[0] = readl(sep->bar + T2_SEP_INBOX_DATA + 0x0);
+			reply.word[1] = readl(sep->bar + T2_SEP_INBOX_DATA + 0x4);
+			reply.word[2] = readl(sep->bar + T2_SEP_INBOX_DATA + 0x8);
+			reply.word[3] = readl(sep->bar + T2_SEP_INBOX_DATA + 0xc);
+			dev_info(&sep->pdev->dev,
+				 "research AKS 0x19 rx: %08x %08x %08x %08x waited_us=%u msi0=%d msi1=%d ool_out_len=%#x\n",
+				 reply.word[0], reply.word[1], reply.word[2],
+				 reply.word[3], waited,
+				 atomic_read(&sep->msi_inbox_count),
+				 atomic_read(&sep->msi_outbox_count),
+				 get_unaligned_le32(sep->ool_out));
+			return 0;
+		}
+		usleep_range(1000, 2000);
+	}
+	dev_warn(&sep->pdev->dev,
+		 "research AKS 0x19 timeout; msi0=%d msi1=%d ool_out_nonzero=%u\n",
+		 atomic_read(&sep->msi_inbox_count),
+		 atomic_read(&sep->msi_outbox_count),
+		 get_unaligned_le32(sep->ool_out) ? 1 : 0);
 	return -ETIMEDOUT;
 }
 
@@ -1686,6 +1756,13 @@ static int t2_sep_probe(struct pci_dev *pdev,
 		if (ret)
 			dev_warn(&pdev->dev,
 				 "research ACM SCRD canary failed (%d); continuing\n",
+				 ret);
+	}
+	if (aks_device_state_canary) {
+		ret = t2_sep_aks_device_state_canary(sep);
+		if (ret)
+			dev_warn(&pdev->dev,
+				 "research AKS 0x19 canary failed (%d); continuing\n",
 				 ret);
 	}
 

@@ -138,3 +138,12 @@ Prior ABI matrix without startCPU is obsolete for conclusions about wire format 
 | `aks_acm_canary` | true | EP10 OOL + SCRD init (`DRCS\n` + `0x28`) before AKS capability |
 
 Look for `research discovery rx` / `research ACM SCRD rx` vs timeouts.
+
+## Phase 6 result (2026-09-03)
+
+- Discovery: `records=0` after NOP (no `0xfd` ads).
+- **ACM SCRD canary succeeded** (`research ACM SCRD rx`, ~1 ms, MSI counted).
+- AKS capability (`0x4d`) still timed out with `ool_out_nonzero=0`.
+
+Conclusion: Intel SEP mailbox + EP10 ACM are alive on MBA91; EP7 AKS
+`get_capabilities` remains silent. Next: AKS `0x19` device-state canary.
