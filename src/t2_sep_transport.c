@@ -109,6 +109,27 @@ module_param(probe_capabilities, bool, 0400);
 MODULE_PARM_DESC(probe_capabilities,
 	"Issue one read-only AppleKeyStore capability query (default: false)");
 
+/* research/mba91-aks-ep7: MacBookAir9,1 EP7 bring-up knobs (defaults on). */
+static bool aks_cap_zero_time = true;
+module_param(aks_cap_zero_time, bool, 0400);
+MODULE_PARM_DESC(aks_cap_zero_time,
+	"Stamp usec_time=0 on the capability request (research default: true)");
+
+static bool aks_cap_trace = true;
+module_param(aks_cap_trace, bool, 0400);
+MODULE_PARM_DESC(aks_cap_trace,
+	"Log non-secret mailbox words/status around capability probe (research default: true)");
+
+static bool aks_cap_accept_any_ep7 = true;
+module_param(aks_cap_accept_any_ep7, bool, 0400);
+MODULE_PARM_DESC(aks_cap_accept_any_ep7,
+	"Accept any endpoint-7 mailbox reply during capability probe (research default: true)");
+
+static uint aks_cap_timeout_sec = 30;
+module_param(aks_cap_timeout_sec, uint, 0400);
+MODULE_PARM_DESC(aks_cap_timeout_sec,
+	"Mailbox wait seconds for capability probe only (research default: 30)");
+
 static bool register_acm;
 module_param(register_acm, bool, 0400);
 MODULE_PARM_DESC(register_acm,
@@ -873,15 +894,24 @@ static int t2_aks_probe_capabilities(struct t2_sep_transport *sep)
 	u16 reply_length;
 	u8 transaction = 1;
 	unsigned int skipped = 0;
+	unsigned int waited;
+	u32 inbox, outbox;
+	u64 usec_time = 0;
+	unsigned long timeout_us;
 	int ret;
+
+	timeout_us = (unsigned long)aks_cap_timeout_sec * USEC_PER_SEC;
+	if (!timeout_us)
+		timeout_us = T2_SEP_TIMEOUT_US;
 
 	memset(sep->ool_in, 0, T2_SEP_OOL_SIZE);
 	memset(sep->ool_out, 0, T2_SEP_OOL_SIZE);
 	put_unaligned_le32(T2_SEP_AKS_HEADER_V1_SIZE, sep->ool_in);
 	header = sep->ool_in + sizeof(__le32);
 	header->version = cpu_to_le32(T2_SEP_AKS_HEADER_V1);
-	header->usec_time = cpu_to_le64(ktime_get_boottime_ns() /
-					   NSEC_PER_USEC);
+	if (!aks_cap_zero_time)
+		usec_time = ktime_get_boottime_ns() / NSEC_PER_USEC;
+	header->usec_time = cpu_to_le64(usec_time);
 
 	/* Request payload: result=0, selector=1, empty input blob. */
 	payload = sep->ool_in + T2_SEP_AKS_V1_WIRE_SIZE;
@@ -892,6 +922,14 @@ static int t2_aks_probe_capabilities(struct t2_sep_transport *sep)
 	if (ret)
 		return ret;
 
+	if (aks_cap_trace)
+		dev_info(&sep->pdev->dev,
+			 "research capability probe: zero_time=%u usec=%llu ool_in_dma=0x%llx ool_out_dma=0x%llx timeout_us=%lu\n",
+			 aks_cap_zero_time, (unsigned long long)usec_time,
+			 (unsigned long long)sep->ool_in_dma,
+			 (unsigned long long)sep->ool_out_dma,
+			 timeout_us);
+
 	/* EP7 descriptor: endpoint, operation, transaction, OOL length at +6. */
 	request.word[0] = T2_SEP_AKS_ENDPOINT |
 		(T2_SEP_AKS_GET_CAPABILITIES << 8) | (transaction << 16);
@@ -900,19 +938,65 @@ static int t2_aks_probe_capabilities(struct t2_sep_transport *sep)
 	if (ret)
 		return ret;
 
-	for (;;) {
-		ret = t2_sep_receive(sep, &reply);
-		if (ret)
-			return ret;
-		if ((reply.word[0] & 0xff) == T2_SEP_AKS_ENDPOINT &&
-		    (((reply.word[0] >> 8) & 0x7f) ==
-		     T2_SEP_AKS_GET_CAPABILITIES) &&
-		    ((reply.word[0] >> 16) & 0xff) == transaction)
-			break;
-		if (++skipped == 32)
-			return -EOVERFLOW;
+	if (aks_cap_trace) {
+		inbox = readl(sep->bar + T2_SEP_INBOX_STATUS);
+		outbox = readl(sep->bar + T2_SEP_OUTBOX_STATUS);
+		dev_info(&sep->pdev->dev,
+			 "research capability sent: req=%08x %08x %08x %08x inbox=%#x outbox=%#x\n",
+			 request.word[0], request.word[1], request.word[2],
+			 request.word[3], inbox, outbox);
 	}
 
+	/*
+	 * Capability-only wait loop. Stock t2_sep_receive uses T2_SEP_TIMEOUT_US;
+	 * Air bring-up needs a longer, traced wait and optional EP7 accept-any.
+	 */
+	for (waited = 0; waited < timeout_us; waited += 100) {
+		inbox = readl(sep->bar + T2_SEP_INBOX_STATUS);
+		if (!(inbox & T2_SEP_INBOX_EMPTY)) {
+			reply.word[0] = readl(sep->bar + T2_SEP_INBOX_DATA + 0x0);
+			reply.word[1] = readl(sep->bar + T2_SEP_INBOX_DATA + 0x4);
+			reply.word[2] = readl(sep->bar + T2_SEP_INBOX_DATA + 0x8);
+			reply.word[3] = readl(sep->bar + T2_SEP_INBOX_DATA + 0xc);
+
+			if (aks_cap_trace)
+				dev_info(&sep->pdev->dev,
+					 "research capability rx: %08x %08x %08x %08x skipped=%u waited_us=%u\n",
+					 reply.word[0], reply.word[1], reply.word[2],
+					 reply.word[3], skipped, waited);
+
+			if ((reply.word[0] & 0xff) == T2_SEP_AKS_ENDPOINT &&
+			    (((reply.word[0] >> 8) & 0x7f) ==
+			     T2_SEP_AKS_GET_CAPABILITIES) &&
+			    ((reply.word[0] >> 16) & 0xff) == transaction)
+				goto got_reply;
+
+			if (aks_cap_accept_any_ep7 &&
+			    (reply.word[0] & 0xff) == T2_SEP_AKS_ENDPOINT) {
+				dev_warn(&sep->pdev->dev,
+					 "research: accepting mismatched EP7 reply for diagnostics\n");
+				goto got_reply;
+			}
+
+			if (++skipped == 32)
+				return -EOVERFLOW;
+			continue;
+		}
+		usleep_range(100, 200);
+	}
+
+	inbox = readl(sep->bar + T2_SEP_INBOX_STATUS);
+	outbox = readl(sep->bar + T2_SEP_OUTBOX_STATUS);
+	dev_warn(&sep->pdev->dev,
+		 "mailbox receive timeout: inbox=%#x outbox=%#x\n",
+		 inbox, outbox);
+	if (aks_cap_trace)
+		dev_warn(&sep->pdev->dev,
+			 "research capability timeout after %lu us (skipped=%u)\n",
+			 timeout_us, skipped);
+	return -ETIMEDOUT;
+
+got_reply:
 	reply_length = reply.word[1] >> 16;
 	if (reply_length < T2_SEP_AKS_V1_WIRE_SIZE ||
 	    reply_length > T2_SEP_OOL_SIZE)
