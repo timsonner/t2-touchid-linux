@@ -11,6 +11,7 @@ Read [Before you start](#before-you-start) before installing anything.
 ## Contents
 
 - [Status](#status)
+- [Related research (MacBookAir9,1)](#related-research-macbookair91)
 - [Proven configuration](#proven-configuration)
 - [Prerequisites](#prerequisites)
 - [Before you start](#before-you-start)
@@ -33,6 +34,16 @@ Read [Before you start](#before-you-start) before installing anything.
 - [License](#license)
 
 ## Status
+
+### Related research (MacBookAir9,1)
+
+Air-specific AppleKeyStore EP7 bring-up on branch
+[`research/mba91-aks-ep7`](https://github.com/timsonner/t2-touchid-linux/tree/research/mba91-aks-ep7)
+is **PARKED**: SEP mailbox transport (EP0/MSI/startCPU/ACM) works; AKS on EP7
+stays mute under documented and bent-exact framing. Full scoreboard:
+[`docs/RESEARCH_MBA91_AKS.md`](docs/RESEARCH_MBA91_AKS.md). Useful to other T2
+agents as a negative result + `/dev/t2-sep-lab` research path — not a working
+Touch ID port for Air yet.
 
 "Exposed" means a user can invoke it on an installed system. "Hardware-tested"
 means it has been proven on the [proven configuration](#proven-configuration)
