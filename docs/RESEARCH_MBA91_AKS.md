@@ -122,4 +122,9 @@ Priority order (do not re-burn falsified items unless paired with a new lever):
 
 - Upstream: https://github.com/jmurth1234/t2-touchid-linux  
 - Bent bring-up / MSI / startCPU: https://github.com/bentsignal/t2-omarchy (`docs/touch-id.md`, `prototypes/t2sep-probe/`)  
-- Fork branch: https://github.com/timsonner/t2-touchid-linux/tree/research/mba91-aks-ep7  
+- Fork branch: https://github.com/timsonner/t2-touchid-linux/tree/research/mba91-aks-ep7
+
+### Passive discovery (2026-09-03)
+
+- `aks_discover_ms` default **10000**; phases **pre-ool** (after EP0 NOP) and **post-acm** (after ACM SCRD).
+- Hypothesis: Air may emit dynamic ads only after ACM bring-up, or never (`records=0`).

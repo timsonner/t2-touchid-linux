@@ -185,7 +185,12 @@ MODULE_PARM_DESC(aks_ep0_nop,
 static bool aks_discover = true;
 module_param(aks_discover, bool, 0400);
 MODULE_PARM_DESC(aks_discover,
-	"Passive 1s inbox listen after NOP for 0xfd/other ads (research default: true)");
+	"Passive inbox listen for 0xfd/other ads (research default: true)");
+
+static uint aks_discover_ms = 10000;
+module_param(aks_discover_ms, uint, 0400);
+MODULE_PARM_DESC(aks_discover_ms,
+	"Passive discovery listen window in ms (research default: 10000)");
 
 static bool aks_acm_canary = true;
 module_param(aks_acm_canary, bool, 0400);
@@ -412,16 +417,22 @@ static int t2_sep_ep0_nop(struct t2_sep_transport *sep)
 }
 
 
-static int t2_sep_passive_discover(struct t2_sep_transport *sep)
+static int t2_sep_passive_discover(struct t2_sep_transport *sep,
+				  const char *phase)
 {
 	unsigned int elapsed_ms;
 	unsigned int idle_ms = 0;
 	unsigned int records = 0;
+	unsigned int window_ms = aks_discover_ms ? aks_discover_ms : 1000;
 	bool saw = false;
 
+	if (window_ms > 120000)
+		window_ms = 120000;
+
 	dev_info(&sep->pdev->dev,
-		 "research discovery: passive listen up to 1000 ms\n");
-	for (elapsed_ms = 0; elapsed_ms < 1000; elapsed_ms += 10) {
+		 "research discovery (%s): passive listen up to %u ms\n",
+		 phase ? phase : "?", window_ms);
+	for (elapsed_ms = 0; elapsed_ms < window_ms; elapsed_ms += 10) {
 		u32 inbox = readl(sep->bar + T2_SEP_INBOX_STATUS);
 		struct t2_sep_message msg;
 
@@ -449,8 +460,9 @@ static int t2_sep_passive_discover(struct t2_sep_transport *sep)
 			break;
 	}
 	dev_info(&sep->pdev->dev,
-		 "research discovery done: records=%u saw=%u msi0=%d msi1=%d\n",
-		 records, saw, atomic_read(&sep->msi_inbox_count),
+		 "research discovery done (%s): records=%u saw=%u msi0=%d msi1=%d\n",
+		 phase ? phase : "?", records, saw,
+		 atomic_read(&sep->msi_inbox_count),
 		 atomic_read(&sep->msi_outbox_count));
 	return 0;
 }
@@ -2156,7 +2168,7 @@ static int t2_sep_probe(struct pci_dev *pdev,
 				 ret);
 	}
 	if (aks_discover) {
-		ret = t2_sep_passive_discover(sep);
+		ret = t2_sep_passive_discover(sep, "pre-ool");
 		if (ret)
 			dev_warn(&pdev->dev,
 				 "research discovery failed (%d); continuing\n",
@@ -2277,6 +2289,13 @@ static int t2_sep_probe(struct pci_dev *pdev,
 		if (ret)
 			dev_warn(&pdev->dev,
 				 "research ACM SCRD canary failed (%d); continuing\n",
+				 ret);
+	}
+	if (aks_discover) {
+		ret = t2_sep_passive_discover(sep, "post-acm");
+		if (ret)
+			dev_warn(&pdev->dev,
+				 "research discovery (post-acm) failed (%d); continuing\n",
 				 ret);
 	}
 	if (aks_device_state_canary) {
