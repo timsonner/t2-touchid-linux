@@ -28,6 +28,7 @@ Status: **PARKED** (2026-09-03) — Touch ID blocked on mute AppleKeyStore EP7.
 | AKS EP7 `0x19` get_device_state | **Timeout** `-110`, `ool_out_nonzero=0` |
 | AKS EP7 `0x4d` get_capabilities | **Timeout** `-110`, `ool_out_nonzero=0` |
 | `/dev/t2-aks` | Never created (capability hard-fails) |
+| `/dev/t2-sep-lab` | **Now registered** even when capability fails (research lab) |
 
 ### Conclusion
 
@@ -71,6 +72,30 @@ Defaults are research-oriented (on). Do not ship these as upstream defaults.
 | `aks_discover` | true | 1 s passive inbox listen after NOP |
 | `aks_acm_canary` | true | EP10 OOL + SCRD init canary |
 | `aks_device_state_canary` | true | AKS `0x19` before capabilities |
+| `aks_lab` | true | Register `/dev/t2-sep-lab` even if capability fails |
+
+## In-session lab
+
+After one research DKMS rebuild/reboot with `register_ool=1`, capability probe
+may still time out — that **no longer** blocks a userspace path. When `aks_lab`
+is true (research default), probe registers root-only `/dev/t2-sep-lab` even if
+`/dev/t2-aks` stays disabled. OOL DMA remains pinned (`__module_get`); `rmmod`
+is still blocked until reboot.
+
+Iterate mailbox/OOL/AKS frames without rebuilding:
+
+```bash
+# once per tree sync
+tools/build-t2-sep-lab.sh /home/tim/Private/t2-touchid/t2-sep-lab
+# or: cc -O2 -Wall -I src -o t2-sep-lab tools/t2-sep-lab.c
+
+sudo /home/tim/Private/t2-touchid/t2-sep-lab status
+sudo /home/tim/Private/t2-touchid/t2-sep-lab aks --op 0x4d --ver 2 --zero-time --timeout-ms 30000
+sudo /home/tim/Private/t2-touchid/t2-sep-lab raw --w0 0x... --w1 0x... --w2 0x0 --timeout-ms 5000
+```
+
+Ioctls: `STATUS`, `RAW_MB`, `OOL`, `EP0`, `AKS` (no operation whitelist on the
+lab AKS path). Do not log OOL payload contents from the driver.
 
 ## Install notes (Air)
 
@@ -82,6 +107,9 @@ Defaults are research-oriented (on). Do not ship these as upstream defaults.
   (fail-closed parm check). Not committed here (private paths).
 
 ## If resumed later
+
+Use `/dev/t2-sep-lab` + `t2-sep-lab` for in-session EP7 probes before another
+full rebuild cycle.
 
 Priority order (do not re-burn falsified items unless paired with a new lever):
 

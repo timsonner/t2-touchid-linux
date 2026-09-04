@@ -34,6 +34,11 @@
 static_assert(sizeof(struct t2_acm_ioc_exchange) == 48);
 static_assert(sizeof(struct t2_acm_ioc_info) == 16);
 static_assert(sizeof(struct t2_aks_ioc_exchange) == 32);
+static_assert(sizeof(struct t2_sep_lab_ioc_status) == 28);
+static_assert(sizeof(struct t2_sep_lab_ioc_raw_mb) == 40);
+static_assert(sizeof(struct t2_sep_lab_ioc_ool) == 24);
+static_assert(sizeof(struct t2_sep_lab_ioc_ep0) == 16);
+static_assert(sizeof(struct t2_sep_lab_ioc_aks) == 64);
 
 #define T2_SEP_VENDOR_ID            0x106b
 #define T2_SEP_DEVICE_ID            0x1802
@@ -59,6 +64,7 @@ static_assert(sizeof(struct t2_aks_ioc_exchange) == 32);
 #define T2_SEP_CMSG_SET_OOL_IN      2
 #define T2_SEP_CMSG_SET_OOL_OUT     3
 #define T2_SEP_OOL_SIZE             0x4000
+static_assert(T2_SEP_LAB_OOL_SIZE == T2_SEP_OOL_SIZE);
 #define T2_SEP_DMA_BITS             44
 #define T2_SEP_TIMEOUT_US           (5 * USEC_PER_SEC)
 #define T2_SEP_AKS_GET_CAPABILITIES 0x4d
@@ -97,6 +103,7 @@ struct t2_sep_transport {
 	bool acm_ool_out_registered;
 	struct miscdevice aks_miscdev;
 	struct miscdevice acm_miscdev;
+	struct miscdevice lab_miscdev;
 	struct mutex exchange_lock;
 	atomic_t acm_opened;
 	u8 next_transaction;
@@ -106,6 +113,7 @@ struct t2_sep_transport {
 	u8 acm_context[T2_ACM_CONTEXT_SIZE];
 	bool misc_registered;
 	bool acm_misc_registered;
+	bool lab_misc_registered;
 };
 
 static bool register_ool;
@@ -188,6 +196,11 @@ static bool aks_device_state_canary = true;
 module_param(aks_device_state_canary, bool, 0400);
 MODULE_PARM_DESC(aks_device_state_canary,
 	"Send AKS get_device_state (0x19) before capabilities as EP7 canary (research default: true)");
+
+static bool aks_lab = true;
+module_param(aks_lab, bool, 0400);
+MODULE_PARM_DESC(aks_lab,
+	"Register research /dev/t2-sep-lab even if capability probe fails (research default: true)");
 
 static bool register_acm;
 module_param(register_acm, bool, 0400);
@@ -620,6 +633,56 @@ static int t2_sep_receive(struct t2_sep_transport *sep,
 	return -ETIMEDOUT;
 }
 
+/*
+ * Research lab / capability-style wait. @timeout_us is the remaining budget;
+ * on success *@waited_us accumulates the spin time so callers can keep a single
+ * overall deadline across skipped unrelated messages.
+ */
+static int t2_sep_receive_timeout(struct t2_sep_transport *sep,
+				  struct t2_sep_message *message,
+				  unsigned long timeout_us,
+				  unsigned int *waited_us)
+{
+	unsigned int waited = 0;
+	u32 inbox, outbox;
+
+	if (!timeout_us)
+		timeout_us = T2_SEP_TIMEOUT_US;
+
+	for (waited = 0; waited < timeout_us; waited += 100) {
+		if (!(readl(sep->bar + T2_SEP_INBOX_STATUS) &
+		      T2_SEP_INBOX_EMPTY)) {
+			message->word[0] = readl(sep->bar + T2_SEP_INBOX_DATA + 0x0);
+			message->word[1] = readl(sep->bar + T2_SEP_INBOX_DATA + 0x4);
+			message->word[2] = readl(sep->bar + T2_SEP_INBOX_DATA + 0x8);
+			message->word[3] = readl(sep->bar + T2_SEP_INBOX_DATA + 0xc);
+			if (waited_us)
+				*waited_us += waited;
+			return 0;
+		}
+		usleep_range(100, 200);
+	}
+	if (waited_us)
+		*waited_us += waited;
+	inbox = readl(sep->bar + T2_SEP_INBOX_STATUS);
+	outbox = readl(sep->bar + T2_SEP_OUTBOX_STATUS);
+	dev_warn(&sep->pdev->dev,
+		 "mailbox receive timeout (%lu us): inbox=%#x outbox=%#x\n",
+		 timeout_us, inbox, outbox);
+	return -ETIMEDOUT;
+}
+
+static unsigned int t2_sep_lab_clamp_timeout_ms(u32 timeout_ms)
+{
+	if (!timeout_ms)
+		return 5000;
+	if (timeout_ms < 1)
+		return 1;
+	if (timeout_ms > 60000)
+		return 60000;
+	return timeout_ms;
+}
+
 static int t2_sep_control(struct t2_sep_transport *sep, u8 target_endpoint,
 			  u8 opcode, u8 tag, dma_addr_t dma, size_t size)
 {
@@ -976,6 +1039,463 @@ out_free:
 static const struct file_operations t2_aks_fops = {
 	.owner = THIS_MODULE,
 	.unlocked_ioctl = t2_aks_ioctl,
+	.compat_ioctl = compat_ptr_ioctl,
+};
+
+static void t2_sep_lab_fill_status(struct t2_sep_transport *sep,
+				   struct t2_sep_lab_ioc_status *status)
+{
+	memset(status, 0, sizeof(*status));
+	status->inbox_status = readl(sep->bar + T2_SEP_INBOX_STATUS);
+	status->outbox_status = readl(sep->bar + T2_SEP_OUTBOX_STATUS);
+	status->msi_inbox_count = atomic_read(&sep->msi_inbox_count);
+	status->msi_outbox_count = atomic_read(&sep->msi_outbox_count);
+	if (sep->ool_out)
+		status->ool_out_first_le32 = get_unaligned_le32(sep->ool_out);
+	status->next_transaction = sep->next_transaction;
+	if (sep->ool_in_registered)
+		status->flags |= T2_SEP_LAB_F_OOL_IN_REG;
+	if (sep->ool_out_registered)
+		status->flags |= T2_SEP_LAB_F_OOL_OUT_REG;
+	if (sep->misc_registered)
+		status->flags |= T2_SEP_LAB_F_MISC_AKS;
+	if (sep->acm_misc_registered)
+		status->flags |= T2_SEP_LAB_F_MISC_ACM;
+	if (sep->lab_misc_registered)
+		status->flags |= T2_SEP_LAB_F_LAB;
+}
+
+static int t2_sep_lab_raw_mb_locked(struct t2_sep_transport *sep,
+				    struct t2_sep_lab_ioc_raw_mb *raw)
+{
+	struct t2_sep_message request = { };
+	struct t2_sep_message reply;
+	unsigned long timeout_us;
+	unsigned int skipped = 0;
+	u8 expect_ep;
+	int ret;
+
+	request.word[0] = raw->word[0];
+	request.word[1] = raw->word[1];
+	request.word[2] = raw->word[2];
+	/* word[3] is always zero on the wire inside t2_sep_send. */
+
+	ret = t2_sep_send(sep, &request);
+	if (ret) {
+		raw->result = ret;
+		return ret;
+	}
+
+	if (!(raw->flags & T2_SEP_LAB_RAW_F_WAIT_REPLY)) {
+		raw->result = 0;
+		return 0;
+	}
+
+	timeout_us = (unsigned long)t2_sep_lab_clamp_timeout_ms(raw->timeout_ms) *
+		USEC_PER_MSEC;
+	expect_ep = FIELD_GET(T2_SEP_ENDPOINT_MASK, request.word[0]);
+
+	{
+		unsigned int waited = 0;
+
+		for (;;) {
+			unsigned long remain = timeout_us - waited;
+
+			ret = t2_sep_receive_timeout(sep, &reply, remain, &waited);
+			if (ret) {
+				raw->result = ret;
+				return ret;
+			}
+			if ((raw->flags & T2_SEP_LAB_RAW_F_ACCEPT_ANY_ENDPOINT) ||
+			    FIELD_GET(T2_SEP_ENDPOINT_MASK, reply.word[0]) ==
+			    expect_ep) {
+				memcpy(raw->reply_word, reply.word,
+				       sizeof(raw->reply_word));
+				raw->result = 0;
+				return 0;
+			}
+			if (++skipped == 32) {
+				raw->result = -EOVERFLOW;
+				return -EOVERFLOW;
+			}
+			if (waited >= timeout_us) {
+				raw->result = -ETIMEDOUT;
+				return -ETIMEDOUT;
+			}
+		}
+	}
+}
+
+static int t2_sep_lab_ool_locked(struct t2_sep_transport *sep,
+				 struct t2_sep_lab_ioc_ool *ool)
+{
+	size_t max_len;
+
+	if (ool->reserved0)
+		return -EINVAL;
+	if (ool->offset >= T2_SEP_OOL_SIZE)
+		return -EINVAL;
+	max_len = T2_SEP_OOL_SIZE - ool->offset;
+	if (ool->length > max_len)
+		return -EMSGSIZE;
+
+	switch (ool->direction) {
+	case T2_SEP_LAB_OOL_DIR_WRITE:
+		if (!sep->ool_in)
+			return -ENODEV;
+		if (!ool->length)
+			return 0;
+		if (!ool->user_buf)
+			return -EINVAL;
+		if (copy_from_user(sep->ool_in + ool->offset,
+				   u64_to_user_ptr(ool->user_buf), ool->length))
+			return -EFAULT;
+		return 0;
+	case T2_SEP_LAB_OOL_DIR_READ:
+		if (!sep->ool_out)
+			return -ENODEV;
+		if (!ool->length)
+			return 0;
+		if (!ool->user_buf)
+			return -EINVAL;
+		if (copy_to_user(u64_to_user_ptr(ool->user_buf),
+				 sep->ool_out + ool->offset, ool->length))
+			return -EFAULT;
+		return 0;
+	case T2_SEP_LAB_OOL_DIR_ZERO:
+		if (!sep->ool_in || !sep->ool_out)
+			return -ENODEV;
+		memset(sep->ool_in, 0, T2_SEP_OOL_SIZE);
+		memset(sep->ool_out, 0, T2_SEP_OOL_SIZE);
+		return 0;
+	default:
+		return -EINVAL;
+	}
+}
+
+static int t2_sep_lab_ep0_locked(struct t2_sep_transport *sep,
+				 struct t2_sep_lab_ioc_ep0 *ep0)
+{
+	dma_addr_t dma;
+	bool registered;
+	int ret;
+
+	if (ep0->reserved0)
+		return -EINVAL;
+
+	switch (ep0->dma_sel) {
+	case T2_SEP_LAB_DMA_OOL_IN:
+		dma = sep->ool_in_dma;
+		registered = sep->ool_in_registered;
+		break;
+	case T2_SEP_LAB_DMA_OOL_OUT:
+		dma = sep->ool_out_dma;
+		registered = sep->ool_out_registered;
+		break;
+	case T2_SEP_LAB_DMA_ACM_OOL_IN:
+		if (!sep->acm_ool_in_registered) {
+			ep0->result = -ENODEV;
+			return -ENODEV;
+		}
+		dma = sep->acm_ool_in_dma;
+		registered = true;
+		break;
+	case T2_SEP_LAB_DMA_ACM_OOL_OUT:
+		if (!sep->acm_ool_out_registered) {
+			ep0->result = -ENODEV;
+			return -ENODEV;
+		}
+		dma = sep->acm_ool_out_dma;
+		registered = true;
+		break;
+	default:
+		return -EINVAL;
+	}
+
+	if (!registered) {
+		ep0->result = -ENODEV;
+		return -ENODEV;
+	}
+
+	ret = t2_sep_control(sep, ep0->target_endpoint, ep0->opcode, ep0->tag,
+			     dma, ep0->size);
+	ep0->result = ret;
+	return ret;
+}
+
+static int t2_sep_lab_aks_locked(struct t2_sep_transport *sep,
+				 struct t2_sep_lab_ioc_aks *aks,
+				 const void *request_body)
+{
+	struct t2_aks_header_v1 *header_v1;
+	struct t2_aks_header_v2 *header_v2;
+	struct t2_sep_message request = { };
+	struct t2_sep_message reply;
+	size_t header_size;
+	size_t wire_size;
+	size_t request_length;
+	unsigned long timeout_us;
+	unsigned int skipped = 0;
+	u8 transaction;
+	u16 reply_length;
+	s8 reply_status;
+	u64 usec_time = 0;
+	u8 *response_body;
+	size_t response_body_length;
+	int ret;
+
+	aks->sep_status = 0;
+	aks->response_length = 0;
+	memset(aks->reply_word, 0, sizeof(aks->reply_word));
+
+	if (aks->reserved0[0] || aks->reserved0[1] || aks->reserved0[2] ||
+	    aks->reserved1[0] || aks->reserved1[1] || aks->reserved1[2])
+		return -EINVAL;
+	if (!sep->ool_in_registered || !sep->ool_out_registered)
+		return -ENODEV;
+	if (aks->header_ver != T2_SEP_AKS_HEADER_V1 &&
+	    aks->header_ver != T2_SEP_AKS_HEADER_V2)
+		return -EINVAL;
+	if (aks->request_body_len > T2_SEP_AKS_MAX_BODY_SIZE ||
+	    aks->response_capacity > T2_SEP_AKS_MAX_BODY_SIZE)
+		return -EMSGSIZE;
+
+	if (aks->header_ver == T2_SEP_AKS_HEADER_V1) {
+		header_size = T2_SEP_AKS_HEADER_V1_SIZE;
+		wire_size = T2_SEP_AKS_V1_WIRE_SIZE;
+	} else {
+		header_size = T2_SEP_AKS_HEADER_V2_SIZE;
+		wire_size = T2_SEP_AKS_V2_WIRE_SIZE;
+	}
+	request_length = wire_size + aks->request_body_len;
+	if (request_length > T2_SEP_OOL_SIZE)
+		return -EMSGSIZE;
+
+	memset(sep->ool_in, 0, T2_SEP_OOL_SIZE);
+	memset(sep->ool_out, 0, T2_SEP_OOL_SIZE);
+	put_unaligned_le32(header_size, sep->ool_in);
+	header_v1 = sep->ool_in + sizeof(__le32);
+	header_v1->version = cpu_to_le32(aks->header_ver);
+	if (!aks->zero_usec_time)
+		usec_time = ktime_get_boottime_ns() / NSEC_PER_USEC;
+	header_v1->usec_time = cpu_to_le64(usec_time);
+	if (aks->header_ver == T2_SEP_AKS_HEADER_V2) {
+		header_v2 = sep->ool_in + sizeof(__le32);
+		header_v2->calendar_seconds =
+			cpu_to_le64(ktime_get_real_seconds());
+	}
+	if (aks->request_body_len)
+		memcpy(sep->ool_in + wire_size, request_body,
+		       aks->request_body_len);
+
+	if (!aks->skip_digest) {
+		ret = t2_aks_digest(sep->ool_in, request_length);
+		if (ret) {
+			aks->result = ret;
+			return ret;
+		}
+	}
+
+	transaction = ++sep->next_transaction;
+	if (!transaction)
+		transaction = ++sep->next_transaction;
+	request.word[0] = T2_SEP_AKS_ENDPOINT | (aks->operation << 8) |
+		(transaction << 16);
+	request.word[1] = request_length << 16;
+	ret = t2_sep_send(sep, &request);
+	if (ret) {
+		aks->result = ret;
+		return ret;
+	}
+
+	timeout_us = (unsigned long)t2_sep_lab_clamp_timeout_ms(aks->timeout_ms) *
+		USEC_PER_MSEC;
+
+	/*
+	 * Single budget like research capability wait (not short T2_SEP_TIMEOUT_US
+	 * per attempt). Drain unrelated messages until match/timeout/overflow.
+	 */
+	{
+		unsigned int waited = 0;
+
+		for (;;) {
+			unsigned long remain = timeout_us - waited;
+
+			ret = t2_sep_receive_timeout(sep, &reply, remain, &waited);
+			if (ret) {
+				dev_warn(&sep->pdev->dev,
+					 "lab AKS op %#x timeout after %lu us; ool_out_nonzero=%u\n",
+					 aks->operation, timeout_us,
+					 get_unaligned_le32(sep->ool_out) ? 1 : 0);
+				aks->result = ret;
+				return ret;
+			}
+
+			if ((reply.word[0] & 0xff) == T2_SEP_AKS_ENDPOINT &&
+			    (((reply.word[0] >> 8) & 0xff) ==
+			     (aks->operation | 0x80)) &&
+			    ((reply.word[0] >> 16) & 0xff) == transaction)
+				break;
+
+			if (aks->accept_any_ep7 &&
+			    (reply.word[0] & 0xff) == T2_SEP_AKS_ENDPOINT)
+				break;
+
+			if (++skipped == 32) {
+				aks->result = -EOVERFLOW;
+				return -EOVERFLOW;
+			}
+			if (waited >= timeout_us) {
+				dev_warn(&sep->pdev->dev,
+					 "lab AKS op %#x timeout after %lu us; ool_out_nonzero=%u\n",
+					 aks->operation, timeout_us,
+					 get_unaligned_le32(sep->ool_out) ? 1 : 0);
+				aks->result = -ETIMEDOUT;
+				return -ETIMEDOUT;
+			}
+		}
+	}
+
+	memcpy(aks->reply_word, reply.word, sizeof(aks->reply_word));
+	reply_status = (s8)(reply.word[0] >> 24);
+	aks->sep_status = reply_status;
+	if (reply_status) {
+		aks->result = -EREMOTEIO;
+		return -EREMOTEIO;
+	}
+
+	reply_length = reply.word[1] >> 16;
+	if (reply_length < wire_size || reply_length > T2_SEP_OOL_SIZE) {
+		aks->result = -EPROTO;
+		return -EPROTO;
+	}
+
+	response_body = sep->ool_out + wire_size;
+	response_body_length = reply_length - wire_size;
+	if (response_body_length > aks->response_capacity) {
+		aks->response_length = response_body_length;
+		aks->result = -ENOSPC;
+		return -ENOSPC;
+	}
+	if (response_body_length && aks->response) {
+		if (copy_to_user(u64_to_user_ptr(aks->response), response_body,
+				 response_body_length)) {
+			aks->result = -EFAULT;
+			return -EFAULT;
+		}
+	}
+	aks->response_length = response_body_length;
+	aks->result = 0;
+	return 0;
+}
+
+static long t2_sep_lab_ioctl(struct file *file, unsigned int command,
+			     unsigned long argument)
+{
+	struct miscdevice *misc = file->private_data;
+	struct t2_sep_transport *sep = container_of(misc,
+		struct t2_sep_transport, lab_miscdev);
+	void __user *user_argument = (void __user *)argument;
+	int ret;
+
+	switch (command) {
+	case T2_SEP_LAB_IOC_STATUS: {
+		struct t2_sep_lab_ioc_status status;
+
+		ret = mutex_lock_interruptible(&sep->exchange_lock);
+		if (ret)
+			return ret;
+		t2_sep_lab_fill_status(sep, &status);
+		mutex_unlock(&sep->exchange_lock);
+		if (copy_to_user(user_argument, &status, sizeof(status)))
+			return -EFAULT;
+		return 0;
+	}
+	case T2_SEP_LAB_IOC_RAW_MB: {
+		struct t2_sep_lab_ioc_raw_mb raw;
+
+		if (copy_from_user(&raw, user_argument, sizeof(raw)))
+			return -EFAULT;
+		memset(raw.reply_word, 0, sizeof(raw.reply_word));
+		raw.result = 0;
+		ret = mutex_lock_interruptible(&sep->exchange_lock);
+		if (ret)
+			return ret;
+		ret = t2_sep_lab_raw_mb_locked(sep, &raw);
+		mutex_unlock(&sep->exchange_lock);
+		if (copy_to_user(user_argument, &raw, sizeof(raw)))
+			return -EFAULT;
+		return ret;
+	}
+	case T2_SEP_LAB_IOC_OOL: {
+		struct t2_sep_lab_ioc_ool ool;
+
+		if (copy_from_user(&ool, user_argument, sizeof(ool)))
+			return -EFAULT;
+		ret = mutex_lock_interruptible(&sep->exchange_lock);
+		if (ret)
+			return ret;
+		ret = t2_sep_lab_ool_locked(sep, &ool);
+		mutex_unlock(&sep->exchange_lock);
+		return ret;
+	}
+	case T2_SEP_LAB_IOC_EP0: {
+		struct t2_sep_lab_ioc_ep0 ep0;
+
+		if (copy_from_user(&ep0, user_argument, sizeof(ep0)))
+			return -EFAULT;
+		ep0.result = 0;
+		ret = mutex_lock_interruptible(&sep->exchange_lock);
+		if (ret)
+			return ret;
+		ret = t2_sep_lab_ep0_locked(sep, &ep0);
+		mutex_unlock(&sep->exchange_lock);
+		if (copy_to_user(user_argument, &ep0, sizeof(ep0)))
+			return -EFAULT;
+		return ret;
+	}
+	case T2_SEP_LAB_IOC_AKS: {
+		struct t2_sep_lab_ioc_aks aks;
+		void *request = NULL;
+
+		if (copy_from_user(&aks, user_argument, sizeof(aks)))
+			return -EFAULT;
+		aks.sep_status = 0;
+		aks.response_length = 0;
+		aks.result = 0;
+		memset(aks.reply_word, 0, sizeof(aks.reply_word));
+		if (aks.request_body_len) {
+			if (!aks.request_body)
+				return -EINVAL;
+			request = memdup_user(u64_to_user_ptr(aks.request_body),
+					      aks.request_body_len);
+			if (IS_ERR(request))
+				return PTR_ERR(request);
+		}
+		ret = mutex_lock_interruptible(&sep->exchange_lock);
+		if (ret)
+			goto out_free_aks;
+		ret = t2_sep_lab_aks_locked(sep, &aks, request);
+		memzero_explicit(sep->ool_in, T2_SEP_OOL_SIZE);
+		memzero_explicit(sep->ool_out, T2_SEP_OOL_SIZE);
+		mutex_unlock(&sep->exchange_lock);
+		if (copy_to_user(user_argument, &aks, sizeof(aks)))
+			ret = -EFAULT;
+out_free_aks:
+		if (request) {
+			memzero_explicit(request, aks.request_body_len);
+			kfree(request);
+		}
+		return ret;
+	}
+	default:
+		return -ENOTTY;
+	}
+}
+
+static const struct file_operations t2_sep_lab_fops = {
+	.owner = THIS_MODULE,
+	.unlocked_ioctl = t2_sep_lab_ioctl,
 	.compat_ioctl = compat_ptr_ioctl,
 };
 
@@ -1767,37 +2287,63 @@ static int t2_sep_probe(struct pci_dev *pdev,
 				 ret);
 	}
 
-	if (probe_capabilities) {
-		ret = t2_aks_probe_capabilities(sep);
-		if (ret) {
-			/*
-			 * The DMA registrations are live and pinned, but endpoint 7 did
-			 * not complete its read-only v1 negotiation.  Do not expose an
-			 * exchange device that can only time out; a reboot is required
-			 * before registration can be attempted again safely.
-			 */
-			dev_err(&pdev->dev,
-				"AppleKeyStore capability negotiation failed: %d; /dev/t2-aks disabled until reboot\n",
-				ret);
-			return 0;
-		}
-		sep->next_transaction = 1;
-	}
+	{
+		bool caps_ok = true;
 
-	sep->aks_miscdev.minor = MISC_DYNAMIC_MINOR;
-	sep->aks_miscdev.name = "t2-aks";
-	sep->aks_miscdev.fops = &t2_aks_fops;
-	sep->aks_miscdev.parent = &pdev->dev;
-	sep->aks_miscdev.mode = 0600;
-	ret = misc_register(&sep->aks_miscdev);
-	if (ret)
-		dev_warn(&pdev->dev,
-			 "cannot register root-only AppleKeyStore exchange device: %d\n",
-			 ret);
-	else {
-		sep->misc_registered = true;
-		dev_info(&pdev->dev,
-			 "root-only /dev/t2-aks exchange enabled for whitelisted operations\n");
+		if (probe_capabilities) {
+			ret = t2_aks_probe_capabilities(sep);
+			if (ret) {
+				/*
+				 * DMA registrations stay pinned.  Do not expose
+				 * /dev/t2-aks (whitelist path) after a failed
+				 * negotiation, but continue so research lab can
+				 * still iterate mailbox/OOL probes in-session.
+				 */
+				dev_err(&pdev->dev,
+					"AppleKeyStore capability negotiation failed: %d; /dev/t2-aks disabled until reboot\n",
+					ret);
+				caps_ok = false;
+			} else {
+				sep->next_transaction = 1;
+			}
+		}
+
+		if (aks_lab) {
+			sep->lab_miscdev.minor = MISC_DYNAMIC_MINOR;
+			sep->lab_miscdev.name = "t2-sep-lab";
+			sep->lab_miscdev.fops = &t2_sep_lab_fops;
+			sep->lab_miscdev.parent = &pdev->dev;
+			sep->lab_miscdev.mode = 0600;
+			ret = misc_register(&sep->lab_miscdev);
+			if (ret)
+				dev_warn(&pdev->dev,
+					 "cannot register research /dev/t2-sep-lab: %d\n",
+					 ret);
+			else {
+				sep->lab_misc_registered = true;
+				dev_info(&pdev->dev,
+					 "research /dev/t2-sep-lab enabled (capability_ok=%u)\n",
+					 caps_ok);
+			}
+		}
+
+		if (caps_ok) {
+			sep->aks_miscdev.minor = MISC_DYNAMIC_MINOR;
+			sep->aks_miscdev.name = "t2-aks";
+			sep->aks_miscdev.fops = &t2_aks_fops;
+			sep->aks_miscdev.parent = &pdev->dev;
+			sep->aks_miscdev.mode = 0600;
+			ret = misc_register(&sep->aks_miscdev);
+			if (ret)
+				dev_warn(&pdev->dev,
+					 "cannot register root-only AppleKeyStore exchange device: %d\n",
+					 ret);
+			else {
+				sep->misc_registered = true;
+				dev_info(&pdev->dev,
+					 "root-only /dev/t2-aks exchange enabled for whitelisted operations\n");
+			}
+		}
 	}
 	if (register_acm) {
 		sep->acm_miscdev.minor = MISC_DYNAMIC_MINOR;
@@ -1840,6 +2386,8 @@ static void t2_sep_remove(struct pci_dev *pdev)
 	t2_sep_teardown_msi(sep);
 	if (!register_ool)
 		return;
+	if (sep->lab_misc_registered)
+		misc_deregister(&sep->lab_miscdev);
 	if (sep->misc_registered)
 		misc_deregister(&sep->aks_miscdev);
 	if (sep->acm_misc_registered)
