@@ -1,149 +1,97 @@
 # Research: MacBookAir9,1 AKS endpoint-7 bring-up
 
-Branch: `research/mba91-aks-ep7`
+Branch: `research/mba91-aks-ep7`  
+Status: **PARKED** (2026-09-03) — Touch ID blocked on mute AppleKeyStore EP7.
 
-## Problem
+## Hardware / software
 
-On `MacBookAir9,1` (iBridge `23.16.16068`), stock `t2_sep_transport` with
-`register_ool=1 probe_capabilities=1` registers OOL buffers successfully but
-AppleKeyStore capability negotiation times out (`mailbox receive timeout`,
-`-110`). Soft reboot leaves dirty SEP mailbox counters; cold power resets them
-to `0x20001` / `0x20001`, but capability still times out.
-
-Upstream is only hardware-proven on `MacBookPro16,2` / bridgeOS `23P1072`.
-
-## Phase 1 knobs (this branch)
-
-Module parameters (research defaults **on**):
-
-| Param | Default | Meaning |
-| --- | --- | --- |
-| `aks_cap_zero_time` | true | Stamp `usec_time=0` on capability request (bent’s first live reply class) |
-| `aks_cap_trace` | true | Log non-secret req/rx mailbox words, DMA addrs, status |
-| `aks_cap_accept_any_ep7` | true | Accept mismatched EP7 replies for diagnostics |
-| `aks_cap_timeout_sec` | 30 | Capability-only mailbox wait |
-| `aks_ool_dma32` | true | Force OOL buffers into 32-bit DMA |
-
-Do not commit keybags, catacomb, or `/etc` private config to this branch.
-
-## Cold-boot test
-
-```bash
-# after installing this branch via DKMS / install.sh
-sudo poweroff   # full power-off, wait 20s, power on
-journalctl -b -k | rg 't2_sep|research capability|AppleKeyStore'
-ls -l /dev/t2-aks
-```
-
-Look for `research capability rx:` (SEP spoke) vs timeout-only.
-
-## Phase 1 result (2026-09-03)
-
-Cold power, zero_time=1, 30s wait: `skipped=0`, true EP7 silence. OOL DMA was
-`0x16753…` / `0x16752…` (above 4G). Next: `aks_ool_dma32=1`.
-
-## Phase 3 result (2026-09-03)
-
-`aks_ool_dma32=1` allocated `ool_in_dma=0x56c58000` / `ool_out_dma=0x56c5c000`
-(under 4G). Capability still timed out with `skipped=0` over 30s. DMA32
-hypothesis falsified.
-
-## Next (after DMA32 falsified)
-
-1. On timeout, log whether `ool_out` was DMA-touched without a mailbox reply.
-2. Gate module load on successful `t2-biometric-port-refresh` (RSD warm), not ping alone.
-3. Phase 2 ABI matrix if still silent.
-
-## Phase 4 result (2026-09-03)
-
-RSD-warm gate + `ool_out` touch check on cold boot: timeout with
-`skipped=0 ool_out_len=0x0 ool_out_nonzero=0`. SEP neither wrote OOL nor rang
-mailbox. DMA-without-doorbell and RSD-warm hypotheses falsified.
-
-## Phase 2: `aks_cap_variant` matrix
-
-Module param `aks_cap_variant` (0..5), one cold boot each:
-
-| N | Meaning |
+| Item | Value |
 | --- | --- |
-| 0 | baseline V1 selector=1 len=0x5c |
-| 1 | V1 selector=0 |
-| 2 | V2 envelope + selector=1 |
-| 3 | mailbox length in low 16 bits of word[1] |
-| 4 | mailbox declared length = full OOL 0x4000 |
-| 5 | transaction tag 3 |
+| Machine | MacBookAir9,1 (MBA91-OMARCHY) |
+| iBridge / bridgeOS | `23.16.16068` |
+| Host | Omarchy / Arch, kernel `7.1.8-arch1-Watanare-T2-3-t2` |
+| PCI SEP | `106b:1802` BAR4 |
+| Upstream proof | MacBookPro16,2 + bridgeOS `23P1072` only |
+| Keybags / catacomb | Exported privately; **not** on this branch |
 
-```bash
-# in /etc/modprobe.d/t2-sep-transport.conf options line, add e.g.:
-# aks_cap_variant=1
-sudo /home/tim/Private/t2-touchid/rebuild-research-aks.sh
-# full power-off between variants
-journalctl -b -k | rg 't2_sep|research capability|AppleKeyStore|ool_out'
-```
+## Final scoreboard (clean cold boot, research DKMS)
 
-## Phase 2 result (2026-09-03)
+| Path | Result |
+| --- | --- |
+| Cold mailbox | `inbox/outbox=0x20001` after full power-off |
+| SEP CPU at load | **Stopped** (`+0x8028=0x7f`); Apple start → `0x7a` / `+0x8048=0x1` |
+| MSI (2 vectors) | Allocates; both fire on EP0 NOP / ACM |
+| EP0 control NOP | **Reply ~1 ms** |
+| EP0 AKS OOL register | **Success** (16 KiB in/out) |
+| Passive `0xfd` discovery (1 s) | **Empty** (no ads) |
+| ACM EP10 SCRD init | **Reply ~1 ms** |
+| AKS EP7 `0x19` get_device_state | **Timeout** `-110`, `ool_out_nonzero=0` |
+| AKS EP7 `0x4d` get_capabilities | **Timeout** `-110`, `ool_out_nonzero=0` |
+| `/dev/t2-aks` | Never created (capability hard-fails) |
 
-`aks_cap_variant` 1–5 all timed out with `skipped=0 ool_out_nonzero=0` on cold
-boot. ABI framing A/B matrix falsified.
+### Conclusion
 
-## Phase 5 / bent-compat (variant 6)
+Intel SEP **mailbox transport is healthy** on this Air (EP0 + MSI + startCPU +
+EP10 ACM). **AppleKeyStore on fixed endpoint 7 does not answer** any probed
+opcode; silence is true (no mailbox reply and no OOL DMA write). This is not
+explained by the falsified hypotheses below. Likely Air/bridgeOS-specific AKS
+availability, endpoint mapping, or a missing SEP-side bring-up step that MBP
+`23P1072` does not need — not a simple host wire-format bug.
 
-Bent’s working MBP probe uses a **different** capability frame than stock
-upstream V1 (92 bytes / prefix `0x48`) and our variant 2 (prefix `0x50` /
-version 2):
+Touch ID (keybag load → unlock → match → PAM) is **parked** until EP7 speaks.
 
-- mailbox length `0x00640000` (100 bytes)
-- length prefix `0x50`, **version field still 1**
-- digest = SHA-256 truncated over header_tail `0x38` + body at offset `0x54`
-  (calendar_seconds zeros are *not* in the v1 digest input)
+## Falsified hypotheses
 
-`aks_cap_variant=6` reproduces that exact wire + digest (+ `dma_wmb`).
+| Hypothesis | Result |
+| --- | --- |
+| `usec_time=0` alone | Still silent |
+| OOL must be DMA32 (&lt;4G) | Still silent under 4G |
+| RSD / biometric-port warm before load | Still silent |
+| DMA-without-doorbell (`ool_out` touch, no ring) | `ool_out_nonzero=0` |
+| ABI matrix `aks_cap_variant` 1–5 | All silent |
+| Bent-compat frame (variant 6: prefix `0x50`, ver 1, 100 B, bent digest) | Silent without and with startCPU |
+| Missing MSI + `_startCPUGated` + EP0 NOP | Bring-up works; AKS still silent |
+| Only `0x4d` broken (try `0x19`) | `0x19` also silent |
 
-## Phase 2 variant 6 result (2026-09-03)
+## Research module parameters (this branch)
 
-Bent-compat frame (`aks_cap_variant=6`) still timed out with
-`skipped=0 ool_out_nonzero=0`. Wire/digest parity with bent’s MBP probe is
-insufficient alone on MBA91.
-
-## Phase 5: MSI + startCPU + EP0 NOP
-
-Research defaults (also set in modprobe conf):
-
-| Param | Default | Meaning |
-| --- | --- | --- |
-| `aks_msi` | true | 2× MSI (inbox-nempty / outbox-empty) |
-| `aks_start_cpu` | true | Apple `_startCPUGated` at `0x8040/0x8048/0x8028` |
-| `aks_ep0_nop` | true | Control NOP (tag `0xfe`) before OOL |
-| (send path) | — | fence-read outbox status after commit word |
-
-Keep `aks_cap_variant=6` for this boot. Log lines: `research MSI`,
-`research CPU controls`, `research EP0 NOP`, timeout `msi0=`/`msi1=`.
-
-## Phase 5 results (2026-09-03)
-
-With MSI + startCPU + EP0 NOP:
-
-- Cold load finds SEP **stopped** (`+0x8028=0x7f`); start yields `0x7a` / `+0x8048=0x1`.
-- EP0 NOP replies in ~1 ms; both MSI vectors fire.
-- AKS OOL registration still succeeds.
-- `aks_cap_variant=6` and **variant 0** still true-silence on `0x4d`.
-
-Prior ABI matrix without startCPU is obsolete for conclusions about wire format alone.
-
-## Phase 6: discovery + ACM canary
+Defaults are research-oriented (on). Do not ship these as upstream defaults.
 
 | Param | Default | Meaning |
 | --- | --- | --- |
-| `aks_discover` | true | 1s passive inbox listen after NOP |
-| `aks_acm_canary` | true | EP10 OOL + SCRD init (`DRCS\n` + `0x28`) before AKS capability |
+| `aks_cap_zero_time` | true | Stamp `usec_time=0` on capability |
+| `aks_cap_trace` | true | Log non-secret mailbox / DMA / status |
+| `aks_cap_accept_any_ep7` | true | Accept mismatched EP7 replies |
+| `aks_cap_timeout_sec` | 30 | Capability mailbox wait |
+| `aks_ool_dma32` | true | Force 32-bit coherent OOL |
+| `aks_cap_variant` | 0 | 0 stock; 1–5 framing A/B; 6 bent-compat |
+| `aks_msi` | true | 2× MSI before start/OOL |
+| `aks_start_cpu` | true | Apple `_startCPUGated` (`0x8040/0x8048/0x8028`) |
+| `aks_ep0_nop` | true | EP0 NOP (tag `0xfe`) after start |
+| `aks_discover` | true | 1 s passive inbox listen after NOP |
+| `aks_acm_canary` | true | EP10 OOL + SCRD init canary |
+| `aks_device_state_canary` | true | AKS `0x19` before capabilities |
 
-Look for `research discovery rx` / `research ACM SCRD rx` vs timeouts.
+## Install notes (Air)
 
-## Phase 6 result (2026-09-03)
+- Full **power-off** between tests (soft reboot leaves dirty mailbox counters).
+- `dkms remove` can restore an archived **stock** module into
+  `extra/t2_sep_transport.ko` and win over an empty DKMS tree — always verify
+  `modinfo -n` is under `updates/dkms/` and research parms exist before reboot.
+- Helper used on MBA91: `~/Private/t2-touchid/force-rebuild-research-aks.sh`
+  (fail-closed parm check). Not committed here (private paths).
 
-- Discovery: `records=0` after NOP (no `0xfd` ads).
-- **ACM SCRD canary succeeded** (`research ACM SCRD rx`, ~1 ms, MSI counted).
-- AKS capability (`0x4d`) still timed out with `ool_out_nonzero=0`.
+## If resumed later
 
-Conclusion: Intel SEP mailbox + EP10 ACM are alive on MBA91; EP7 AKS
-`get_capabilities` remains silent. Next: AKS `0x19` device-state canary.
+Priority order (do not re-burn falsified items unless paired with a new lever):
+
+1. Map service endpoints (SBIO `0x08`, other IDs) — which apps answer on Air?
+2. Capture macOS-side first AKS txn on this bridgeOS vs MBP `23P1072` (header only).
+3. Consider upstream issue on `jmurth1234/t2-touchid-linux` with this scoreboard.
+4. Only then revisit AKS wire / endpoint identity.
+
+## References
+
+- Upstream: https://github.com/jmurth1234/t2-touchid-linux  
+- Bent bring-up / MSI / startCPU: https://github.com/bentsignal/t2-omarchy (`docs/touch-id.md`, `prototypes/t2sep-probe/`)  
+- Fork branch: https://github.com/timsonner/t2-touchid-linux/tree/research/mba91-aks-ep7  
