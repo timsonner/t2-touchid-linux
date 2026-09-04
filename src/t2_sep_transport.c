@@ -258,6 +258,7 @@ static int t2_sep_send(struct t2_sep_transport *sep,
 		       const struct t2_sep_message *message);
 static int t2_sep_receive(struct t2_sep_transport *sep,
 			  struct t2_sep_message *message);
+static int t2_aks_digest(void *message, size_t length);
 
 static irqreturn_t t2_sep_msi_irq(int irq, void *data)
 {
