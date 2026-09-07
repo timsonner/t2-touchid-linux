@@ -46,6 +46,39 @@ sudo ls -lt /var/log/t2-aks-capture/
 sudo ps aux | grep -E '[l]og stream|[t]2-aks-boot'
 ```
 
+
+### 1b. Allow non-root read of capture logs (for agent / local verify)
+
+The log dir is created mode `700` (root-only). Grok Bot / Cursor local tools
+on the Mac run as your user and **cannot** `sudo` interactively, so they get
+`Permission denied` until you open the dir:
+
+```bash
+sudo chmod 755 /var/log/t2-aks-capture
+sudo chmod a+r /var/log/t2-aks-capture/*
+```
+
+Re-apply `chmod a+r` after each reboot if new files are still root-only
+(or copy out):
+
+```bash
+sudo mkdir -p ~/Private/t2-aks-capture
+sudo cp -a /var/log/t2-aks-capture/. ~/Private/t2-aks-capture/
+sudo chown -R "$(whoami)" ~/Private/t2-aks-capture
+```
+
+Then verify (you or the agent on `tims-MacBook-Air.local`):
+
+```bash
+ls -lt /var/log/t2-aks-capture/
+# expect growing *.logstream.log; AppleKeyStore lines may already appear
+```
+
+On MBA91 (2026-09-06) after chmod: daemon running, ~360KB stream, real
+`AppleKeyStore` kernel lines (`sel: 7` / `sel: 35`, ret `e00002f0`), plus
+BiometricKit / LocalAuthentication. Predicate is noisy (`sep` over-matches);
+live stream may drop messages — use `log show` later if needed.
+
 ### 2. Enable private log strings (do this BEFORE reboot)
 
 `sudo log config --mode 'private_data:on'` is **dead** on modern macOS
@@ -152,17 +185,21 @@ sudo log config --status   # PRIVATE_DATA should be gone
 cd ~/Downloads/mba91-aks-macos-capture
 chmod +x install.sh uninstall.sh t2-aks-boot-capture.sh
 sudo ./install.sh
-sudo ls -lt /var/log/t2-aks-capture/
+
+# let user/agent read logs without sudo
+sudo chmod 755 /var/log/t2-aks-capture
+sudo chmod a+r /var/log/t2-aks-capture/*
+ls -lt /var/log/t2-aks-capture/    # need growing *.logstream.log
 
 # private data (BEFORE reboot)
 open EnablePrivateLogging.mobileconfig
 # → System Settings → General → Device Management → Install
 sudo log config --status   # must show PRIVATE_DATA
 
-# reboot → login → enroll Touch ID
+# reboot → login → chmod a+r again if needed → enroll Touch ID
 
 # collect
-sudo ls -lt /var/log/t2-aks-capture/
+ls -lt /var/log/t2-aks-capture/
 # copy newest *.boot.txt *.logstream.log *.snapshot.log to USB
 # copy EFI/APPLE/EMBEDDEDOS/FDRData off-machine
 

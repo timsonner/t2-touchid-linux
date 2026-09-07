@@ -153,11 +153,17 @@ AppleKeyStore / SEP / BiometricKit, plus Device Management profile for
 Kit path: [`tools/mba91-aks-macos-capture/`](../tools/mba91-aks-macos-capture/)
 (see README + CHECKLIST there).
 
-Canonical flow: install daemon → confirm growing `*.logstream.log` → install
-`EnablePrivateLogging.mobileconfig` via System Settings → General → Device
-Management → confirm `sudo log config --status` shows `PRIVATE_DATA` →
-cold reboot → enroll Touch ID → copy `/var/log/t2-aks-capture/` and
-`EFI/APPLE/EMBEDDEDOS/FDRData` off-machine → uninstall + remove profile.
+Canonical flow: install daemon → `chmod 755` / `chmod a+r` on
+`/var/log/t2-aks-capture` (so user/agent can verify without sudo) → confirm
+growing `*.logstream.log` → install `EnablePrivateLogging.mobileconfig` via
+System Settings → General → Device Management → confirm
+`sudo log config --status` shows `PRIVATE_DATA` → cold reboot → re-chmod if
+needed → enroll Touch ID → copy logs and `EFI/APPLE/EMBEDDEDOS/FDRData`
+off-machine → uninstall + remove profile.
+
+Agent visibility on MBA91: with the Mac registered/connected, tools can read
+logs as the login user after chmod; interactive sudo is not available to the
+agent.
 
 Does **not** capture raw SEP mailbox OOL bytes; that remains a later lever if
 os_log sequence is insufficient.
