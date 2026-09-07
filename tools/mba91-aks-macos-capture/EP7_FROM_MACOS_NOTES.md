@@ -23,19 +23,30 @@ Path: `/System/Library/KernelCollections/BootKernelExtensions.kc`
 | `com.apple.driver.AppleKeyStore` fileset fileoff | `0x18e9000` |
 | AKS LC_UUID | `ef0c4f28-1c68-39be-b1f4-4f2e55b11c7c` |
 | AKS LC_SOURCE_VERSION | **1827.120.2.703.1** |
-| AKS fileset content SHA-256 (naive slice) | `0bf4b320e75c76b6b8782316b37bfc24075b757ef52afe14722483d93bc426ab` |
 | Bundle Info.plist | `CFBundleShortVersionString=2`, SDK `macosx15.7.internal` / `24G823` |
 | Related filesets present | `AppleSEPManager`, `AppleFDEKeyStore`, … |
 
-Also present in the same KC (prelinked / shared string tables — **not** a clean
-standalone AKS Mach-O extract with stock `nm`): symbol **names**
-`init_sep_endpoint`, `_ipc_get_capabilities`, `sep_action`, `_gen_ipc_header`,
-`_payload_hash`.
+### Proper extract (2026-09-07)
 
-Naive “slice to next fileset fileoff” produces a **truncated** Mach-O (segment
-fileoffs point into the wider KC). Full disassembly needs a proper KC/fileset
-tool (`ipsw`, etc.), not committed here. Binary stays under `$HOME/Private`
-only.
+Used `ipsw kernel extract` (v3.1.713) → standalone Mach-O **AppleKeyStore**
+(847280 bytes). Binary stays under `$HOME/Private/t2-aks-research/kc/extracted/`
+only (not in git).
+
+`otool` on `AppleKeyStore::init_sep_endpoint` (Sequoia **1827.120.2.703.1**):
+
+1. Builds transport callback args, then **`callq __ipc_get_capabilities`** with
+   header version **1** (`movl $0x1, %edx`).
+2. Failure → `msg_header_set_negotiated_version(1)` (“failed to negotiate,
+   defaulting to v1”).
+3. Success → `min(remote_version, 2)` via `msg_header_set_negotiated_version`.
+4. **`AppleKeyStore::set_env(false)`** (`xorl %esi, %esi` then call).
+5. `add_class_f_entropy_to_kernel_prng()`.
+
+`__ipc_get_capabilities` ends the setup with **`pushq $0x4d; popq %rsi`** then
+an indirect call through the transport callback — selector **0x4d** unchanged.
+
+**Consequence:** Sequoia did **not** add a hidden pre-`0x4d` prerequisite.
+MBA91 EP7 mute is still not explained by AKS init order.
 
 ## Bent handoff vs this Air (important)
 
@@ -54,23 +65,34 @@ including bent-exact wires. Transport below AKS is healthy (EP0/MSI/startCPU/ACM
 | | bent (working mailbox) | MBA91 (this research) |
 | --- | --- | --- |
 | Symptom | Replies; parse/framing | **No reply** |
-| Example host | MBP16,2 + bridgeOS `23P1072` (their proof) | MacBookAir9,1 + iBridge **23.16.16068** |
+| Example host | MBP16,2 + bridgeOS `23P1072` (their early proof) | MacBookAir9,1 + iBridge **23.16.16068** |
+| bridgeOS build string | bent later BridgeXPC HELO: **`23P6068`** | system_profiler: **`23P6068`** (same) |
+| bridge-model | (see bent notes) | **`J230kAP`** |
 | macOS AKS sampled | 25G83 / UUID `12144241-…` / srcver 55 | 24G830 / UUID `ef0c4f28-…` / srcver **1827.120.2.703.1** |
 
 So “copy init_sep_endpoint order from macOS” is **already what Linux tried**.
 The open gap is **why this SEP/bridgeOS never answers EP7**, not a missing
 pre-`0x4d` userspace dance visible in biometric logs.
 
+## Lever results (2026-09-07)
+
+| Lever | Status | Result |
+| --- | --- | --- |
+| Proper KC extract + `init_sep_endpoint` disasm | **Done** | Same order as bent: `0x4d` then `set_env(false)`. No new pre-cap gate. |
+| Offline catacomb / CFTL parse | **Done** | See `CATACOMB_ONDISK.md`. Metadata plaintext; `LTFC` body SEP-sealed. |
+| bridgeOS / SKU delta | **Partial** | Firmware build string **`23P6068` matches** bent’s BridgeXPC HELO. Mute is not “wrong marketing bridgeOS string.” Board is still **J230kAP / MBA91** vs bent’s MBP proof host. |
+| BridgeXPC Linux (non-EP7) | **Mapped** | bent already reaches `bkremoted` HELO on **`23P6068`**; stuck on activation / first method bytes (method 3 gated). Parallel to mute EP7 — see bent `docs/touch-id.md`. |
+| Raw first-txn under macOS | **Blocked / optional** | Needs SIP-off custom kext, hypervisor SEP trace, or equivalent. os_log cannot supply mailbox bytes. Not started without Tim expanding scope. |
+
 ## What would still move EP7
 
-1. **Proper KC extract + disasm** of this 1827.x `AppleKeyStore` vs Linux codec
-   (confirm Sequoia didn’t add a real prerequisite bent’s older note missed).
-2. **bridgeOS / SEP firmware** side: endpoint bring-up, xART, or SKU differences
-   vs MBP16,2 — needs firmware/Bridge instrumentation, not Touch ID os_log.
+1. ~~Proper KC extract + disasm~~ → **closed** (no Sequoia pre-`0x4d` surprise).
+2. **SKU / SEP bring-up** beyond build string (J230kAP vs MBP; xART; endpoint map) —
+   firmware/Bridge instrumentation, not Touch ID os_log.
 3. **Raw first-txn capture** under macOS (hypervisor / custom kext / SEP trace) —
-   only path to actual EP7 mailbox bytes; os_log will not provide them.
-4. **Non-EP7 Linux path**: BridgeXPC-class userspace to bridgeOS for biometrics
-   (parallel to mute AKS).
+   only path to actual EP7 mailbox bytes; requires explicit scope expand.
+4. **Non-EP7 Linux path**: finish bent’s BridgeXPC activation gap (exact macOS
+   outbound HELO/method-0 / remoted handoff), then Mesa/SBIO — independent of mute AKS.
 
 ## Do not expect
 
@@ -80,4 +102,4 @@ pre-`0x4d` userspace dance visible in biometric logs.
 
 ## Private artifacts (not in git)
 
-`$HOME/Private/t2-aks-research/` — KC hash, FINDINGS.txt, partial AKS slice.
+`$HOME/Private/t2-aks-research/` — KC copy, `ipsw` extract, FINDINGS.txt, catacomb/CFTL extracts.
