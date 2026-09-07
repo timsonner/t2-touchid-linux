@@ -90,3 +90,15 @@ Annotation helps understand macOS biometric ordering (device list → enroll/mat
 See [CATACOMB_BRIDGE_SEQUENCE.md](CATACOMB_BRIDGE_SEQUENCE.md) for load vs save
 ordering, `/Library/Catacomb/<uuid>/prepare/` staging, and the cold-boot empty
 `loadCatacomb` path (filesystem Common logs before Mesa confirm cluster).
+
+## Opcode 8 = GetIdentityRecords (promoted)
+
+Confirmed on enroll + enrolled reboot: `performCommand` **opcode 8** precedes
+`MCDMExtractMessageData` 40-byte identity records and
+`performGetIdentityRecordsCommand`. See
+[BRIDGE_GETIDENTITY_DECODE.md](BRIDGE_GETIDENTITY_DECODE.md).
+
+| Opcode | Hex | Role | Confidence |
+| --- | --- | --- | --- |
+| 8 | `0x08` | **GetIdentityRecords** | **high** |
+| 17 | `0x11` | getNodeTopology (3060 B reply) | **high** (unchanged) |

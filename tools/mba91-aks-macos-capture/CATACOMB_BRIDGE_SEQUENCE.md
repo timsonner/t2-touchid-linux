@@ -148,3 +148,9 @@ UUID (`18BE…`) remains a separate namespace.
 - AKS `getUserKeybagUUIDForUID` failed during early unarchive (sel 23/35) before
   password unlock — catacomb still unarchived; keybag timing vs template sync.
 - Linux EP7 mute unchanged; this A/B is Bridge/Mesa + filesystem catacomb only.
+
+## Bridge payload decode
+
+GetIdentityRecords (Mesa opcode **8**) 40-byte uid+UUID layout, topology (17),
+and CFTL complete-save blobs:
+[BRIDGE_GETIDENTITY_DECODE.md](BRIDGE_GETIDENTITY_DECODE.md).
