@@ -143,3 +143,21 @@ Priority (do not re-burn falsified Linux framing unless paired with a new lever)
 - Bent bring-up / codec: https://github.com/bentsignal/t2-omarchy (`docs/touch-id.md`, `prototypes/t2sep-probe/aks-transport.py`)
 - Fork branch: https://github.com/timsonner/t2-touchid-linux/tree/research/mba91-aks-ep7
 - Local running log (private): `~/notes/mba-touchid-sep.md`
+
+## macOS boot / enroll capture kit
+
+Verified on MBA91 (2026-09-06): early LaunchDaemon + unified-log stream for
+AppleKeyStore / SEP / BiometricKit, plus Device Management profile for
+`PRIVATE_DATA`.
+
+Kit path: [`tools/mba91-aks-macos-capture/`](../tools/mba91-aks-macos-capture/)
+(see README + CHECKLIST there).
+
+Canonical flow: install daemon → confirm growing `*.logstream.log` → install
+`EnablePrivateLogging.mobileconfig` via System Settings → General → Device
+Management → confirm `sudo log config --status` shows `PRIVATE_DATA` →
+cold reboot → enroll Touch ID → copy `/var/log/t2-aks-capture/` and
+`EFI/APPLE/EMBEDDEDOS/FDRData` off-machine → uninstall + remove profile.
+
+Does **not** capture raw SEP mailbox OOL bytes; that remains a later lever if
+os_log sequence is insufficient.

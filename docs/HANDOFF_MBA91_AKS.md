@@ -36,3 +36,9 @@ Keybags, catacomb, host sudoers/LUKS helpers — intentionally off-git.
 - Cite as Air / `23.16.16068` negative result in compatibility notes
 - Reuse `aks_lab` / `t2-sep-lab` ideas for other mute-EP bring-up
 - Cross-check bent MBP startCPU/MSI path (already aligned; AKS still diverges on Air)
+
+## macOS capture kit
+
+`tools/mba91-aks-macos-capture/` — boot/enroll unified-log LaunchDaemon +
+private-data profile. Use before Touch ID enroll when chasing first-txn /
+boot-time AKS sequence on this Air.
