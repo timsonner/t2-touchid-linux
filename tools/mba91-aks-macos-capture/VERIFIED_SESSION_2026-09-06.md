@@ -79,3 +79,7 @@ Optional later: keybag/catacomb export for Linux; uninstall capture daemon + rem
 ## Sequence mining
 
 See [MESA_BRIDGE_OPCODE_NOTES.md](MESA_BRIDGE_OPCODE_NOTES.md) for BridgeXPC/Mesa opcode histogram and phase timeline mined from the private capture (public-safe).
+
+## Opcode annotations
+
+See [MESA_OPCODE_ANNOTATIONS.md](MESA_OPCODE_ANNOTATIONS.md) for verified call-site mapping and confidence.

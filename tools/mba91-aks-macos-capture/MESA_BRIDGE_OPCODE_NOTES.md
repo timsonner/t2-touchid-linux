@@ -220,3 +220,7 @@ Notable tags:
 2. On Linux, check whether BridgeXPC/IPv6 interface to bridgeOS can observe similar messages (userspace) vs mailbox-only.
 3. Export keybags/catacomb when returning to Omarchy; retest match stack separately from EP7 capability.
 4. Optional: `log show --last boot` offline to recover lines dropped by live `log stream`.
+
+## Opcode annotations
+
+See [MESA_OPCODE_ANNOTATIONS.md](MESA_OPCODE_ANNOTATIONS.md) for verified call-site mapping and confidence.
