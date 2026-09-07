@@ -17,13 +17,15 @@ Fingerprint path is **BridgeXPC** (`BRIDGEXPC_PATH.md`).
   (`WARM_IDENTITY_AB_2026-09-07.md`)
 - T2 NCM IPv6 LL pinned via NM on Omarchy (`enp116s0f1u1` /
   `fe80::aede:48ff:fe00:1122`)
+- **Warm catacomb probes:** `0x42` still 1 while `0x38`/`0x3c`/`0x50` fail `0xe00002c2`; `0x3a` v1 ok 33 B; `0x54` first_byte still 0 (`WARM_CATACOMB_PROBES_2026-09-07.md`)
 
 ## Next (in order)
 
 ### 1. Cold restore / accessory path
 
-- Why warm `0x42` works but `0x54` accessory-present (`first_byte`) stays **0**
-- Bounded `0x40` loadCatacomb with Private CFTL only (no enroll)
+- **Cold Omarchy reboot A/B** (no macOS): does `0x42` survive?
+- Why warm `0x42` works but `0x38`/`0x3c` fail and `0x54` first_byte stays **0**
+- Bounded `0x40` loadCatacomb once Private `.cat`/CFTL is on the Air (no enroll)
 - Compare to bent’s cold `loadCatacomb` / no-reset identity gap
 
 ### 2. Linux-native enroll / ACM policy
