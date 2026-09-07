@@ -8,67 +8,55 @@ bridgeOS **23P6068** · BridgeXPC **39**.
 
 | Fact | Evidence |
 | --- | --- |
-| Multiverse → HELO → method 0 `(0,3)` → method 1 opened | `WARM_IDENTITY_AB_2026-09-07.md` |
-| After macOS enroll once, `0x42` shows uid 501 | warm A/B |
-| `0x42` **survives soft reboot and true power-off** without Linux `loadCatacomb` | `COLD_SOFT_REBOOT_AB_2026-09-07.md`, `COLD_POWEROFF_AB_2026-09-07.md` |
-| `0x38` / `0x3c` / `0x50` still fail `0xe00002c2` while `0x42` is non-empty | `WARM_CATACOMB_PROBES_2026-09-07.md` |
-| `0x54` accessory-present first_byte stays **0** | all canary runs |
-| `0x08` ≠ bent `0x42` | Omarchy canaries |
-| USB `.cat` → LTFC extract is valid on-disk shape | Private `cftl-extract/` |
-| No-reset `0x40` load → **status 257**, no canary change | `LOAD_CATACOMB_0x40_2026-09-07.md` |
+| Multiverse → method 0 `(0,3)` → method 1 opened | `WARM_IDENTITY_AB_2026-09-07.md` |
+| After macOS enroll, `0x42` survives soft reboot **and** true power-off without Linux `loadCatacomb` | cold A/B notes |
+| `0x38`/`0x3c` fail while `0x42` can be non-empty; `0x54` first_byte stays **0** | warm catacomb probes |
+| No-reset `0x40` → **257** | `LOAD_CATACOMB_0x40_2026-09-07.md` |
+| Reset preflight OK (`calibration_present`) but `0x40` still **257**; `no_catacomb` cleared `0x42` to 0 | `RESET_THEN_LOAD40_2026-09-07.md` |
+| bent: 257 ↔ missing accessory/device-group context | bent `docs/touch-id.md` |
 
-**Reframe:** on this Air, bent’s “cold restore” is **not** “`0x42` goes empty after
-power loss.” The open Bridge gaps are **store APIs / accessory / `0x40` preflight**
-(and later Linux-native enroll).
+**Current SEP/Mesa list state on Air:** `0x42` count **0** after this run.
 
 ## Next (in order)
 
-### 1. Supervised reset-then-`0x40` A/B  ← **do this next**
+### 1. Accessory / `0x54` context  ← **do this next**
 
-Destructive by design. Expect `0x42` empty after sensor reset; then load Private
-LTFC (master → user) and re-check canaries.
+Why `0x54` first_byte stays 0, and what bent’s successful macOS boot does for
+accessory caching before general `0x40`. Read-only probes preferred. Goal: flip
+accessory-present (or document why Linux cannot) **before** another `0x40`.
 
-**Success criteria (public-safe):**
+### 2. Re-warm identity (when needed)
 
-1. After reset: `0x42` count=0 (or fail), readiness/provisioning still sane  
-2. `0x40` master then user → **status 0** (not 257)  
-3. After load: `0x42` count≥1 uid 501; note `0x38`/`0x3c`/`0x54` first_byte  
+macOS Touch ID → Omarchy warm handoff again to restore `0x42` for match / UX
+experiments. Proven path; no guesswork.
 
-**Do not:** enroll, ConfirmSave, `SetProtectedConfig`, EP7.  
-**Script basis:** bent `external-catacomb-load-probe` preflight (reset + cancel +
-calibration gate) + our Private LTFC paths — adapt locally, keep blobs out of git.
+### 3. Only after accessory-present looks right
 
-### 2. Offline: decode status **257**
+Retry bounded `0x40` (consider **skipping** `no_catacomb(0xffffffff)` unless
+required — it cleared identities here). Then optional warm match canary.
 
-Parallel / quick: map `257` (`0x101`) in bent/macOS notes vs BK error tables.
-Doesn’t block (1), but write a one-liner into `LOAD_CATACOMB_0x40_2026-09-07.md`
-when found.
+### 4. Linux-native enroll / ACM
 
-### 3. After a successful load
+Only after load/match story is coherent. No ConfirmSave spray.
 
-- Re-check `0x54` first_byte and store APIs  
-- Optional **warm match** canary (read-only path only)  
-- Only then consider Linux-native enroll / ACM policy  
+### 5. If Bridge stalls
 
-### 4. Only if Bridge path stalls
-
-SIP-off EP7 first-txn — explicit Tim OK. Not before 1–3.
+SIP-off EP7 — explicit Tim OK.
 
 ## Parked
 
-- Mute AKS EP7 ABI variants  
-- More Sequoia `pktap,en3` tcpdump  
+- Mute AKS EP7  
+- Blind `0x40` retries without accessory progress  
+- Assuming power-off clears `0x42` once enrolled (disproven)  
 - Treating `0x08` as `0x42`  
-- Assuming power-off clears `0x42` on MBA91 (disproven once enrolled)  
 
-## Doc index (this arc)
+## Doc index
 
 | Note | Topic |
 | --- | --- |
 | `WARM_IDENTITY_AB_2026-09-07.md` | smoke + warm A/B |
 | `WARM_CATACOMB_PROBES_2026-09-07.md` | store API split |
-| `COLD_SOFT_REBOOT_AB_2026-09-07.md` | soft reboot preserve |
-| `COLD_POWEROFF_AB_2026-09-07.md` | true cold preserve |
+| `COLD_SOFT_REBOOT_AB_2026-09-07.md` / `COLD_POWEROFF_AB_2026-09-07.md` | preserve ladder |
 | `LOAD_CATACOMB_0x40_2026-09-07.md` | no-reset 257 |
-| `MESA_BENT_OPCODE_CROSSWALK.md` | opcode table |
-| `MBA91_T2_NCM_LL.md` (local Air) | NM LL pin recipe |
+| `RESET_THEN_LOAD40_2026-09-07.md` | reset + still 257 |
+| `MESA_BENT_OPCODE_CROSSWALK.md` | opcodes |
