@@ -68,7 +68,7 @@ sudo chown "$(whoami)" "$DEST/keybags/t2-keybags.tar.gz"
 chmod 600 "$DEST/keybags/t2-keybags.tar.gz"
 
 diskutil eject "$USB"
-cd ~/Downloads/mba91-aks-macos-capture && sudo ./uninstall.sh
+cd "${KIT:-$HOME/Downloads/mba91-aks-macos-capture}" && sudo ./uninstall.sh
 # Device Management → remove private-data profile
 sudo rm -f /tmp/t2-keybags.tar.gz /private/tmp/t2-keybags.tar.gz
 ```

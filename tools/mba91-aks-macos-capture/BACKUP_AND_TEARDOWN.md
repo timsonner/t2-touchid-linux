@@ -1,5 +1,7 @@
 # MBA91 backup + teardown (verified 2026-09-06)
 
+Paths below use `$HOME` / `~` so any macOS or Linux username works. Set `KIT` to your local copy of `tools/mba91-aks-macos-capture` (or leave the default under `$HOME/Downloads/...`). LaunchDaemon label `com.timsonner.t2-aks-boot-capture` is a reverse-DNS id, not a home path.
+
 After cold-boot capture → enroll → lock-screen unlock, back up artifacts
 **before** uninstalling the LaunchDaemon / removing `PRIVATE_DATA`.
 
@@ -74,7 +76,7 @@ Only after USB verify (and Private copies if you want):
 ```bash
 diskutil eject "/Volumes/NO NAME"
 
-cd ~/Downloads/mba91-aks-macos-capture   # or wherever the kit lives
+cd "${KIT:-$HOME/Downloads/mba91-aks-macos-capture}"   # set KIT to your kit checkout
 sudo ./uninstall.sh
 # optional: sudo ./uninstall.sh --wipe-logs
 

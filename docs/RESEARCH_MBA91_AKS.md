@@ -112,10 +112,12 @@ even if `/dev/t2-aks` stays disabled. OOL DMA remains pinned; `rmmod` blocked
 until reboot.
 
 ```bash
-tools/build-t2-sep-lab.sh /home/tim/Private/t2-touchid/t2-sep-lab
-sudo /home/tim/Private/t2-touchid/t2-sep-lab status
-sudo /home/tim/Private/t2-touchid/t2-sep-lab aks --op 0x4d --ver 2 --zero-time --timeout-ms 5000
-sudo /home/tim/Private/t2-touchid/t2-sep-lab ep0 --endpoint 12 --opcode 2 --tag 20 --size 16384 --dma in
+# Install the lab binary somewhere writable (any username):
+LAB="$HOME/Private/t2-touchid/t2-sep-lab"
+tools/build-t2-sep-lab.sh "$LAB"
+sudo "$LAB" status
+sudo "$LAB" aks --op 0x4d --ver 2 --zero-time --timeout-ms 5000
+sudo "$LAB" ep0 --endpoint 12 --opcode 2 --tag 20 --size 16384 --dma in
 ```
 
 Ioctls: `STATUS`, `RAW_MB`, `OOL`, `EP0`, `AKS` (lab AKS path has **no**

@@ -9,4 +9,4 @@ mkdir -p "$dest_dir"
 cc -O2 -Wall -I "$root/src" -o "$out" "$root/tools/t2-sep-lab.c"
 echo "built $out"
 # Optional research install path used on MBA91:
-#   tools/build-t2-sep-lab.sh /home/tim/Private/t2-touchid/t2-sep-lab
+#   tools/build-t2-sep-lab.sh "$HOME/Private/t2-touchid/t2-sep-lab"
