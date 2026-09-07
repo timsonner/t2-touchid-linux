@@ -24,6 +24,7 @@ Cold boot → enroll → lock-screen unlock **confirmed** with growing
 | Doc | What |
 | --- | --- |
 | [BRIDGEXPC_CAPTURE.md](BRIDGEXPC_CAPTURE.md) | Private `en3` pcap one-shot (HELO / method-0) |
+| [NEXT_STEPS.md](NEXT_STEPS.md) | Ordered next work after current tip |
 | [BRIDGEXPC_PATH.md](BRIDGEXPC_PATH.md) | BridgeXPC avenue map (vs mute EP7); MBA91 en3 inventory |
 | [EP7_FROM_MACOS_NOTES.md](EP7_FROM_MACOS_NOTES.md) | Why biometric logs won't wake Linux EP7; Sequoia AKS extract |
 | [LEVERS_2026-09-07.md](LEVERS_2026-09-07.md) | Remaining-lever run: AKS disasm, SKU, BridgeXPC map, raw-txn bounds |
