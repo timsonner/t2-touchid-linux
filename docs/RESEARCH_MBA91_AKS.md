@@ -222,3 +222,11 @@ Private capture logs remain under `~/Private/t2-aks-capture/` (not in git).
 Verified USB backup of capture logs, catacomb UUID tree, and keybags, plus
 LaunchDaemon uninstall: see
 [`tools/mba91-aks-macos-capture/BACKUP_AND_TEARDOWN.md`](../tools/mba91-aks-macos-capture/BACKUP_AND_TEARDOWN.md).
+
+## Catacomb + Bridge sequence (lane B)
+
+Mined load/save ordering from the verified macOS capture:
+[`tools/mba91-aks-macos-capture/CATACOMB_BRIDGE_SEQUENCE.md`](../tools/mba91-aks-macos-capture/CATACOMB_BRIDGE_SEQUENCE.md).
+
+Next A/B without dual-boot: cold reboot **with** enrollment present and compare
+`loadCatacomb` / `restoreAndSyncTemplates` to the empty-store Phase A.

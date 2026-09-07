@@ -61,3 +61,9 @@ After wipe + macOS reinstall, ESP had **no** `EFI/APPLE/EMBEDDEDOS/FDRData`.
 Touch ID still worked. Treat T1-style FDR preserve as **non-blocking** for this
 T2 Air; do not expect Linux install to recreate it. See RESEARCH +
 `tools/mba91-aks-macos-capture/VERIFIED_SESSION_2026-09-06.md`.
+
+## Lane B progress
+
+Catacomb load/save + Bridge/Mesa ordering documented in
+`tools/mba91-aks-macos-capture/CATACOMB_BRIDGE_SEQUENCE.md`.
+Recommended next: enrolled cold-boot reload capture (still on macOS).

@@ -84,3 +84,9 @@ Annotation helps understand macOS biometric ordering (device list → enroll/mat
 
 - Full tagged timeline (private): `~/Private/t2-aks-capture/mesa-bridge-timeline.txt`
 - Earlier histogram: [MESA_BRIDGE_OPCODE_NOTES.md](MESA_BRIDGE_OPCODE_NOTES.md)
+
+## Follow-up mining (2026-09-06 evening)
+
+See [CATACOMB_BRIDGE_SEQUENCE.md](CATACOMB_BRIDGE_SEQUENCE.md) for load vs save
+ordering, `/Library/Catacomb/<uuid>/prepare/` staging, and the cold-boot empty
+`loadCatacomb` path (filesystem Common logs before Mesa confirm cluster).
