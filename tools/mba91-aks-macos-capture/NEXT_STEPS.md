@@ -1,47 +1,74 @@
 # MBA91 Touch ID / BridgeXPC — next steps
 
-Branch tip context: `research/mba91-aks-ep7`. EP7 AKS mailbox stays **parked**.
-Fingerprint path is **BridgeXPC** (`BRIDGEXPC_PATH.md`).
+Branch: `research/mba91-aks-ep7`. Host: MacBookAir9,1 · Omarchy `MBA19-OMARCHY` ·
+bridgeOS **23P6068** · BridgeXPC **39**.  
+**EP7 AKS stays parked.** Fingerprint path = **BridgeXPC** (`BRIDGEXPC_PATH.md`).
 
-## Done recently
+## What we know (2026-09-07)
 
-- Sequoia AKS extract: no pre-`0x4d` surprise (`LEVERS_2026-09-07.md`)
-- Catacomb on-disk = NSKeyedArchiver → `LTFC` v10 (`CATACOMB_ONDISK.md`)
-- bent BridgeXPC status corrected: past method-0; gaps are cold restore / enroll
-- `en3` tcpdump: BPF blind on this Air; os_log unlock timelines are good
-- Mesa ↔ bent codec crosswalk (`MESA_BENT_OPCODE_CROSSWALK.md`)
-- **Omarchy BridgeXPC smoke** on MBA91: Multiverse → HELO (`bkremoted` / 39 /
-  `23P6068`) → method 0 `(0,3)` → method 1 opened (`WARM_IDENTITY_AB_2026-09-07.md`)
-- **Read-only Mesa canaries** cold + **warm identity A/B**: `0x42` empty →
-  count=1 uid=501 after macOS→Omarchy warm reboot; `0x54` first_byte still 0
-  (`WARM_IDENTITY_AB_2026-09-07.md`)
-- T2 NCM IPv6 LL pinned via NM on Omarchy (`enp116s0f1u1` /
-  `fe80::aede:48ff:fe00:1122`)
-- **Warm catacomb probes:** `0x42` still 1 while `0x38`/`0x3c`/`0x50` fail `0xe00002c2`; `0x3a` v1 ok 33 B; `0x54` first_byte still 0 (`WARM_CATACOMB_PROBES_2026-09-07.md`)
-- **Omarchy soft-reboot A/B:** `0x42` still count=1 after Linux→Linux reboot (not power-off); `0x38`/`0x3c` still fail (`COLD_SOFT_REBOOT_AB_2026-09-07.md`)
-- **True cold power-off A/B:** `0x42` still count=1 after full shutdown (no macOS); store APIs still fail (`COLD_POWEROFF_AB_2026-09-07.md`)
-- **Bounded no-reset `0x40`:** master+user LTFC from USB `.cat` → status **257**, no change to `0x38`/`0x54`/`0x42` (`LOAD_CATACOMB_0x40_2026-09-07.md`)
+| Fact | Evidence |
+| --- | --- |
+| Multiverse → HELO → method 0 `(0,3)` → method 1 opened | `WARM_IDENTITY_AB_2026-09-07.md` |
+| After macOS enroll once, `0x42` shows uid 501 | warm A/B |
+| `0x42` **survives soft reboot and true power-off** without Linux `loadCatacomb` | `COLD_SOFT_REBOOT_AB_2026-09-07.md`, `COLD_POWEROFF_AB_2026-09-07.md` |
+| `0x38` / `0x3c` / `0x50` still fail `0xe00002c2` while `0x42` is non-empty | `WARM_CATACOMB_PROBES_2026-09-07.md` |
+| `0x54` accessory-present first_byte stays **0** | all canary runs |
+| `0x08` ≠ bent `0x42` | Omarchy canaries |
+| USB `.cat` → LTFC extract is valid on-disk shape | Private `cftl-extract/` |
+| No-reset `0x40` load → **status 257**, no canary change | `LOAD_CATACOMB_0x40_2026-09-07.md` |
+
+**Reframe:** on this Air, bent’s “cold restore” is **not** “`0x42` goes empty after
+power loss.” The open Bridge gaps are **store APIs / accessory / `0x40` preflight**
+(and later Linux-native enroll).
 
 ## Next (in order)
 
-### 1. Cold restore / accessory path
+### 1. Supervised reset-then-`0x40` A/B  ← **do this next**
 
-- ~~Full power-off A/B~~ **done** — `0x42` survives (`COLD_POWEROFF_AB_2026-09-07.md`)
-- Why warm `0x42` works but `0x38`/`0x3c` fail and `0x54` first_byte stays **0**
-- Supervised **reset-then-`0x40`** A/B (destructive) vs decode status 257 offline
-  (no-reset load already failed: `LOAD_CATACOMB_0x40_2026-09-07.md`)
-- Compare to bent’s cold `loadCatacomb` / no-reset identity gap
+Destructive by design. Expect `0x42` empty after sensor reset; then load Private
+LTFC (master → user) and re-check canaries.
 
-### 2. Linux-native enroll / ACM policy
+**Success criteria (public-safe):**
 
-Only after cold restore is understood. No ConfirmSave spray until then.
+1. After reset: `0x42` count=0 (or fail), readiness/provisioning still sane  
+2. `0x40` master then user → **status 0** (not 257)  
+3. After load: `0x42` count≥1 uid 501; note `0x38`/`0x3c`/`0x54` first_byte  
 
-### 3. Only if Bridge path stalls
+**Do not:** enroll, ConfirmSave, `SetProtectedConfig`, EP7.  
+**Script basis:** bent `external-catacomb-load-probe` preflight (reset + cancel +
+calibration gate) + our Private LTFC paths — adapt locally, keep blobs out of git.
 
-SIP-off EP7 first-txn capture — explicit Tim OK. Not before 1–2.
+### 2. Offline: decode status **257**
+
+Parallel / quick: map `257` (`0x101`) in bent/macOS notes vs BK error tables.
+Doesn’t block (1), but write a one-liner into `LOAD_CATACOMB_0x40_2026-09-07.md`
+when found.
+
+### 3. After a successful load
+
+- Re-check `0x54` first_byte and store APIs  
+- Optional **warm match** canary (read-only path only)  
+- Only then consider Linux-native enroll / ACM policy  
+
+### 4. Only if Bridge path stalls
+
+SIP-off EP7 first-txn — explicit Tim OK. Not before 1–3.
 
 ## Parked
 
-- More `pktap,en3` tcpdump on macOS Sequoia  
 - Mute AKS EP7 ABI variants  
-- Treating `0x08` GetIdentityRecords as bent `0x42` (disproven on Omarchy)  
+- More Sequoia `pktap,en3` tcpdump  
+- Treating `0x08` as `0x42`  
+- Assuming power-off clears `0x42` on MBA91 (disproven once enrolled)  
+
+## Doc index (this arc)
+
+| Note | Topic |
+| --- | --- |
+| `WARM_IDENTITY_AB_2026-09-07.md` | smoke + warm A/B |
+| `WARM_CATACOMB_PROBES_2026-09-07.md` | store API split |
+| `COLD_SOFT_REBOOT_AB_2026-09-07.md` | soft reboot preserve |
+| `COLD_POWEROFF_AB_2026-09-07.md` | true cold preserve |
+| `LOAD_CATACOMB_0x40_2026-09-07.md` | no-reset 257 |
+| `MESA_BENT_OPCODE_CROSSWALK.md` | opcode table |
+| `MBA91_T2_NCM_LL.md` (local Air) | NM LL pin recipe |
