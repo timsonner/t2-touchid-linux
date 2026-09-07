@@ -169,7 +169,13 @@ Copy the **newest** set for this boot:
 Then (when ready for Linux research): export keybags / catacomb per
 `t2-touchid-linux` docs — separate from this logger.
 
-### 6. Tear down (after copies are safe)
+### 6. USB backup then tear down
+
+See **[BACKUP_AND_TEARDOWN.md](BACKUP_AND_TEARDOWN.md)** for the verified USB layout (capture + catacomb + keybags) and uninstall steps.
+
+Short version: copy `~/Private/t2-aks-capture/`, `/Library/Catacomb/<UUID>/`, and `t2-keybags.tar.gz` to USB; then eject; `sudo ./uninstall.sh`; remove Device Management profile; delete `/tmp` keybag archives. ESP FDR is N/A on this wiped Air.
+
+### 7. Tear down (after copies are safe)
 
 ```bash
 # stop daemon; keep logs on disk

@@ -214,3 +214,9 @@ Mounted `disk0s1` EFI after the verified capture session:
 **Takeaway:** T1Bridge’s “preserve ESP FDR” gate does **not** apply as a hard requirement on this T2 Sequoia Air. Post-wipe macOS did not recreate the Apple EFI FDR path; biometric state observed in-capture is Mesa/BridgeXPC + catacomb (`master.cat`), not ESP FDR. Installing Omarchy/Linux will **not** regenerate Apple FDR — only dual-boot lab value.
 
 Private capture logs remain under `~/Private/t2-aks-capture/` (not in git).
+
+## Backup + teardown
+
+Verified USB backup of capture logs, catacomb UUID tree, and keybags, plus
+LaunchDaemon uninstall: see
+[`tools/mba91-aks-macos-capture/BACKUP_AND_TEARDOWN.md`](../tools/mba91-aks-macos-capture/BACKUP_AND_TEARDOWN.md).

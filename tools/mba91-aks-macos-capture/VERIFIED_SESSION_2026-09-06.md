@@ -83,3 +83,14 @@ See [MESA_BRIDGE_OPCODE_NOTES.md](MESA_BRIDGE_OPCODE_NOTES.md) for BridgeXPC/Mes
 ## Opcode annotations
 
 See [MESA_OPCODE_ANNOTATIONS.md](MESA_OPCODE_ANNOTATIONS.md) for verified call-site mapping and confidence.
+
+## USB backup + teardown (same session)
+
+Backed up to `/Volumes/NO NAME/mba91-backup-20260906/`:
+
+- `t2-aks-capture/` (cold-boot stream, logshow backfill, notes)
+- `catacomb/64FFD0F9-9014-5F6F-BC5B-265A589D0570/`
+- `keybags/t2-keybags.tar.gz` (export wrote `/private/tmp/` first; copied to USB)
+- Private mirror: `~/Private/t2-keybags/t2-keybags-20260906.tar.gz`
+
+Procedure: [BACKUP_AND_TEARDOWN.md](BACKUP_AND_TEARDOWN.md).
