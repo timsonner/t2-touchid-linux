@@ -27,17 +27,14 @@ mkdir -p ~/Private/t2-aks-capture
 rsync -a /var/log/t2-aks-capture/ ~/Private/t2-aks-capture/
 # (re-chmod a+r first if Permission denied)
 
-# THEN EFI FDR backup (disk0s1 on MBA91)
-sudo mkdir -p /Volumes/EFI
-sudo diskutil mount -mountPoint /Volumes/EFI disk0s1
-ls -la /Volumes/EFI/EFI/APPLE/EMBEDDEDOS/FDRData
-mkdir -p ~/Private/mba91-efi-fdr
-rsync -a /Volumes/EFI/EFI/APPLE/EMBEDDEDOS/FDRData ~/Private/mba91-efi-fdr/
-rsync -a /Volumes/EFI/EFI/APPLE/EMBEDDEDOS/ ~/Private/mba91-efi-fdr/EMBEDDEDOS/
-sudo diskutil unmount /Volumes/EFI
+# EFI FDR — on MBA91 after wipe: path was ABSENT (empty ESP). Skip unless
+# ls shows EFI/APPLE/EMBEDDEDOS/FDRData. Do not install Linux to "create" it.
+# sudo mkdir -p /Volumes/EFI && sudo diskutil mount -mountPoint /Volumes/EFI disk0s1
+# ls -la /Volumes/EFI/EFI/APPLE/EMBEDDEDOS/   # expect missing on this Air
+# sudo diskutil unmount /Volumes/EFI
 
-# prefer a second copy to USB
-# rsync -a ~/Private/t2-aks-capture ~/Private/mba91-efi-fdr /Volumes/USBNAME/mba91-backup-$(date +%Y%m%d)/
+# prefer a second copy of capture logs to USB
+# rsync -a ~/Private/t2-aks-capture /Volumes/USBNAME/mba91-backup-$(date +%Y%m%d)/
 
 sudo ./uninstall.sh
 # Device Management → remove the private-data profile

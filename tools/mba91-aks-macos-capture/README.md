@@ -15,8 +15,10 @@ Cold boot → enroll → lock-screen unlock **confirmed** with growing
 [VERIFIED_SESSION_2026-09-06.md](VERIFIED_SESSION_2026-09-06.md) and
 [CHECKLIST.md](CHECKLIST.md).
 
-**Checkpoint rule:** copy `/var/log/t2-aks-capture/` to `~/Private/` (and USB)
-**before** mounting EFI / copying `FDRData`, in case ESP work goes wrong.
+**Checkpoint rule:** copy `/var/log/t2-aks-capture/` to `~/Private/` (and USB) before any ESP experiments.
+
+**ESP FDR on MBA91 (2026-09-06):** `disk0s1` had **no** `EFI/APPLE/EMBEDDEDOS/FDRData` after full-disk wipe + macOS reinstall; Touch ID still worked. T1-style FDR backup is **N/A** here — do not install Omarchy expecting it to recreate Apple FDR. Details in VERIFIED_SESSION_2026-09-06.md.
+
 
 
 ---

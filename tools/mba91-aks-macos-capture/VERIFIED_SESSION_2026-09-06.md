@@ -48,10 +48,28 @@ Host biometric bring-up on this Air is **BridgeXPC + Mesa via `biometrickitd`**,
 
 ## Still TODO (after this checkpoint)
 
-1. Mount `disk0s1` EFI → back up `EFI/APPLE/EMBEDDEDOS/FDRData` (and preferably whole `EMBEDDEDOS`) off-machine
+1. ~~ESP FDR backup~~ — **N/A on this Mac** (path absent; not required — see below)
 2. Optional: keybag / catacomb export for Linux restore path
 3. `sudo ./uninstall.sh` + remove Device Management private-data profile
 4. Offline filter of Private logs for a public-safe opcode timeline (no templates / UUIDs that look like secrets)
+
+
+## EFI / FDRData finding (same session)
+
+Mounted ESP `disk0s1` → `/Volumes/EFI`.
+
+| Check | Result |
+| --- | --- |
+| `EFI/APPLE/EMBEDDEDOS/FDRData` | **Absent** |
+| ESP contents | Essentially empty (~844 KiB; Spotlight/Trash metadata only) |
+| Preboot `EMBEDDEDOS` / `FDRData` | **Not found** (targeted search) |
+| Touch ID without ESP FDR | **Works** — enroll + lock-screen unlock already captured |
+
+**Conclusion for MBA91 / T2 Sequoia:** do **not** treat T1Bridge-style ESP `FDRData` as required. Full-disk Omarchy wiped any prior Apple EFI tree; this macOS install did not recreate it, yet Mesa/BiometricKit/catacomb still functioned. Factory/sensor state for this path appears to live in SEP / xART / catacomb (see unlock: `master.cat`, `performConfirmSaveCatacombCommand`), not on the ESP.
+
+**Do not** install Omarchy (or anything else) hoping it will regenerate Apple `FDRData` — Linux cannot create that machine-specific Apple tree. Dual-boot Omarchy is fine for lab space; it is unrelated to FDR recovery.
+
+Optional later: keybag/catacomb export for Linux; uninstall capture daemon + remove private-data profile.
 
 ## Do not commit
 

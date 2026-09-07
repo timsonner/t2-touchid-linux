@@ -48,6 +48,13 @@ boot-time AKS sequence on this Air.
 
 Cold boot + enroll + lock-screen unlock captured on MBA91 with
 `tools/mba91-aks-macos-capture/`. Private logs under Tim’s
-`~/Private/t2-aks-capture/` (not in git). FDR backup was the next step after
-this checkpoint. Details:
+`~/Private/t2-aks-capture/` (not in git). ESP FDR backup was attempted next; path was absent and is not required on this T2 Air. Details:
 [`VERIFIED_SESSION_2026-09-06.md`](../tools/mba91-aks-macos-capture/VERIFIED_SESSION_2026-09-06.md).
+
+
+## ESP FDR — MBA91 finding
+
+After wipe + macOS reinstall, ESP had **no** `EFI/APPLE/EMBEDDEDOS/FDRData`.
+Touch ID still worked. Treat T1-style FDR preserve as **non-blocking** for this
+T2 Air; do not expect Linux install to recreate it. See RESEARCH +
+`tools/mba91-aks-macos-capture/VERIFIED_SESSION_2026-09-06.md`.

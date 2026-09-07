@@ -187,5 +187,18 @@ see [`VERIFIED_SESSION_2026-09-06.md`](../tools/mba91-aks-macos-capture/VERIFIED
 
 Raw logs / FDR / keybags are **not** on this branch.
 
-Next: EFI `disk0s1` → `EFI/APPLE/EMBEDDEDOS/FDRData` backup; then optional
-keybag/catacomb export; then uninstall capture daemon + remove profile.
+Next: optional keybag/catacomb export; uninstall capture daemon + remove
+profile. ESP FDR backup: **skipped** — path absent / not required (see below).
+
+
+## ESP FDRData — absent / not required (2026-09-06)
+
+Mounted `disk0s1` EFI after the verified capture session:
+
+- `/Volumes/EFI` essentially **empty** (~844 KiB metadata only)
+- **No** `EFI/APPLE/EMBEDDEDOS/FDRData` (and no `EMBEDDEDOS` on Preboot in a targeted search)
+- Touch ID enroll + unlock had **already succeeded** without that tree
+
+**Takeaway:** T1Bridge’s “preserve ESP FDR” gate does **not** apply as a hard requirement on this T2 Sequoia Air. Post-wipe macOS did not recreate the Apple EFI FDR path; biometric state observed in-capture is Mesa/BridgeXPC + catacomb (`master.cat`), not ESP FDR. Installing Omarchy/Linux will **not** regenerate Apple FDR — only dual-boot lab value.
+
+Private capture logs remain under `~/Private/t2-aks-capture/` (not in git).
