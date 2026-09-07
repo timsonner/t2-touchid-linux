@@ -10,7 +10,7 @@ bridgeOS **23P6068** · BridgeXPC **39**.
 | --- | --- |
 | Bridge open works (Multiverse → 0 → client-ver 2 → 1) | warm A/B |
 | Once enrolled, `0x42` survives soft reboot **and** power-off **without** Linux `0x40` | cold A/B notes |
-| `0x54` accessoryInfo shape OK (83 B) but **first_byte always 0** (warm, cold, post-reset) | all canaries |
+| `0x54` accessoryInfo: **all-zero 83 B** (types 0–3 + order canary); `0x52` still 1 builtin | `ACCESSORY_0x54_NOTES.md` |
 | `0x40` → **257** with or without reset preflight; USB LTFC extract looks structurally valid | load notes |
 | bent: 257 ↔ missing accessory/device-group context; same `0x54` first_byte=0 on their Linux | bent touch-id / catacomb handoff |
 | `no_catacomb(0xffffffff)` cleared `0x42` here; reset alone did **not** | `RESET_THEN_LOAD40_2026-09-07.md` |
@@ -19,26 +19,20 @@ bridgeOS **23P6068** · BridgeXPC **39**.
 
 ## Next (in order)
 
-### 1. Accessory / `0x54` — concrete probes  ← **do this next**
+### 1. Accessory / `0x54` — status
 
-Goal: explain or flip accessory-present **before** another `0x40`. Prefer
-read-only. Public-safe logging only (status / lengths / first_byte).
+**Done (Linux):** offline notes + type 0/1/2/3 A/B + `0x52→0x54→0x0c`.
+Result: reply is **all-zero 83 B** for every type; `0x52` still 1 builtin.
+See `ACCESSORY_0x54_NOTES.md`.
 
-1. **Offline decode** of 83-byte `0x54` reply layout from bent + any MBA91
-   macOS capture notes (what bytes besides first_byte mean). Write
-   `ACCESSORY_0x54_NOTES.md` (no raw dumps in git).
-2. **A/B input variants** (still read-only): type/UUID in the 20-byte
-   accessoryInfo request — type **2**+zero UUID is what we used; try bent’s
-   documented builtin shapes only; never enroll.
-3. **Order canary:** `0x52` → `0x54` → `0x0c` (bent enroll-predecessor order)
-   and record first_byte only — expect still 0, but documents parity.
-4. **macOS contrast (when Tim is on Sequoia):** one unlock/enroll-adjacent
-   os_log window — does macOS ever log accessory-present / `accessoryInfo`
-   success before `loadCatacomb`? No more blind Linux `0x40`.
+**Still open:**
+1. How macOS fills accessoryInfo (cacheAccessories / lifecycle) — Sequoia
+   os_log contrast when convenient
+2. Any Linux host-side step bent also never recovered (document gap)
+3. Do **not** blind-retry `0x40` until presence can be nonzero
 
-Stop condition for this section: either first_byte becomes nonzero under a
-documented probe, **or** we prove Linux cannot get it without a missing
-host-side step bent also lacks (then escalate that gap).
+Stop condition unchanged: nonzero first_byte under a documented probe, or
+proven missing host step shared with bent.
 
 ### 2. Re-warm identity (ops)
 
@@ -76,3 +70,4 @@ SIP-off EP7 — explicit Tim OK.
 | `LOAD_CATACOMB_0x40_2026-09-07.md` | no-reset 257 |
 | `RESET_THEN_LOAD40_2026-09-07.md` | reset + still 257 |
 | `MESA_BENT_OPCODE_CROSSWALK.md` | opcodes |
+| `ACCESSORY_0x54_NOTES.md` | accessoryInfo / all-zero reply |
