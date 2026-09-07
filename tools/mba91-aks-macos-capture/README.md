@@ -19,6 +19,19 @@ Cold boot → enroll → lock-screen unlock **confirmed** with growing
 
 **ESP FDR on MBA91 (2026-09-06):** `disk0s1` had **no** `EFI/APPLE/EMBEDDEDOS/FDRData` after full-disk wipe + macOS reinstall; Touch ID still worked. T1-style FDR backup is **N/A** here — do not install Omarchy expecting it to recreate Apple FDR. Details in VERIFIED_SESSION_2026-09-06.md.
 
+## Research notes (this branch)
+
+| Doc | What |
+| --- | --- |
+| [EP7_FROM_MACOS_NOTES.md](EP7_FROM_MACOS_NOTES.md) | Why biometric logs won't wake Linux EP7; Sequoia AKS extract |
+| [LEVERS_2026-09-07.md](LEVERS_2026-09-07.md) | Remaining-lever run: AKS disasm, SKU, BridgeXPC map, raw-txn bounds |
+| [CATACOMB_ONDISK.md](CATACOMB_ONDISK.md) | On-disk `.cat` = NSKeyedArchiver → `LTFC` v10 (public-safe) |
+| [CATACOMB_BRIDGE_SEQUENCE.md](CATACOMB_BRIDGE_SEQUENCE.md) | loadCatacomb / save / ConfirmSave Bridge timeline |
+| [BRIDGE_GETIDENTITY_DECODE.md](BRIDGE_GETIDENTITY_DECODE.md) | Mesa opcode 8 GetIdentityRecords layout |
+| [MESA_OPCODE_ANNOTATIONS.md](MESA_OPCODE_ANNOTATIONS.md) | Opcode confidence table from MBA91 capture |
+| [BACKUP_AND_TEARDOWN.md](BACKUP_AND_TEARDOWN.md) | USB backup + capture-kit uninstall |
+
+
 
 
 ---
