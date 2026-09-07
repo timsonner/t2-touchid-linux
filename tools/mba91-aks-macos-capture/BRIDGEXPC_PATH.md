@@ -134,3 +134,7 @@ Those matter **after** method 3 works. They do not fix method 0 silence.
 ## Private artifacts
 
 `$HOME/Private/t2-bridgexpc-research/` — iface inventory, hashes (no pcaps yet).
+
+## Capture kit
+
+See [BRIDGEXPC_CAPTURE.md](BRIDGEXPC_CAPTURE.md) / `capture-en3-bridgexpc.sh`.
