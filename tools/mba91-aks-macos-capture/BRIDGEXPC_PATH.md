@@ -163,3 +163,10 @@ These are first-class inputs for bent’s **current** gap, not “later.”
 ## Capture kit
 
 See [BRIDGEXPC_CAPTURE.md](BRIDGEXPC_CAPTURE.md) / `capture-en3-bridgexpc.sh`.
+
+## Omarchy verification (2026-09-07)
+
+On `MBA19-OMARCHY` / `enp116s0f1u1`: Multiverse → HELO (`bkremoted` / 39 /
+`23P6068`) → method 0 `(0,3)` → method 1 opened. Warm macOS→Omarchy reboot
+preserved one `0x42` identity (uid 501) without Linux `loadCatacomb`; `0x54`
+first_byte stayed 0. Full tables: `WARM_IDENTITY_AB_2026-09-07.md`.

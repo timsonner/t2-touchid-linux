@@ -112,3 +112,9 @@ Read-only, in order:
   `0x3d/3e/3f`, device list `0x52`, `0x54` ordering)
 - MBA91: `MESA_OPCODE_ANNOTATIONS.md`, `BRIDGE_GETIDENTITY_DECODE.md`,
   `CATACOMB_ONDISK.md`, Private unlock logs 2026-09-06/07
+
+## Live Omarchy canaries (2026-09-07)
+
+Cold + warm A/B on MBA91 Omarchy: see `WARM_IDENTITY_AB_2026-09-07.md`.
+Summary: `0x52`/`0x54`/`0x27` shapes match bent; warm `0x42` count=1 uid=501;
+`0x08` still not an alias for `0x42`; `0x54` first_byte remained 0 even warm.

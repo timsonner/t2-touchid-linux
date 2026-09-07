@@ -10,39 +10,32 @@ Fingerprint path is **BridgeXPC** (`BRIDGEXPC_PATH.md`).
 - bent BridgeXPC status corrected: past method-0; gaps are cold restore / enroll
 - `en3` tcpdump: BPF blind on this Air; os_log unlock timelines are good
 - Mesa ↔ bent codec crosswalk (`MESA_BENT_OPCODE_CROSSWALK.md`)
+- **Omarchy BridgeXPC smoke** on MBA91: Multiverse → HELO (`bkremoted` / 39 /
+  `23P6068`) → method 0 `(0,3)` → method 1 opened (`WARM_IDENTITY_AB_2026-09-07.md`)
+- **Read-only Mesa canaries** cold + **warm identity A/B**: `0x42` empty →
+  count=1 uid=501 after macOS→Omarchy warm reboot; `0x54` first_byte still 0
+  (`WARM_IDENTITY_AB_2026-09-07.md`)
+- T2 NCM IPv6 LL pinned via NM on Omarchy (`enp116s0f1u1` /
+  `fe80::aede:48ff:fe00:1122`)
 
 ## Next (in order)
 
-### 2. Omarchy on MBA91 — enveloped BridgeXPC smoke (read-only)
+### 1. Cold restore / accessory path
 
-**Goal:** Multiverse → HELO (`bkremoted` / 39 / `23P6068`) → method **0**
-`(0,3)` → method **1** opened.
+- Why warm `0x42` works but `0x54` accessory-present (`first_byte`) stays **0**
+- Bounded `0x40` loadCatacomb with Private CFTL only (no enroll)
+- Compare to bent’s cold `loadCatacomb` / no-reset identity gap
 
-**Do not:** enroll, `SetProtectedConfig`, ConfirmSave, sensor reset, EP7 probes.
+### 2. Linux-native enroll / ACM policy
 
-**Success:** same activation bent already has on MBP+23P6068, proven on Air.
+Only after cold restore is understood. No ConfirmSave spray until then.
 
-### 3. Read-only biometric canaries (after 2)
+### 3. Only if Bridge path stalls
 
-Order from crosswalk:
-
-1. `0x52` bio device list  
-2. `0x54` (20-byte in — bent live shape)  
-3. `0x27` SKS lock (uid 501)  
-4. Compare **`0x42` identity list** vs probe **`0x08` GetIdentityRecords**  
-5. Later: `0x40` loadCatacomb with Private CFTL only  
-
-### 4. Warm identity preserve A/B
-
-macOS enroll → warm reboot Linux **without** sensor reset → identity count /
-optional match. Tests bent’s cold-restore gap on this SKU.
-
-### 5. Only if Bridge path stalls
-
-SIP-off EP7 first-txn capture — explicit Tim OK. Not before 2–4.
+SIP-off EP7 first-txn capture — explicit Tim OK. Not before 1–2.
 
 ## Parked
 
 - More `pktap,en3` tcpdump on macOS Sequoia  
-- Linux-native enroll / ACM policy until warm restore understood  
 - Mute AKS EP7 ABI variants  
+- Treating `0x08` GetIdentityRecords as bent `0x42` (disproven on Omarchy)  
