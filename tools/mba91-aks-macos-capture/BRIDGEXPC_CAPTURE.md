@@ -41,3 +41,10 @@ Ping Rook. We review the sanitized JSON for HELO / method-0 bytes, then compare
 to bent’s `bridge-protocol.py` / `macos-bridge-wire-compare.py`.
 
 See also [BRIDGEXPC_PATH.md](BRIDGEXPC_PATH.md).
+
+## Known issue (2026-09-07)
+
+First MBA91 run with `tcpdump -i pktap,en3 -y RAW` wrote a **header-only**
+pcap while unified logs showed full BridgeXPC/Mesa unlock traffic. Script now
+prefers plain `-i en3` and may add a parallel `pktap` capture without `-y RAW`.
+Always keep the unified-log artifact.

@@ -81,9 +81,11 @@ for interface_name in $capture_ifaces; do
   case "$interface_name" in
     *[!A-Za-z0-9._-]*) echo "unsafe interface name: $interface_name" >&2; exit 2 ;;
   esac
-  # pktap+$iface avoids empty DLT_RAW on AppleUSBNCMData; -y RAW strips pktap hdr.
-  capture_interface="pktap,$interface_name"
-  sudo tcpdump -i "$capture_interface" -y RAW -n -s 0 -U -w \
+  # MBA91 Sequoia: pktap,$iface -y RAW produced empty pcaps (header-only)
+  # while BridgeXPC traffic was live in unified logs. Prefer direct iface;
+  # fall back to pktap without forcing DLT.
+  capture_interface="$interface_name"
+  sudo tcpdump -i "$capture_interface" -n -s 0 -U -w \
     "$capture_dir/$interface_name.pcap" \
     >"$capture_dir/$interface_name-tcpdump.txt" 2>&1 &
   pids="$pids $!"
@@ -94,6 +96,20 @@ for capture_pid in $pids; do
   if ! kill -0 "$capture_pid" 2>/dev/null; then
     echo "tcpdump exited early — see $capture_dir/*-tcpdump.txt" >&2
     exit 4
+  fi
+done
+
+
+# If the primary capture looks dead after 2s, start a parallel pktap capture.
+sleep 1
+for interface_name in $capture_ifaces; do
+  pcap=$capture_dir/$interface_name.pcap
+  if [[ -f $pcap ]] && [[ $(stat -f%z "$pcap" 2>/dev/null || echo 0) -le 24 ]]; then
+    echo "primary pcap still empty; also capturing pktap,$interface_name (no -y RAW)" | tee -a "$capture_dir/$interface_name-tcpdump.txt"
+    sudo tcpdump -i "pktap,$interface_name" -n -s 0 -U -w \
+      "$capture_dir/$interface_name-pktap.pcap" \
+      >>"$capture_dir/$interface_name-tcpdump.txt" 2>&1 &
+    pids="$pids $!"
   fi
 done
 
