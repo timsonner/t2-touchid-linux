@@ -75,3 +75,7 @@ Optional later: keybag/catacomb export for Linux; uninstall capture daemon + rem
 
 - Raw `*.logstream.log` / snapshots
 - `FDRData`, keybags, catacomb blobs
+
+## Sequence mining
+
+See [MESA_BRIDGE_OPCODE_NOTES.md](MESA_BRIDGE_OPCODE_NOTES.md) for BridgeXPC/Mesa opcode histogram and phase timeline mined from the private capture (public-safe).
