@@ -23,6 +23,7 @@ Cold boot → enroll → lock-screen unlock **confirmed** with growing
 
 | Doc | What |
 | --- | --- |
+| [BRIDGEXPC_PATH.md](BRIDGEXPC_PATH.md) | BridgeXPC avenue map (vs mute EP7); MBA91 en3 inventory |
 | [EP7_FROM_MACOS_NOTES.md](EP7_FROM_MACOS_NOTES.md) | Why biometric logs won't wake Linux EP7; Sequoia AKS extract |
 | [LEVERS_2026-09-07.md](LEVERS_2026-09-07.md) | Remaining-lever run: AKS disasm, SKU, BridgeXPC map, raw-txn bounds |
 | [CATACOMB_ONDISK.md](CATACOMB_ONDISK.md) | On-disk `.cat` = NSKeyedArchiver → `LTFC` v10 (public-safe) |
