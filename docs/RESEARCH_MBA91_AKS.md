@@ -234,3 +234,12 @@ Next A/B without dual-boot: cold reboot **with** enrollment present and compare
 ### Enrolled reboot A/B (done)
 
 Boot `28BE7F9F-…`: `restoreAndSyncTemplates identities 1`, hash len=32, identity `7C66170E-…`. Catacomb dir UUID == Hardware UUID. Details in `CATACOMB_BRIDGE_SEQUENCE.md` Phase A′.
+
+## EP7 wake from macOS?
+
+See [`tools/mba91-aks-macos-capture/EP7_FROM_MACOS_NOTES.md`](../tools/mba91-aks-macos-capture/EP7_FROM_MACOS_NOTES.md).
+
+Installed 24G830 AKS is SOURCE_VERSION `1827.120.2.703.1` (UUID `ef0c4f28-…`).
+bent’s analysis already says capabilities is the first protected call; MBA91’s
+failure mode is **mailbox silence**, not their framing bug. Fingerprint/Bridge
+captures do not supply EP7 wake bytes.
