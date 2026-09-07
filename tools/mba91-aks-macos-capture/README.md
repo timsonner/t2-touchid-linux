@@ -8,6 +8,17 @@ BiometricKit / LocalAuthentication from boot through Touch ID enroll.
 
 Hardware context: MacBookAir9,1 — dual-boot / macOS side of `research/mba91-aks-ep7`.
 
+## Verified on MBA91 (2026-09-06)
+
+Cold boot → enroll → lock-screen unlock **confirmed** with growing
+`*.logstream.log` and Mesa/BridgeXPC biometric traffic. See
+[VERIFIED_SESSION_2026-09-06.md](VERIFIED_SESSION_2026-09-06.md) and
+[CHECKLIST.md](CHECKLIST.md).
+
+**Checkpoint rule:** copy `/var/log/t2-aks-capture/` to `~/Private/` (and USB)
+**before** mounting EFI / copying `FDRData`, in case ESP work goes wrong.
+
+
 ---
 
 ## Prerequisites
@@ -126,7 +137,8 @@ AppleKeyStore / SEP chatter.
 
 1. Log in
 2. System Settings → Touch ID → enroll at least one finger
-3. Leave the daemon running through enroll
+3. Lock the screen and unlock with Touch ID (match path)
+4. Leave the daemon running through both
 
 Optional sanity check after login:
 
@@ -136,6 +148,9 @@ sudo ls -lt /var/log/t2-aks-capture/
 ```
 
 ### 5. Collect artifacts off-machine
+
+**Checkpoint:** copy capture logs to `~/Private/t2-aks-capture/` (and USB) **before** mounting EFI / copying FDR.
+
 
 ```bash
 sudo ls -lt /var/log/t2-aks-capture/

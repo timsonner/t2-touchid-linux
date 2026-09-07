@@ -1,6 +1,6 @@
 # MBA91 AKS capture — command checklist
 
-## Canonical (next time)
+## Canonical (verified 2026-09-06 on MacBookAir9,1)
 
 ```bash
 tar -xvf mba91-aks-macos-capture.tar.gz
@@ -15,43 +15,35 @@ ls -lt /var/log/t2-aks-capture/    # need growing *.logstream.log
 
 open EnablePrivateLogging.mobileconfig
 # System Settings → General → Device Management → Install
-#   "Enable Unified Log Private Data (T2 research)"
 sudo log config --status                # expect PRIVATE_DATA
 
-# reboot → login → re-chmod if new files are root-only → enroll Touch ID
+# reboot → login → re-chmod if needed → confirm NEW boot UUID files
 
-ls -lt /var/log/t2-aks-capture/
-# copy newest *.boot.txt *.logstream.log *.snapshot.log to USB
-# also copy EFI/APPLE/EMBEDDEDOS/FDRData off-machine
+# enroll Touch ID (at least one finger)
+# then lock-screen Touch ID unlock (match path)
+
+# CHECKPOINT — copy logs BEFORE EFI/FDR work
+mkdir -p ~/Private/t2-aks-capture
+rsync -a /var/log/t2-aks-capture/ ~/Private/t2-aks-capture/
+# (re-chmod a+r first if Permission denied)
+
+# THEN EFI FDR backup (disk0s1 on MBA91)
+sudo mkdir -p /Volumes/EFI
+sudo diskutil mount -mountPoint /Volumes/EFI disk0s1
+ls -la /Volumes/EFI/EFI/APPLE/EMBEDDEDOS/FDRData
+mkdir -p ~/Private/mba91-efi-fdr
+rsync -a /Volumes/EFI/EFI/APPLE/EMBEDDEDOS/FDRData ~/Private/mba91-efi-fdr/
+rsync -a /Volumes/EFI/EFI/APPLE/EMBEDDEDOS/ ~/Private/mba91-efi-fdr/EMBEDDEDOS/
+sudo diskutil unmount /Volumes/EFI
+
+# prefer a second copy to USB
+# rsync -a ~/Private/t2-aks-capture ~/Private/mba91-efi-fdr /Volumes/USBNAME/mba91-backup-$(date +%Y%m%d)/
 
 sudo ./uninstall.sh
 # Device Management → remove the private-data profile
 ```
 
-## As-run on MBA91 (2026-09-06)
-
-```bash
-tar -xvf mba91-aks-macos-capture.tar.gz
-cd mba91-aks-macos-capture
-chmod +x install.sh uninstall.sh t2-aks-boot-capture.sh
-chmod +x enable-private-data-system.sh
-sudo ./install.sh
-sudo ./enable-private-data-system.sh    # alone: no PRIVATE_DATA yet
-sudo log config --status
-
-sudo ls -lt /var/log/t2-aks-capture/
-sudo ps aux | grep -E '[l]og stream|[t]2-aks-boot'
-sudo launchctl kickstart -k system/com.timsonner.t2-aks-boot-capture
-sleep 3
-sudo ls -lt /var/log/t2-aks-capture/
-
-open EnablePrivateLogging.mobileconfig  # Device Management → Install
-sudo log config --status                # INFO STREAM_LIVE PRIVATE_DATA
-
-# after agent Permission denied on /var/log/t2-aks-capture:
-sudo chmod 755 /var/log/t2-aks-capture
-sudo chmod a+r /var/log/t2-aks-capture/*
-# agent confirmed: growing logstream, AppleKeyStore lines (e00002f0), daemon running
-```
+See also: [VERIFIED_SESSION_2026-09-06.md](VERIFIED_SESSION_2026-09-06.md).
 
 Never use: `sudo log config --mode 'private_data:on'` (Invalid Modes on modern macOS).
+Never commit raw logs / FDR / keybags / catacomb.

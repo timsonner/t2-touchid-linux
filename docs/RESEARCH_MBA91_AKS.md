@@ -167,3 +167,25 @@ agent.
 
 Does **not** capture raw SEP mailbox OOL bytes; that remains a later lever if
 os_log sequence is insufficient.
+
+
+## macOS capture — verified session (2026-09-06)
+
+Status: **verified** on this Air (macOS 15.7.9) before EFI/FDR backup.
+
+Kit: [`tools/mba91-aks-macos-capture/`](../tools/mba91-aks-macos-capture/) —
+see [`VERIFIED_SESSION_2026-09-06.md`](../tools/mba91-aks-macos-capture/VERIFIED_SESSION_2026-09-06.md).
+
+| Step | Result |
+| --- | --- |
+| Cold-boot LaunchDaemon + `log stream` | New boot UUID `2489129E-…`; stream grew (MB-class) |
+| `PRIVATE_DATA` | Device Management profile (CLI `private_data:on` dead) |
+| Non-root log read | Need `chmod 755` + `a+r` on `/var/log/t2-aks-capture` |
+| Touch ID enroll (right index) | Captured: `biometrickitd` → Mesa / BridgeTransport / BridgeXPC |
+| Lock-screen unlock | Captured: AKS lock-state; `getEnabledForUnlock→1`; catacomb `master.cat` save/confirm |
+| Private log copy | `~/Private/t2-aks-capture/` (do this **before** EFI work) |
+
+Raw logs / FDR / keybags are **not** on this branch.
+
+Next: EFI `disk0s1` → `EFI/APPLE/EMBEDDEDOS/FDRData` backup; then optional
+keybag/catacomb export; then uninstall capture daemon + remove profile.

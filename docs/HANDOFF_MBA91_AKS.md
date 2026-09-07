@@ -42,3 +42,12 @@ Keybags, catacomb, host sudoers/LUKS helpers — intentionally off-git.
 `tools/mba91-aks-macos-capture/` — boot/enroll unified-log LaunchDaemon +
 private-data profile. Use before Touch ID enroll when chasing first-txn /
 boot-time AKS sequence on this Air.
+
+
+## macOS capture — verified (2026-09-06)
+
+Cold boot + enroll + lock-screen unlock captured on MBA91 with
+`tools/mba91-aks-macos-capture/`. Private logs under Tim’s
+`~/Private/t2-aks-capture/` (not in git). FDR backup was the next step after
+this checkpoint. Details:
+[`VERIFIED_SESSION_2026-09-06.md`](../tools/mba91-aks-macos-capture/VERIFIED_SESSION_2026-09-06.md).
