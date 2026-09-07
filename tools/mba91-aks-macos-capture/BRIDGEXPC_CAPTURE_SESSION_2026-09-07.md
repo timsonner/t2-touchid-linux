@@ -28,3 +28,11 @@ This matches the previously mined unlock → match → post-unlock save/ConfirmS
 
 1. Re-run with fixed script (direct `-i en3`, optional `pktap` without `-y RAW`).
 2. Keep using size timelines from os_log as a Sequoia framing check vs bent even before pcap works.
+
+## Second run (045414Z) — Ctrl-C after double unlock
+
+- Script: fixed `pktap,en3` twin (PKTAP + RAW)
+- Operator: locked + unlocked twice, then Ctrl-C
+- `en3-pktap.pcap` / `en3-raw.pcap`: **0 packets** (tcpdump listened; filter saw nothing)
+- `unified-log.ndjson` (~2.9 MB): **good** — 8× `getEnabledForUnlock → 1`, ConfirmSave **63×2**, opcodes match prior unlock/save pattern
+- Conclusion: host BPF on `pktap,en3` is blind to BiometricKit BridgeXPC on MBA91 Sequoia; prefer os_log sizes + codecs.

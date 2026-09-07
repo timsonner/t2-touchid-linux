@@ -30,6 +30,7 @@ Cold boot → enroll → lock-screen unlock **confirmed** with growing
 | [CATACOMB_ONDISK.md](CATACOMB_ONDISK.md) | On-disk `.cat` = NSKeyedArchiver → `LTFC` v10 (public-safe) |
 | [CATACOMB_BRIDGE_SEQUENCE.md](CATACOMB_BRIDGE_SEQUENCE.md) | loadCatacomb / save / ConfirmSave Bridge timeline |
 | [BRIDGE_GETIDENTITY_DECODE.md](BRIDGE_GETIDENTITY_DECODE.md) | Mesa opcode 8 GetIdentityRecords layout |
+| [MESA_BENT_OPCODE_CROSSWALK.md](MESA_BENT_OPCODE_CROSSWALK.md) | MBA91 Mesa opcodes ↔ bent biometric-command codecs |
 | [MESA_OPCODE_ANNOTATIONS.md](MESA_OPCODE_ANNOTATIONS.md) | Opcode confidence table from MBA91 capture |
 | [BACKUP_AND_TEARDOWN.md](BACKUP_AND_TEARDOWN.md) | USB backup + capture-kit uninstall |
 
