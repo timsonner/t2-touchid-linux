@@ -21,7 +21,7 @@ Raw logs stay private (`~/Private/t2-aks-capture/`); nothing sensitive in git.
 5. Confirm **new** boot UUID + growing `*.logstream.log`
 6. Enroll right index finger (~21:10 MT)
 7. Lock-screen Touch ID unlock (~21:14 MT)
-8. Copy logs to `~/Private/t2-aks-capture/` **before** EFI/FDR work
+8. Copy logs to `~/Private/t2-aks-capture/` (done before ESP check)
 
 ## Observed signals (sanitized)
 

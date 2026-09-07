@@ -1,9 +1,16 @@
 # Research: MacBookAir9,1 AKS endpoint-7 bring-up
 
 Branch: `research/mba91-aks-ep7`  
-Status: **PARKED** (2026-09-03/04) — Touch ID blocked on mute AppleKeyStore EP7.
-Linux-side documented AKS framing is exhausted; next lever is macOS first-txn
-capture on this bridgeOS (or park).
+Status: **SPLIT** (updated 2026-09-06)
+
+| Track | Status |
+| --- | --- |
+| Linux AKS EP7 mailbox | **PARKED** (2026-09-03/04) — mute under documented + bent-exact framing |
+| macOS os_log / Mesa / BridgeXPC capture | **DONE** (2026-09-06) — cold boot + enroll + unlock; see kit docs below |
+| ESP `FDRData` | **N/A** on this Air after wipe — absent; Touch ID still worked |
+| Raw SEP mailbox first-txn bytes | **Still open** — os_log is not mailbox OOL capture |
+
+Linux Touch ID remains blocked until EP7 speaks or a new bring-up lever appears.
 
 ## Hardware / software
 
@@ -11,10 +18,11 @@ capture on this bridgeOS (or park).
 | --- | --- |
 | Machine | MacBookAir9,1 (MBA91-OMARCHY) |
 | iBridge / bridgeOS | `23.16.16068` |
-| Host | Omarchy / Arch, kernel `7.1.8-arch1-Watanare-T2-3-t2` |
+| Host (Linux park) | Omarchy / Arch, kernel `7.1.8-arch1-Watanare-T2-3-t2` |
 | PCI SEP | `106b:1802` BAR4 (`04:00.2`) — **not** audio `04:00.3` / `106b:1803` |
 | Upstream proof | MacBookPro16,2 + bridgeOS `23P1072` only |
-| Keybags / catacomb | Exported privately; **not** on this branch |
+| Host (macOS capture) | macOS 15.7.9 (24G830), boot session `2489129E-...` |
+| Keybags / catacomb | Prior Linux-era exports private; fresh post-enroll export optional; **not** on this branch |
 
 ## Final scoreboard
 
@@ -129,12 +137,14 @@ Private MBA helpers (not in git): `force-rebuild-research-aks.sh`,
 
 Priority (do not re-burn falsified Linux framing unless paired with a new lever):
 
-1. **macOS first AKS txn capture** on Air bridgeOS `23.16.16068` vs MBP `23P1072`
-   (header/endpoint/OOL sizes only — no secrets).
-2. Use discovery/`0xfd` **only** if a recovered Intel host→disc packing appears;
+1. ~~macOS os_log / Mesa / BridgeXPC enroll+unlock capture~~ — **done** (2026-09-06).
+   Opcode annotations in `tools/mba91-aks-macos-capture/MESA_OPCODE_ANNOTATIONS.md`.
+2. **Still open:** raw SEP **mailbox** first-txn / OOL bytes (only if still needed after os_log mining),
+   or map BridgeXPC bring-up to Linux without replaying the dead EP7 ABI matrix.
+3. Use discovery/`0xfd` **only** if a recovered Intel host→disc packing appears;
    bent’s probe is passive-only; our dual-phase listen was empty.
-3. Optional: upstream issue on `jmurth1234/t2-touchid-linux` with this scoreboard.
-4. **Do not** invent SBIO app opcodes, xART writes, or AKS body spray.
+4. Optional: keybag/catacomb re-export after this enroll; upstream issue with scoreboard.
+5. **Do not** invent SBIO app opcodes, xART writes, or AKS body spray.
    EP8 SET_OOL already `EREMOTEIO`; EP12 is SSE-class (OOL ACK only — no app traffic).
 
 ## References
@@ -158,8 +168,10 @@ Canonical flow: install daemon → `chmod 755` / `chmod a+r` on
 growing `*.logstream.log` → install `EnablePrivateLogging.mobileconfig` via
 System Settings → General → Device Management → confirm
 `sudo log config --status` shows `PRIVATE_DATA` → cold reboot → re-chmod if
-needed → enroll Touch ID → copy logs and `EFI/APPLE/EMBEDDEDOS/FDRData`
-off-machine → uninstall + remove profile.
+needed → enroll + lock-screen unlock → copy logs to `~/Private/` →
+uninstall + remove profile.
+
+ESP `FDRData`: **skip on this Air** (absent after wipe; not required for T2 Touch ID here).
 
 Agent visibility on MBA91: with the Mac registered/connected, tools can read
 logs as the login user after chmod; interactive sudo is not available to the
@@ -171,7 +183,7 @@ os_log sequence is insufficient.
 
 ## macOS capture — verified session (2026-09-06)
 
-Status: **verified** on this Air (macOS 15.7.9) before EFI/FDR backup.
+Status: **verified** on this Air (macOS 15.7.9). ESP FDR checked afterward — absent / N/A.
 
 Kit: [`tools/mba91-aks-macos-capture/`](../tools/mba91-aks-macos-capture/) —
 see [`VERIFIED_SESSION_2026-09-06.md`](../tools/mba91-aks-macos-capture/VERIFIED_SESSION_2026-09-06.md).

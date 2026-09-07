@@ -6,7 +6,7 @@ BiometricKit / LocalAuthentication from boot through Touch ID enroll.
 **Scope:** sequence and os_log evidence for Linux T2 AKS research.  
 **Not in scope:** raw SEP mailbox / OOL wire bytes (later lever if logs are thin).
 
-Hardware context: MacBookAir9,1 — dual-boot / macOS side of `research/mba91-aks-ep7`.
+Hardware context: MacBookAir9,1 — macOS side of `research/mba91-aks-ep7` (Linux EP7 park was on Omarchy; this kit runs in macOS).
 
 ## Verified on MBA91 (2026-09-06)
 
@@ -27,7 +27,7 @@ Cold boot → enroll → lock-screen unlock **confirmed** with growing
 
 - macOS on the Air (this machine), admin account
 - This folder (`mba91-aks-macos-capture/`) on disk
-- USB or other off-machine store for log + FDR copies (keep off git/iCloud)
+- USB or other off-machine store for **log** copies (keep off git/iCloud). ESP FDR is N/A on this wiped Air.
 
 ---
 
@@ -151,22 +151,20 @@ sudo ls -lt /var/log/t2-aks-capture/
 
 ### 5. Collect artifacts off-machine
 
-**Checkpoint:** copy capture logs to `~/Private/t2-aks-capture/` (and USB) **before** mounting EFI / copying FDR.
-
+**Checkpoint:** copy capture logs to `~/Private/t2-aks-capture/` (and USB) before teardown or disk experiments.
 
 ```bash
-sudo ls -lt /var/log/t2-aks-capture/
+ls -lt /var/log/t2-aks-capture/
 ```
 
-Copy (USB recommended) the **newest** set for this boot:
+Copy the **newest** set for this boot:
 
 - `*.boot.txt` — marker, hardware/ifaces snapshot
 - `*.logstream.log` — live stream (main signal)
 - `*.snapshot.log` — short `log show` window
 
-Also back up machine EFI data before any later wipe/Linux reinstall:
-
-- `EFI/APPLE/EMBEDDEDOS/FDRData` (this Mac only; other Macs’ copies are useless)
+**ESP FDR:** on MBA91 after full-disk wipe, `EFI/APPLE/EMBEDDEDOS/FDRData` was
+**absent** and is **not required** for Touch ID here. Skip unless `ls` shows it.
 
 Then (when ready for Linux research): export keybags / catacomb per
 `t2-touchid-linux` docs — separate from this logger.
@@ -218,7 +216,7 @@ sudo log config --status   # must show PRIVATE_DATA
 # collect
 ls -lt /var/log/t2-aks-capture/
 # copy newest *.boot.txt *.logstream.log *.snapshot.log to USB
-# copy EFI/APPLE/EMBEDDEDOS/FDRData off-machine
+# ESP FDR: skip on this Air unless path exists
 
 # teardown
 sudo ./uninstall.sh
@@ -263,7 +261,7 @@ sudo log config --status
 # → System mode = INFO STREAM_LIVE PRIVATE_DATA
 ```
 
-Then: **reboot → login → enroll Touch ID → copy logs + FDR → uninstall + remove profile.**
+Then: **reboot → login → enroll + unlock → copy logs → uninstall + remove profile.** (FDR N/A here.)
 
 Canonical shortened path for docs/next machine (skip the failed CLI mode and
 optional kickstart if `logstream` already grows after install):
@@ -312,4 +310,4 @@ Hand the USB tree to Rook / the `research/mba91-aks-ep7` notes with:
 1. macOS version (`sw_vers`)
 2. Whether Touch ID enroll completed
 3. Whether `PRIVATE_DATA` was on for that boot
-4. FDR backup confirmation (yes/no + where stored)
+4. FDR check (absent/N/A on MBA91 wipe, or path if present elsewhere)

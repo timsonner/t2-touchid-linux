@@ -37,11 +37,7 @@ Read [Before you start](#before-you-start) before installing anything.
 
 ### Related research (MacBookAir9,1)
 
-Air-specific AppleKeyStore EP7 bring-up on branch
-[`research/mba91-aks-ep7`](https://github.com/timsonner/t2-touchid-linux/tree/research/mba91-aks-ep7)
-is **PARKED**: SEP mailbox transport (EP0/MSI/startCPU/ACM) works; AKS on EP7
-stays mute under documented and bent-exact framing. Full scoreboard:
-[`docs/RESEARCH_MBA91_AKS.md`](docs/RESEARCH_MBA91_AKS.md). Useful to other T2
+Air-specific AppleKeyStore EP7 bring-up on branch [`research/mba91-aks-ep7`](https://github.com/timsonner/t2-touchid-linux/tree/research/mba91-aks-ep7): Linux mailbox AKS EP7 remains **PARKED** (mute). macOS os_log / Mesa / BridgeXPC cold-boot+enroll+unlock capture is **done** (2026-09-06); ESP FDR absent/N/A on this wiped Air. Scoreboard + kit: [`docs/RESEARCH_MBA91_AKS.md`](docs/RESEARCH_MBA91_AKS.md), [`tools/mba91-aks-macos-capture/`](tools/mba91-aks-macos-capture/). Useful to other T2
 agents as a negative result + `/dev/t2-sep-lab` research path — not a working
 Touch ID port for Air yet.
 

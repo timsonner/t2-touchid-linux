@@ -1,7 +1,7 @@
 # Handoff: MacBookAir9,1 AKS EP7 mute (for upstream / bent agents)
 
 **Branch:** https://github.com/timsonner/t2-touchid-linux/tree/research/mba91-aks-ep7  
-**Doc:** [`RESEARCH_MBA91_AKS.md`](RESEARCH_MBA91_AKS.md) @ `bcc5040`+  
+**Doc:** [`RESEARCH_MBA91_AKS.md`](RESEARCH_MBA91_AKS.md) (Linux EP7 parked; macOS capture done)  
 **Machine:** MacBookAir9,1 · bridgeOS `23.16.16068` · SEP PCI `106b:1802`  
 **Intent:** Reusable negative result + research tooling — not a claim of Air Touch ID support.
 
@@ -24,8 +24,11 @@
 1. Do **not** burn the same AKS wire/ABI matrix on Air without a new lever.
 2. Mute is **service-level**, not dead SEP mailbox (ACM proves transport).
 3. Lab header path is ruled out vs bent codec.
-4. Next lever we believe in: **macOS first AKS txn capture** on this bridgeOS vs MBP `23P1072`.
-5. Do **not** invent SBIO app / xART payloads; EP8 already NACKs SET_OOL.
+4. macOS **os_log / Mesa / BridgeXPC** cold-boot+enroll+unlock capture: **done** (2026-09-06).
+   Not the same as raw mailbox EP7 OOL bytes — see `tools/mba91-aks-macos-capture/`.
+5. Next Linux-side levers: map BridgeXPC/Mesa bring-up, or true mailbox capture if still required —
+   **do not** reburn the EP7 ABI matrix alone.
+6. Do **not** invent SBIO app / xART payloads; EP8 already NACKs SET_OOL.
 
 ## Not included (private)
 
@@ -39,9 +42,9 @@ Keybags, catacomb, host sudoers/LUKS helpers — intentionally off-git.
 
 ## macOS capture kit
 
-`tools/mba91-aks-macos-capture/` — boot/enroll unified-log LaunchDaemon +
-private-data profile. Use before Touch ID enroll when chasing first-txn /
-boot-time AKS sequence on this Air.
+`tools/mba91-aks-macos-capture/` — boot/enroll/unlock unified-log LaunchDaemon +
+private-data profile. Captures Mesa/BridgeXPC + AKS kernel notifications; not
+raw SEP mailbox OOL.
 
 
 ## macOS capture — verified (2026-09-06)
