@@ -39,6 +39,14 @@ that path was **not** used (would destroy the cold-preserve A/B evidence).
 | **`0x40` user** | **status=257**, no output |
 | after snapshots | **unchanged** vs before |
 
+## Status 257 (offline note)
+
+bent `docs/touch-id.md` repeatedly records **general/master `0x40` → 257** when
+preflight is wrong (missing reset/calibration context, wrong component ordering,
+or cold-state branch). It is a **service reject**, not proof the LTFC blob is
+corrupt. Same code we saw (`0x101`). Maps toward daemon status class `0x10d` in
+bent’s notes — not a unique MBA91 failure mode.
+
 ## Interpretation
 
 - Raw LTFC from macOS `.cat` is the right **on-disk** family (uid/version match
