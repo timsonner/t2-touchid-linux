@@ -93,8 +93,58 @@ Also: `saveCatacombForIdentity` with a new identity UUID after first template.
 3. **MSRk / calibration blobs** — `loadMSRkData` / `loadCalibrationData` before catacomb; needed for sensor bring-up independently of templates.
 4. **Bridge ↔ SEP mailbox** — still no raw EP7 bytes in os_log; first-txn hunt (lane D) if we need wire proof.
 
-## Next instrument (recommended)
+## Next instrument
 
-Cold reboot **with** enrolled finger still present → new logshow window on
-`loadCatacomb` + `restoreAndSyncTemplates` (expect non-empty identities). Compare
-opcode timeline to Phase A. No Omarchy reinstall required for that A/B.
+Phase A′ enrolled reboot A/B **done** (see above). Optional next: deeper BridgeXPC
+payload decode around `performGetIdentityRecordsCommand`, or lane D raw first-txn.
+
+## Phase A′ — enrolled cold reboot (2026-09-06 ~22:14 MT)
+
+Boot session: `28BE7F9F-FE93-4874-9349-C5714D382E2F`  
+Files: `20260907T041436Z-28BE7F9F-*.{boot,snapshot,logstream}` + Private
+`logshow-enrolled-boot-28BE7F9F-*.log` (live stream dropped early lines; logshow
+recovered them).
+
+Same bring-up order as empty Phase A, but **non-empty** store:
+
+1. Bridge v3 → `initSensor` → `loadMSRkData` (prov 5) → `loadCalibrationData`
+2. `loadCatacomb`
+   - Master component → 0
+   - User 501 → `user_000001f5.cat` → `unarchiveCatacombData…` → 0
+   - `addIdentityObjects:` identity UUID `7C66170E-39D3-44EB-8DEF-9173BF839790`
+     (same UUID minted at first enroll)
+   - `logCatacombUUIDForUser:501 → 18BE***` (redacted; **not** `0000***`)
+   - `logCatacombHashForUser:501 → b9e3*** (len=32)` (**not** len=0)
+3. **`restoreAndSyncTemplates identities 1:`** (was `identities 0: ()` when empty)
+4. Mesa `performGetIdentityRecordsCommand`; Bridge reply payload includes the
+   identity UUID bytes (`7c66170e…`)
+5. `bridgeBootUUID` → `9E70089C-5D62-4BEA-B791-B43C2561970C` (unchanged vs empty boot)
+6. `serviceMatch initialized`
+
+Later: password unlock at login, then lock-screen **fingerprint** unlock succeeded
+(`mesa.matchAttempt` / `BKMatchTouchIDOperation`); catacomb files remtimes ~22:16;
+post-unlock Master save again.
+
+### A/B table
+
+| Signal | Empty enroll boot (Phase A) | Enrolled reboot (Phase A′) |
+| --- | --- | --- |
+| Catacomb UUID log | `0000***` | `18BE***` |
+| Catacomb hash | len=0 | len=32 |
+| `restoreAndSyncTemplates` | identities **0** | identities **1** |
+| `addIdentityObjects` | none | `7C66170E-…` |
+| `user_*.cat` unarchive | n/a / empty | success |
+| `bridgeBootUUID` | `9E70089C-…` | same |
+
+### Solved: directory UUID
+
+`/Library/Catacomb/<DIR_UUID>/` **DIR_UUID equals Hardware UUID / Provisioning
+UDID** on this Air (`64FFD0F9-9014-5F6F-BC5B-265A589D0570`). Content/user catacomb
+UUID (`18BE…`) remains a separate namespace.
+
+### Still open
+
+- Early live `log stream` drops — always pair with `log show` for boot window.
+- AKS `getUserKeybagUUIDForUID` failed during early unarchive (sel 23/35) before
+  password unlock — catacomb still unarchived; keybag timing vs template sync.
+- Linux EP7 mute unchanged; this A/B is Bridge/Mesa + filesystem catacomb only.

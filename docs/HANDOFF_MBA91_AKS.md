@@ -67,3 +67,5 @@ T2 Air; do not expect Linux install to recreate it. See RESEARCH +
 Catacomb load/save + Bridge/Mesa ordering documented in
 `tools/mba91-aks-macos-capture/CATACOMB_BRIDGE_SEQUENCE.md`.
 Recommended next: enrolled cold-boot reload capture (still on macOS).
+
+Enrolled cold-reboot A/B (`28BE7F9F-…`) confirms non-empty load vs empty Phase A; see `CATACOMB_BRIDGE_SEQUENCE.md` Phase A′.

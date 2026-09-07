@@ -230,3 +230,7 @@ Mined load/save ordering from the verified macOS capture:
 
 Next A/B without dual-boot: cold reboot **with** enrollment present and compare
 `loadCatacomb` / `restoreAndSyncTemplates` to the empty-store Phase A.
+
+### Enrolled reboot A/B (done)
+
+Boot `28BE7F9F-…`: `restoreAndSyncTemplates identities 1`, hash len=32, identity `7C66170E-…`. Catacomb dir UUID == Hardware UUID. Details in `CATACOMB_BRIDGE_SEQUENCE.md` Phase A′.
