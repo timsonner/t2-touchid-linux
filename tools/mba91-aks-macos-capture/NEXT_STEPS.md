@@ -20,6 +20,7 @@ Fingerprint path is **BridgeXPC** (`BRIDGEXPC_PATH.md`).
 - **Warm catacomb probes:** `0x42` still 1 while `0x38`/`0x3c`/`0x50` fail `0xe00002c2`; `0x3a` v1 ok 33 B; `0x54` first_byte still 0 (`WARM_CATACOMB_PROBES_2026-09-07.md`)
 - **Omarchy soft-reboot A/B:** `0x42` still count=1 after Linux→Linux reboot (not power-off); `0x38`/`0x3c` still fail (`COLD_SOFT_REBOOT_AB_2026-09-07.md`)
 - **True cold power-off A/B:** `0x42` still count=1 after full shutdown (no macOS); store APIs still fail (`COLD_POWEROFF_AB_2026-09-07.md`)
+- **Bounded no-reset `0x40`:** master+user LTFC from USB `.cat` → status **257**, no change to `0x38`/`0x54`/`0x42` (`LOAD_CATACOMB_0x40_2026-09-07.md`)
 
 ## Next (in order)
 
@@ -27,7 +28,8 @@ Fingerprint path is **BridgeXPC** (`BRIDGEXPC_PATH.md`).
 
 - ~~Full power-off A/B~~ **done** — `0x42` survives (`COLD_POWEROFF_AB_2026-09-07.md`)
 - Why warm `0x42` works but `0x38`/`0x3c` fail and `0x54` first_byte stays **0**
-- Bounded `0x40` loadCatacomb once Private `.cat`/CFTL is on the Air (no enroll)
+- Supervised **reset-then-`0x40`** A/B (destructive) vs decode status 257 offline
+  (no-reset load already failed: `LOAD_CATACOMB_0x40_2026-09-07.md`)
 - Compare to bent’s cold `loadCatacomb` / no-reset identity gap
 
 ### 2. Linux-native enroll / ACM policy
