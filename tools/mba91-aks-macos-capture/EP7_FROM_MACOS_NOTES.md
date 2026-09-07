@@ -81,7 +81,7 @@ pre-`0x4d` userspace dance visible in biometric logs.
 | Proper KC extract + `init_sep_endpoint` disasm | **Done** | Same order as bent: `0x4d` then `set_env(false)`. No new pre-cap gate. |
 | Offline catacomb / CFTL parse | **Done** | See `CATACOMB_ONDISK.md`. Metadata plaintext; `LTFC` body SEP-sealed. |
 | bridgeOS / SKU delta | **Partial** | Firmware build string **`23P6068` matches** bent’s BridgeXPC HELO. Mute is not “wrong marketing bridgeOS string.” Board is still **J230kAP / MBA91** vs bent’s MBP proof host. |
-| BridgeXPC Linux (non-EP7) | **Mapped** | bent already reaches `bkremoted` HELO on **`23P6068`**; stuck on activation / first method bytes (method 3 gated). Parallel to mute EP7 — see bent `docs/touch-id.md`. |
+| BridgeXPC Linux (non-EP7) | **Mapped** | bent BridgeXPC is **past** HELO/method-0 on **23P6068** (enveloped 0/1/3 + warm match). Current gap: cold `loadCatacomb` / Linux enroll policy. Parallel to mute EP7 — see `BRIDGEXPC_PATH.md`. |
 | Raw first-txn under macOS | **Blocked / optional** | Needs SIP-off custom kext, hypervisor SEP trace, or equivalent. os_log cannot supply mailbox bytes. Not started without Tim expanding scope. |
 
 ## What would still move EP7
@@ -91,8 +91,8 @@ pre-`0x4d` userspace dance visible in biometric logs.
    firmware/Bridge instrumentation, not Touch ID os_log.
 3. **Raw first-txn capture** under macOS (hypervisor / custom kext / SEP trace) —
    only path to actual EP7 mailbox bytes; requires explicit scope expand.
-4. **Non-EP7 Linux path**: finish bent’s BridgeXPC activation gap (exact macOS
-   outbound HELO/method-0 / remoted handoff), then Mesa/SBIO — independent of mute AKS.
+4. **Non-EP7 Linux path**: reproduce bent’s enveloped BridgeXPC on MBA91, then
+   cold `loadCatacomb` / warm-identity preserve — independent of mute AKS.
 
 ## Do not expect
 

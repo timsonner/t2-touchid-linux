@@ -8,8 +8,9 @@ noted as bent’s Linux work.
 
 Fingerprint on Intel T2 macOS does **not** ride the Linux AKS mailbox (EP7).
 It rides **BridgeXPC** from `biometrickitd` into bridgeOS `bkremoted`, then Mesa
-opcodes. Linux can speak that stack over the T2 NCM IPv6 link once the
-handshake/activation matches current macOS.
+opcodes. Linux can speak that stack over the T2 NCM IPv6 link (bent already does
+on MBP + 23P6068). MBA91 still needs to prove the same path on this Air,
+then solve cold catacomb / enroll policy.
 
 ## Stack
 
@@ -89,47 +90,71 @@ Method **3** request shape: `[3, command, NSData, output_capacity]` as bplist.
 - Current macOS: RSD Multiverse advertises a **boot-dynamic** port (bent
   observed **49165** on one boot). Always rediscover; do not hardcode forever.
 
-## Where bent is stuck (Linux)
+## Transport envelope (easy to miss)
 
-1. Multiverse directory works; BiometricKit service advertised.
-2. TCP connect to service port → **server-first HELO** validates as `bkremoted`,
-   BridgeXPC **39**, bridgeOS **`23P6068`**.
-3. Reconstructed client HELO + **method 0** (`getBridgeVersion`) → peer ACKs TCP
-   but **no application reply** (bounded waits). Method **3** is intentionally
-   gated until that handoff is byte-exact.
-4. Ruled out (bent): wrong TCP delivery, HELO/method barrier ordering alone,
-   stale directory port, Catalina-fixed 52032 without discovery, speculative
-   `RSDCheckin` prefix (caused RST when mis-ordered).
+Method messages are **not** bare `[method, …]` on the wire. bent recovered:
 
-**MBA91 implication:** same BridgeXPC 39 + same `23P6068` build string means this
-Air is a good place to capture the **missing macOS outbound transcript** on
-`en3`, not a SKU dead-end for the HELO layer.
+- Request: `[1, false, replyUUID, logicalMessage]`
+- Reply: `[1, true, sameUUID, logicalReply]`
+- Bare `[0]` parses as bplist but `handleEnvelope:` **silently** ignores it
+  (looked like “method 0 mute” until fixed).
 
-## What MBA91 already contributes above the handshake
+Directory: Multiverse TCP **59602**; BiometricKit port is **boot-dynamic**
+(bent saw 49165 / 49223). Do not pin Catalina **52032**. Do not send
+`RSDCheckin` on the BiometricKit socket (RST).
+
+## Where bent actually is (Linux) — corrected 2026-09-07
+
+**Past** HELO / method-0 activation. On Omarchy (MBP + bridgeOS **23P6068**):
+
+1. Multiverse → server-first HELO (`bkremoted`, BridgeXPC **39**, **23P6068**)
+2. Enveloped method **0** → `(status=0, version=3)`
+3. Method **1** → service opened
+4. Method **3** `performCommand` with inner `0x4d42` biometric header — many
+   opcodes live; warm match + fprintd verify-match / verify-no-match landed
+
+**Current bent BridgeXPC gaps** (fingerprint UX):
+
+- **Cold-boot identity restore** — warm match needs non-reset identity state;
+  Linux sensor reset without `loadCatacomb` clears live identities
+- **Linux-native enrollment** — ACM `TouchIdEnrollment` policy vs real login
+  keybag session still blocks / returns policy errors; catacomb persist across
+  cold Linux boot unproven
+
+An older MBA91 note that said “method-0 gap; method-3 gated” was **stale** —
+do not plan MBA91 work as if activation were still the blocker.
+
+**MBA91 implication:** same BridgeXPC 39 + **23P6068** means we should
+**reproduce bent’s working enveloped path** on this Air (SKU `J230kAP`), then
+lean on our Mesa/`loadCatacomb` evidence for cold restore — not rediscover HELO.
+
+## What MBA91 already contributes
 
 From capture-kit Mesa/os_log work (see sibling docs):
 
-- Cold-boot / enroll / unlock **opcode timelines**
+- Cold-boot / enroll / unlock **opcode timelines** (exactly the cold-restore
+  story bent still needs)
 - `loadCatacomb` vs save cluster (`60/61/62/63`)
 - Opcode **8** GetIdentityRecords decode
 - On-disk catacomb = NSKeyedArchiver → `LTFC` v10 (`CATACOMB_ONDISK.md`)
 
-Those matter **after** method 3 works. They do not fix method 0 silence.
+These are first-class inputs for bent’s **current** gap, not “later.”
 
-## Ranked next experiments
+## Ranked next experiments (MBA91)
 
-1. **macOS `en3` pcap during biometrickitd traffic** (lock→unlock or
-   `killall biometrickitd` + wait for relaunch). Private only. Sanitize with
-   bent’s `sanitize-macos-enrollment-pcap.py` (or a thin MBA91 wrapper) to a
-   credential-free BridgeXPC transcript. **Success:** byte-exact client HELO +
-   method-0 (+ any remoted handoff) frames. Needs one sudo/tcpdump auth prompt.
-2. **Compare transcript to Linux codec** (`bridge-protocol.py` /
-   `macos-bridge-wire-compare.py`) — fix HELO/method-0 encoding only.
-3. **Re-run Linux probe on Omarchy** (when MBA91 is back on Linux or another T2
-   host) with the corrected first-write sequence; only then enable method 3 /
-   Mesa opcode 8 canaries.
-4. Do **not** spray method-3 / SBIO guesses while method 0 is silent.
-5. Do **not** confuse this with AKS EP7 unmute — keep EP7 parked.
+1. **macOS `en3` pcap** (optional Sequoia transcript) — lock→unlock or
+   `killall biometrickitd`. Confirms Air’s enveloped HELO/method-0/3 sizes vs
+   bent. See `BRIDGEXPC_CAPTURE.md`. Not required to “invent” method 0.
+2. **Offline opcode↔codec table** — map MBA91 Mesa 8/17/63/82/84 to bent
+   `biometric-command` shapes/sizes (no live writes).
+3. **Omarchy on MBA91: Multiverse + enveloped method 0/1 only** — prove Air
+   Linux gets `(0,3)` / opened like bent. Read-only Bridge; no enroll.
+4. **Warm identity preserve A/B** — macOS enroll → warm reboot Linux **without**
+   sensor reset; check identity list / optional match.
+5. **Read-only `loadCatacomb`-class probes** after Private bags present — before
+   native enroll.
+6. Keep AKS EP7 parked; SIP-off EP7 capture only if Bridge fingerprint track
+   stalls on policy/keybag with Tim’s explicit OK.
 
 ## Private artifacts
 

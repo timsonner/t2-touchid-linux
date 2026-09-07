@@ -1,7 +1,9 @@
 # MBA91 BridgeXPC `en3` capture (Private)
 
-Goal: byte-exact macOS outbound HELO + method-0 (and any remoted handoff) on
-the T2 NCM link, to unblock Linux BridgeXPC past bent’s stuck point.
+Goal: byte-exact Sequoia macOS BridgeXPC transcript on the T2 NCM link
+(HELO + enveloped method-0/3). bent already fixed activation on 23P6068; this
+captures MBA91/Air framing for compare and cold-restore research — it is not
+a method-0 unblocker.
 
 ## One-shot (Terminal on the Air)
 
