@@ -81,37 +81,31 @@ for interface_name in $capture_ifaces; do
   case "$interface_name" in
     *[!A-Za-z0-9._-]*) echo "unsafe interface name: $interface_name" >&2; exit 2 ;;
   esac
-  # MBA91 Sequoia: pktap,$iface -y RAW produced empty pcaps (header-only)
-  # while BridgeXPC traffic was live in unified logs. Prefer direct iface;
-  # fall back to pktap without forcing DLT.
-  capture_interface="$interface_name"
-  sudo tcpdump -i "$capture_interface" -n -s 0 -U -w \
-    "$capture_dir/$interface_name.pcap" \
-    >"$capture_dir/$interface_name-tcpdump.txt" 2>&1 &
+  # macOS: plain `-i en3` fails with "No such device exists" for T2 NCM.
+  # Must use pktap,<iface>. Prefer WITHOUT `-y RAW` first (Sequoia RAW was
+  # empty here); also start a RAW twin for the sanitizer's DLT_RAW path.
+  sudo tcpdump -i "pktap,$interface_name" -n -s 0 -U -w \
+    "$capture_dir/$interface_name-pktap.pcap" \
+    >"$capture_dir/$interface_name-pktap-tcpdump.txt" 2>&1 &
+  pids="$pids $!"
+  sudo tcpdump -i "pktap,$interface_name" -y RAW -n -s 0 -U -w \
+    "$capture_dir/$interface_name-raw.pcap" \
+    >"$capture_dir/$interface_name-raw-tcpdump.txt" 2>&1 &
   pids="$pids $!"
 done
 
 sleep 1
+alive=0
 for capture_pid in $pids; do
-  if ! kill -0 "$capture_pid" 2>/dev/null; then
-    echo "tcpdump exited early — see $capture_dir/*-tcpdump.txt" >&2
-    exit 4
+  if kill -0 "$capture_pid" 2>/dev/null; then
+    alive=$((alive + 1))
   fi
 done
-
-
-# If the primary capture looks dead after 2s, start a parallel pktap capture.
-sleep 1
-for interface_name in $capture_ifaces; do
-  pcap=$capture_dir/$interface_name.pcap
-  if [[ -f $pcap ]] && [[ $(stat -f%z "$pcap" 2>/dev/null || echo 0) -le 24 ]]; then
-    echo "primary pcap still empty; also capturing pktap,$interface_name (no -y RAW)" | tee -a "$capture_dir/$interface_name-tcpdump.txt"
-    sudo tcpdump -i "pktap,$interface_name" -n -s 0 -U -w \
-      "$capture_dir/$interface_name-pktap.pcap" \
-      >>"$capture_dir/$interface_name-tcpdump.txt" 2>&1 &
-    pids="$pids $!"
-  fi
-done
+if (( alive == 0 )); then
+  echo "tcpdump exited early — stderr:" >&2
+  cat "$capture_dir"/*-tcpdump.txt >&2 || true
+  exit 4
+fi
 
 log stream --style ndjson --level debug \
   --predicate 'process == "remoted" OR process == "biometrickitd" OR subsystem CONTAINS[c] "Biometric" OR subsystem CONTAINS[c] "Bridge"' \
@@ -145,17 +139,17 @@ sudo chown "$(id -u):$(id -g)" "$capture_dir"/*.pcap 2>/dev/null || true
 chmod 600 "$capture_dir"/*.pcap "$capture_dir"/*.txt "$capture_dir"/*.ndjson 2>/dev/null || true
 
 sanitized_connections=0
+shopt -s nullglob
 for pcap_path in "$capture_dir"/*.pcap; do
-  [[ -f $pcap_path ]] || continue
-  interface_name=$(basename "$pcap_path" .pcap)
-  out=$capture_dir/$interface_name-sanitized-bridgexpc.json
-  if python3 "$sanitizer" "$pcap_path" >"$out"; then
+  base=$(basename "$pcap_path" .pcap)
+  out=$capture_dir/$base-sanitized-bridgexpc.json
+  if python3 "$sanitizer" "$pcap_path" >"$out" 2>"$capture_dir/$base-sanitizer-err.txt"; then
     chmod 600 "$out"
     connection_count=$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1])).get("connection_count",0))' "$out")
     sanitized_connections=$((sanitized_connections + connection_count))
-    echo "sanitized $interface_name: connection_count=$connection_count → $out"
+    echo "sanitized $base: connection_count=$connection_count → $out"
   else
-    echo "sanitizer failed for $pcap_path (raw pcap kept)" >&2
+    echo "sanitizer failed for $pcap_path (see $base-sanitizer-err.txt; raw kept)" >&2
   fi
 done
 

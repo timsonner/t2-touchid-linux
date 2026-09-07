@@ -48,3 +48,10 @@ First MBA91 run with `tcpdump -i pktap,en3 -y RAW` wrote a **header-only**
 pcap while unified logs showed full BridgeXPC/Mesa unlock traffic. Script now
 prefers plain `-i en3` and may add a parallel `pktap` capture without `-y RAW`.
 Always keep the unified-log artifact.
+
+## Troubleshooting
+
+- **Exits immediately with exit 4:** check `*-tcpdump.txt`. Plain `-i en3`
+  fails on macOS (`No such device exists`) — must use `pktap,en3`.
+- **Pcap header-only / 0 packets with `-y RAW`:** known on this Air; script now
+  also writes `*-pktap.pcap` without RAW forcing. Sanitizer accepts DLT_PKTAP.

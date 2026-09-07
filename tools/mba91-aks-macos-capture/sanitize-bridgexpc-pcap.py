@@ -41,9 +41,29 @@ def _regular_file(path: Path) -> bytes:
     return path.read_bytes()
 
 
+def _strip_pktap(packet: bytes) -> bytes | None:
+    """Drop Apple PKTAP header (DLT_PKTAP=149). Length is first LE u32."""
+    if len(packet) < 8:
+        return None
+    header_len = int.from_bytes(packet[0:4], "little")
+    if header_len < 8 or header_len > len(packet):
+        return None
+    return packet[header_len:]
+
+
 def _ipv6_tcp(packet: bytes, network: int) -> tuple[
     tuple[str, int, str, int], int, bytes
 ] | None:
+    # 1=Ethernet, 12/101=RAW IPv4/IPv6, 149=PKTAP (macOS)
+    if network == 149:
+        stripped = _strip_pktap(packet)
+        if stripped is None:
+            return None
+        # After PKTAP, remaining is often Ethernet or raw IP
+        if len(stripped) >= 14 and stripped[12:14] == b"\x86\xdd":
+            packet, network = stripped, 1
+        else:
+            packet, network = stripped, 12
     if network == 1:
         if len(packet) < 14 or packet[12:14] != b"\x86\xdd":
             return None
@@ -85,8 +105,8 @@ def _pcap_streams(path: Path) -> dict[tuple[str, int, str, int], list[tuple[int,
         raise SanitizerError("capture input has an unsupported pcap header")
     endian = PCAP_MAGICS[data[:4]]
     _, _, _, _, snaplen, network = struct.unpack_from(endian + "HHIIII", data, 4)
-    if snaplen == 0 or network not in {1, 12, 101}:
-        raise SanitizerError("capture must use Ethernet or raw IPv6 packets")
+    if snaplen == 0 or network not in {1, 12, 101, 149}:
+        raise SanitizerError("capture must use Ethernet, raw IP, or PKTAP packets")
     streams: dict[tuple[str, int, str, int], list[tuple[int, bytes]]] = {}
     offset = 24
     packet_count = 0
