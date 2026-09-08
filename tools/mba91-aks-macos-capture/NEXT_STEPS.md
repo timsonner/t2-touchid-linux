@@ -31,8 +31,11 @@ too; cache still succeeds from **82**
 (`ACCESSORY_PRIVATE_OPCODES_2026-09-07.md`). Nonzero `0x54` is **not** an
 MBA91 hard gate.
 
-**Next (Linux):** sensor/MSR/cal + **host cache from `0x52`**, then retry
-`0x40`. Skip more `0x54` type enums.
+**Done (Omarchy host-parity):** ready=1, prov=5, cal_present=True, xART,
+`0x52` builtin, warm `0x42`=1 (`HOST_PARITY_CANARIES_2026-09-07.md`).
+
+**Next (Linux):** supervised no-reset `0x40` with that preflight order (treat
+`0x52` as cache). If still 257 → MSR/cal *load* opcode hunt, not `0x54`.
 
 ### 2. Re-warm identity (ops)
 
@@ -73,3 +76,4 @@ SIP-off EP7 — explicit Tim OK.
 | `ACCESSORY_0x54_NOTES.md` | accessoryInfo / all-zero reply |
 | `ACCESSORY_MACOS_CONTRAST_2026-09-07.md` | Sequoia cacheAccessories → loadCatacomb |
 | `ACCESSORY_PRIVATE_OPCODES_2026-09-07.md` | private 82→84; 84 all-zero on macOS |
+| `HOST_PARITY_CANARIES_2026-09-07.md` | Omarchy ready/prov5/cal-present |
