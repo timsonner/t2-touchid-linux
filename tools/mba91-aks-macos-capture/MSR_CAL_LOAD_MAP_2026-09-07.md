@@ -71,3 +71,9 @@ Capture kit + `PRIVATE_DATA` still installed. Soft reboot → login → ping Roo
 - Blind / host-parity-only `0x40`
 - `0x54` type A/B
 - Assuming ESP FDRData is required (Bridge FDR is enough to *read*)
+
+## Sequoia confirm addendum
+
+See `MSR_CAL_SEQUOIA_CONFIRM_2026-09-07.md`. Boot with **calBLOBSource 0**
+issues **no** `0x20`. Source-3 boots match 61407-byte FDR push; opcode 32 not
+captured in Db (stream drop).

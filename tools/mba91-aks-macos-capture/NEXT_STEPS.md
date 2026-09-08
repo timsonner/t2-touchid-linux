@@ -41,8 +41,12 @@ blobs; warm `0x42` preserved (`LOAD40_HOST_PARITY_2026-09-07.md`).
 on Omarchy (matches macOS cal length); load path is Mesa **`0x20` value=3**
 (`MSR_CAL_LOAD_MAP_2026-09-07.md`). MSRk still unknown.
 
-**Next (Sequoia):** private boot Db mine for `0x20` / MSRk opcodes.  
-**Then (Omarchy):** supervised `0x20` FDR load (not another blind `0x40`).
+**Done (Sequoia):** this boot **calBLOBSource 0** (no `setCalibration` /
+no Mesa 32). Source-3 boots log 61407@3 but Db `0x20` lines were dropped —
+inference only (`MSR_CAL_SEQUOIA_CONFIRM_2026-09-07.md`).
+
+**Next (Omarchy):** supervised Mesa **`0x20` value=3** FDR push A/B; if
+`0x40` still 257 with cal already present, pivot to load-envelope (not more cal).
 
 ### 2. Re-warm identity (ops)
 
@@ -87,3 +91,4 @@ SIP-off EP7 — explicit Tim OK.
 | `HOST_PARITY_CANARIES_2026-09-07.md` | Omarchy ready/prov5/cal-present |
 | `LOAD40_HOST_PARITY_2026-09-07.md` | preflight OK, 0x40 still 257 |
 | `MSR_CAL_LOAD_MAP_2026-09-07.md` | FDR method 11 + Mesa 0x20 map |
+| `MSR_CAL_SEQUOIA_CONFIRM_2026-09-07.md` | calBLOBSource 0 vs 3; no captured 32 |
