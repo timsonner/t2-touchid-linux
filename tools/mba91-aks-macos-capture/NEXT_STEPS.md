@@ -34,8 +34,12 @@ MBA91 hard gate.
 **Done (Omarchy host-parity):** ready=1, prov=5, cal_present=True, xART,
 `0x52` builtin, warm `0x42`=1 (`HOST_PARITY_CANARIES_2026-09-07.md`).
 
-**Next (Linux):** supervised no-reset `0x40` with that preflight order (treat
-`0x52` as cache). If still 257 → MSR/cal *load* opcode hunt, not `0x54`.
+**Done:** no-reset `0x40` after host-parity preflight → still **257** both
+blobs; warm `0x42` preserved (`LOAD40_HOST_PARITY_2026-09-07.md`).
+
+**Next:** hunt Mesa **MSR/cal load** write opcodes (Sequoia private Db stream /
+bent Catalina symbols). Park further blind `0x40` until that path exists or is
+proven unnecessary by a different envelope A/B.
 
 ### 2. Re-warm identity (ops)
 
@@ -60,6 +64,7 @@ SIP-off EP7 — explicit Tim OK.
 
 - Mute AKS EP7  
 - Blind `0x40` / reset-load loops  
+- Host-parity-only `0x40` (still 257)  
 - Assuming power-off clears enrolled `0x42`  
 - `0x08` as alias for `0x42`  
 
@@ -77,3 +82,4 @@ SIP-off EP7 — explicit Tim OK.
 | `ACCESSORY_MACOS_CONTRAST_2026-09-07.md` | Sequoia cacheAccessories → loadCatacomb |
 | `ACCESSORY_PRIVATE_OPCODES_2026-09-07.md` | private 82→84; 84 all-zero on macOS |
 | `HOST_PARITY_CANARIES_2026-09-07.md` | Omarchy ready/prov5/cal-present |
+| `LOAD40_HOST_PARITY_2026-09-07.md` | preflight OK, 0x40 still 257 |
