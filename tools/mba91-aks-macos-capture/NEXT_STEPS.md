@@ -48,19 +48,27 @@ inference only (`MSR_CAL_SEQUOIA_CONFIRM_2026-09-07.md`).
 **Done:** Mesa **`0x20` value=3** status **0**; follow-up `0x40` still **257**
 (`LOAD_CAL_0x20_2026-09-07.md`). Cal loops parked.
 
-**Next:** `0x40` **envelope / component** framing vs macOS Common filesystem
-load (not more FDR/`0x20`).
+**Done (map):** `LOAD40_ENVELOPE_MAP_2026-09-07.md` — macOS boot load is
+mostly Common/unarchive (**A**); our Mesa LTFC `0x40` is path **B**. 257 may
+mean wrong tool for warm SEP, wrong blob class, or empty-gate bent also lacks.
+
+**Next fork:**
+1. Confirm whether Sequoia boot ever issues Mesa decimal **64** (`0x40`)
+2. Or pivot live work to **match** on warm `0x42` (skip load)
+3. Envelope A/B only if (1) proves macOS uses Mesa `0x40` for enrolled load
 
 ### 2. Re-warm identity (ops)
 
 macOS Touch ID → Omarchy warm handoff to restore `0x42` when you need a
 non-empty list again (match UX, etc.). Proven; independent of (1).
 
-### 3. Retry `0x40` only after (1) moves
+### 3. Retry `0x40` only if Sequoia proves Mesa `0x40` (or cold restore)
 
-- Skip `no_catacomb(0xffffffff)` unless a note says it’s required  
+Warm match does **not** require another Linux `0x40` when `0x42` is already ≥1.
+
+- Skip `no_catacomb(0xffffffff)` unless intentionally emptying SEP  
 - Success = status 0 + `0x42` count≥1 + note `0x38`/`0x54`  
-- Then optional warm match canary  
+- Otherwise prefer match (`0x04`) / ACM on warm identities  
 
 ### 4. Linux-native enroll / ACM
 
@@ -97,3 +105,4 @@ SIP-off EP7 — explicit Tim OK.
 | `MSR_CAL_LOAD_MAP_2026-09-07.md` | FDR method 11 + Mesa 0x20 map |
 | `MSR_CAL_SEQUOIA_CONFIRM_2026-09-07.md` | calBLOBSource 0 vs 3; no captured 32 |
 | `LOAD_CAL_0x20_2026-09-07.md` | 0x20 OK; 0x40 still 257 |
+| `LOAD40_ENVELOPE_MAP_2026-09-07.md` | Common load A vs Mesa 0x40 B |
