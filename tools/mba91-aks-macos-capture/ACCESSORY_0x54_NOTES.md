@@ -68,3 +68,11 @@ context. Our Air: `0x54` never shows present → load rejects. Input type A/B di
 ## Script
 
 Local: `~/Projects/t2sep-probe/mba91-accessory-54-ab.py`
+
+
+## Sequoia contrast (cold boot 2026-09-07)
+
+See `ACCESSORY_MACOS_CONTRAST_2026-09-07.md`.
+
+macOS order: sensor ready → MSR/cal → **`cacheAccessories` (type 1 / uuid 0 / flags 0x6)** → **`loadCatacomb` OK** → restore templates.
+No `accessoryInfo` string in non-private logs. Linux `0x54` all-zero remains; pivot off blind type A/B toward host cache / sensor-init parity.
