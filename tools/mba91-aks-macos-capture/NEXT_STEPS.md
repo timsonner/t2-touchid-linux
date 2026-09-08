@@ -37,9 +37,12 @@ MBA91 hard gate.
 **Done:** no-reset `0x40` after host-parity preflight → still **257** both
 blobs; warm `0x42` preserved (`LOAD40_HOST_PARITY_2026-09-07.md`).
 
-**Next:** hunt Mesa **MSR/cal load** write opcodes (Sequoia private Db stream /
-bent Catalina symbols). Park further blind `0x40` until that path exists or is
-proven unnecessary by a different envelope A/B.
+**Done (offline + read-only):** FDR Bridge method **11** returns **61407 B**
+on Omarchy (matches macOS cal length); load path is Mesa **`0x20` value=3**
+(`MSR_CAL_LOAD_MAP_2026-09-07.md`). MSRk still unknown.
+
+**Next (Sequoia):** private boot Db mine for `0x20` / MSRk opcodes.  
+**Then (Omarchy):** supervised `0x20` FDR load (not another blind `0x40`).
 
 ### 2. Re-warm identity (ops)
 
@@ -83,3 +86,4 @@ SIP-off EP7 — explicit Tim OK.
 | `ACCESSORY_PRIVATE_OPCODES_2026-09-07.md` | private 82→84; 84 all-zero on macOS |
 | `HOST_PARITY_CANARIES_2026-09-07.md` | Omarchy ready/prov5/cal-present |
 | `LOAD40_HOST_PARITY_2026-09-07.md` | preflight OK, 0x40 still 257 |
+| `MSR_CAL_LOAD_MAP_2026-09-07.md` | FDR method 11 + Mesa 0x20 map |
