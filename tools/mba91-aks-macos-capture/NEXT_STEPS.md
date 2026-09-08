@@ -4,6 +4,8 @@ Branch: `research/mba91-aks-ep7`. Host: MacBookAir9,1 · Omarchy `MBA19-OMARCHY`
 bridgeOS **23P6068** · BridgeXPC **39**.  
 **EP7 AKS stays parked.** Fingerprint path = **BridgeXPC** (`BRIDGEXPC_PATH.md`).
 
+**PARKED (2026-09-08):** live Mesa match / `0x40` / ACM / enroll probes stopped. See `PARKED_2026-09-08.md`. Prior notes are historical only.
+
 ## What we know (2026-09-07)
 
 | Fact | Evidence |
@@ -52,35 +54,28 @@ inference only (`MSR_CAL_SEQUOIA_CONFIRM_2026-09-07.md`).
 mostly Common/unarchive (**A**); our Mesa LTFC `0x40` is path **B**. 257 may
 mean wrong tool for warm SEP, wrong blob class, or empty-gate bent also lacks.
 
-**Next fork:**
-1. Confirm whether Sequoia boot ever issues Mesa decimal **64** (`0x40`)
-2. Or pivot live work to **match** on warm `0x42` (skip load)
-3. Envelope A/B only if (1) proves macOS uses Mesa `0x40` for enrolled load
+**Fork parked (2026-09-08):** neither Sequoia Mesa-64 mine nor warm
+match/`0x04` ACM canary will be run from this agent. See
+`PARKED_2026-09-08.md`.
 
 ### 2. Re-warm identity (ops)
 
 macOS Touch ID → Omarchy warm handoff to restore `0x42` when you need a
 non-empty list again (match UX, etc.). Proven; independent of (1).
 
-### 3. Retry `0x40` only if Sequoia proves Mesa `0x40` (or cold restore)
+### 3. Retry `0x40` / match — **parked**
 
-Warm match does **not** require another Linux `0x40` when `0x42` is already ≥1.
+No further live `0x40` or match/`0x04` / ACM work from this agent.
 
-- Skip `no_catacomb(0xffffffff)` unless intentionally emptying SEP  
-- Success = status 0 + `0x42` count≥1 + note `0x38`/`0x54`  
-- Otherwise prefer match (`0x04`) / ACM on warm identities  
+### 4. Linux-native enroll / ACM — **parked**
 
-### 4. Linux-native enroll / ACM
-
-Only after load/match is coherent. No ConfirmSave spray.
-
-### 5. Last resort
-
-SIP-off EP7 — explicit Tim OK.
+### 5. Last resort (EP7) — stays parked
 
 ## Parked
 
 - Mute AKS EP7  
+- Live Mesa match / `0x40` / ACM canaries (2026-09-08)
+- Sequoia Mesa decimal-64 boot mine (parked with fork)
 - Blind `0x40` / reset-load loops  
 - Host-parity-only `0x40` (still 257)  
 - `0x20` then `0x40` (cal OK, load still 257)  
@@ -106,3 +101,4 @@ SIP-off EP7 — explicit Tim OK.
 | `MSR_CAL_SEQUOIA_CONFIRM_2026-09-07.md` | calBLOBSource 0 vs 3; no captured 32 |
 | `LOAD_CAL_0x20_2026-09-07.md` | 0x20 OK; 0x40 still 257 |
 | `LOAD40_ENVELOPE_MAP_2026-09-07.md` | Common load A vs Mesa 0x40 B |
+| `PARKED_2026-09-08.md` | live probe trail stopped |
