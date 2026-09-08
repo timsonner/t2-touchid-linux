@@ -56,3 +56,8 @@ macOS does **not** wait on a mysterious accessory UUID. It:
 Linux already sees the builtin on `0x52` but never runs an equivalent of steps 2–3’s *host* cache, and bent’s `0x54` presence gate stays empty. Next Linux work should chase **sensor-init / MSR-cal / cacheAccessories-equivalent** before another `0x40`, not more `0x54` type enums.
 
 Optional follow-up on Sequoia: reinstall capture kit + private-data profile for one unlock if we need Mesa opcode hex around `cacheAccessories`→`loadCatacomb`. Not required to keep moving on the host-side gap.
+
+## Follow-up (private-data soft reboot)
+
+`ACCESSORY_PRIVATE_OPCODES_2026-09-07.md`: Mesa **82** then **84**; **84** reply
+is all-zero **on Sequoia too**; host still caches from **82**.

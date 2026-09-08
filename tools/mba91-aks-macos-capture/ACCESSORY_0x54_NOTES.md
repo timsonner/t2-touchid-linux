@@ -76,3 +76,12 @@ See `ACCESSORY_MACOS_CONTRAST_2026-09-07.md`.
 
 macOS order: sensor ready → MSR/cal → **`cacheAccessories` (type 1 / uuid 0 / flags 0x6)** → **`loadCatacomb` OK** → restore templates.
 No `accessoryInfo` string in non-private logs. Linux `0x54` all-zero remains; pivot off blind type A/B toward host cache / sensor-init parity.
+
+
+## Private-data correction (soft reboot 2026-09-07)
+
+See `ACCESSORY_PRIVATE_OPCODES_2026-09-07.md`.
+
+macOS unlock-path: **`0x52` → `0x54`(20 B in) → 83 B all-zero → still
+`cacheAccessories` count 1**. Nonzero `0x54` first_byte is **not** required on
+this Air. Retract “must flip first_byte before load” as an MBA91 hard gate.

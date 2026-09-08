@@ -21,18 +21,18 @@ bridgeOS **23P6068** · BridgeXPC **39**.
 
 ### 1. Accessory / host cache — status
 
-**Done (Linux):** `0x54` type A/B + order canary → all-zero 83 B (`ACCESSORY_0x54_NOTES.md`).
+**Done (Linux):** `0x54` all-zero (`ACCESSORY_0x54_NOTES.md`).
 
-**Done (Sequoia cold boot):** `cacheAccessories` (type 1 / uuid 0 / flags 0x6)
-runs **before** successful `loadCatacomb`. See
-`ACCESSORY_MACOS_CONTRAST_2026-09-07.md`.
+**Done (Sequoia):** `cacheAccessories` before `loadCatacomb`
+(`ACCESSORY_MACOS_CONTRAST_2026-09-07.md`).
 
-**Next (Linux):** host-side parity with macOS init order — sensor ready /
-MSR+cal (or documented stubs) → accessory cache equivalent → then `0x40`.
-Do **not** blind-retry `0x40` or more `0x54` type enums.
+**Done (private opcodes):** unlock-path **82→84**; **84** all-zero on macOS
+too; cache still succeeds from **82**
+(`ACCESSORY_PRIVATE_OPCODES_2026-09-07.md`). Nonzero `0x54` is **not** an
+MBA91 hard gate.
 
-**Optional Sequoia:** private-data profile + capture kit for Mesa opcode hex
-around that burst (nice-to-have, not blocking).
+**Next (Linux):** sensor/MSR/cal + **host cache from `0x52`**, then retry
+`0x40`. Skip more `0x54` type enums.
 
 ### 2. Re-warm identity (ops)
 
@@ -72,3 +72,4 @@ SIP-off EP7 — explicit Tim OK.
 | `MESA_BENT_OPCODE_CROSSWALK.md` | opcodes |
 | `ACCESSORY_0x54_NOTES.md` | accessoryInfo / all-zero reply |
 | `ACCESSORY_MACOS_CONTRAST_2026-09-07.md` | Sequoia cacheAccessories → loadCatacomb |
+| `ACCESSORY_PRIVATE_OPCODES_2026-09-07.md` | private 82→84; 84 all-zero on macOS |
