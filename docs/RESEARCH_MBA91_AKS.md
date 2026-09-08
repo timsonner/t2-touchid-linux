@@ -137,6 +137,12 @@ Private MBA helpers (not in git): `force-rebuild-research-aks.sh`,
 
 ## If resumed later
 
+**Authorization:** this research proceeds under **Track A** — independent
+ownership research (operator-owned hardware + biometric material, controlled
+lab, operator's written authorization; no third party implicated). The
+BridgeXPC A/B/C forks are unblocked. Scope, boundaries, and the future-agent
+due-diligence checklist: [`docs/LAB_PROTOCOL.md`](LAB_PROTOCOL.md).
+
 Priority (do not re-burn falsified Linux framing unless paired with a new lever):
 
 1. ~~macOS os_log / Mesa / BridgeXPC enroll+unlock capture~~ — **done** (2026-09-06).

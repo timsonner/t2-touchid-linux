@@ -39,7 +39,10 @@ Read [Before you start](#before-you-start) before installing anything.
 
 Air-specific AppleKeyStore EP7 bring-up on branch [`research/mba91-aks-ep7`](https://github.com/timsonner/t2-touchid-linux/tree/research/mba91-aks-ep7): Linux mailbox AKS EP7 remains **PARKED** (mute). macOS os_log / Mesa / BridgeXPC cold-boot+enroll+unlock capture is **done** (2026-09-06); ESP FDR absent/N/A on this wiped Air. Scoreboard + kit: [`docs/RESEARCH_MBA91_AKS.md`](docs/RESEARCH_MBA91_AKS.md), [`tools/mba91-aks-macos-capture/`](tools/mba91-aks-macos-capture/). Useful to other T2
 agents as a negative result + `/dev/t2-sep-lab` research path — not a working
-Touch ID port for Air yet.
+Touch ID port for Air yet. This research runs under **Track A** — independent
+research on operator-owned hardware and biometric material, controlled lab,
+operator's written authorization ([`docs/LAB_PROTOCOL.md`](docs/LAB_PROTOCOL.md)).
+The BridgeXPC A/B/C forks are authorized and unblocked.
 
 "Exposed" means a user can invoke it on an installed system. "Hardware-tested"
 means it has been proven on the [proven configuration](#proven-configuration)

@@ -5,6 +5,13 @@
 **Machine:** MacBookAir9,1 · bridgeOS `23.16.16068` · SEP PCI `106b:1802`  
 **Intent:** Reusable negative result + research tooling — not a claim of Air Touch ID support.
 
+**Authorization:** This research runs under **Track A** — independent ownership
+research: operator-owned hardware and biometric material, controlled private
+lab, operator's written authorization; no third party is implicated. The
+BridgeXPC A/B/C forks (match, `0x40` load, empty-SEP envelope) are authorized
+and unblocked. See [`docs/LAB_PROTOCOL.md`](LAB_PROTOCOL.md) for scope,
+boundaries, and the future-agent due-diligence checklist.
+
 ## What works on Air
 
 - EP0 NOP, MSI (2), Apple `_startCPUGated`, AKS OOL register (16 KiB)

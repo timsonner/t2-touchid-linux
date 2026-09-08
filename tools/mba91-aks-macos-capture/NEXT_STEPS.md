@@ -3,9 +3,9 @@
 Branch: `research/mba91-aks-ep7`. Host: MacBookAir9,1 · Omarchy `MBA19-OMARCHY` ·
 bridgeOS **23P6068** · BridgeXPC **39**.  
 Fingerprint path = **BridgeXPC** (`BRIDGEXPC_PATH.md`). This work is
-conducted under an **Apple research grant / written consent** in a controlled
-laboratory; the earlier 2026-09-08 park is lifted. See
-`PARKED_2026-09-08.md` for the authorization record.
+conducted under **Track A** — independent ownership research
+([`docs/LAB_PROTOCOL.md`](../../docs/LAB_PROTOCOL.md)); the earlier 2026-09-08
+park is lifted. See `PARKED_2026-09-08.md` for the authorization record.
 
 ## What we know (2026-09-07)
 
