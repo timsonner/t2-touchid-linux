@@ -54,9 +54,9 @@ inference only (`MSR_CAL_SEQUOIA_CONFIRM_2026-09-07.md`).
 mostly Common/unarchive (**A**); our Mesa LTFC `0x40` is path **B**. 257 may
 mean wrong tool for warm SEP, wrong blob class, or empty-gate bent also lacks.
 
-**Fork parked (2026-09-08):** neither Sequoia Mesa-64 mine nor warm
-match/`0x04` ACM canary will be run from this agent. See
-`PARKED_2026-09-08.md`.
+**Fork parked (2026-09-08):** A (warm match/`0x04`+ACM), B (Sequoia
+Mesa-64 mine), and C (empty-SEP load envelope) are all out of scope for
+this agent. See `PARKED_2026-09-08.md`.
 
 ### 2. Re-warm identity (ops)
 
