@@ -45,8 +45,11 @@ on Omarchy (matches macOS cal length); load path is Mesa **`0x20` value=3**
 no Mesa 32). Source-3 boots log 61407@3 but Db `0x20` lines were dropped —
 inference only (`MSR_CAL_SEQUOIA_CONFIRM_2026-09-07.md`).
 
-**Next (Omarchy):** supervised Mesa **`0x20` value=3** FDR push A/B; if
-`0x40` still 257 with cal already present, pivot to load-envelope (not more cal).
+**Done:** Mesa **`0x20` value=3** status **0**; follow-up `0x40` still **257**
+(`LOAD_CAL_0x20_2026-09-07.md`). Cal loops parked.
+
+**Next:** `0x40` **envelope / component** framing vs macOS Common filesystem
+load (not more FDR/`0x20`).
 
 ### 2. Re-warm identity (ops)
 
@@ -72,6 +75,7 @@ SIP-off EP7 — explicit Tim OK.
 - Mute AKS EP7  
 - Blind `0x40` / reset-load loops  
 - Host-parity-only `0x40` (still 257)  
+- `0x20` then `0x40` (cal OK, load still 257)  
 - Assuming power-off clears enrolled `0x42`  
 - `0x08` as alias for `0x42`  
 
@@ -92,3 +96,4 @@ SIP-off EP7 — explicit Tim OK.
 | `LOAD40_HOST_PARITY_2026-09-07.md` | preflight OK, 0x40 still 257 |
 | `MSR_CAL_LOAD_MAP_2026-09-07.md` | FDR method 11 + Mesa 0x20 map |
 | `MSR_CAL_SEQUOIA_CONFIRM_2026-09-07.md` | calBLOBSource 0 vs 3; no captured 32 |
+| `LOAD_CAL_0x20_2026-09-07.md` | 0x20 OK; 0x40 still 257 |
