@@ -64,7 +64,7 @@ def _load_fork_a():  # noqa: E402
 
 fork_a = _load_fork_a()
 
-LIVE_74_ENABLED = True
+LIVE_74_ENABLED = False
 CONFIRM = "I_UNDERSTAND_THIS_STARTS_ONE_BOUNDED_MATCH74_WINDOW"
 WARM_SKS_STATE = 0x10
 MATCH74_OPCODE = 74
@@ -154,13 +154,11 @@ def main() -> int:
             sock, 0x27, data=struct.pack("<I", args.macos_user_id),
             output_capacity=4,
         )
-        # NOTE: the direct BiometricKit framing returns a 4-byte SKS payload
-        # whose layout differs from the coupled path (observed warm:
-        # 10080000). Only the first byte carries the known state across
-        # all readings (0x10 warm, 0x15 cold on the coupled path); gate on
-        # it and let the 0x42 count carry the hard fail-closed decision.
+        # NOTE: SKS lock-state drifts across sessions (0x10, 0x810, 0x239
+        # all observed with 0x42=1 intact on one warm SEP), so it cannot
+        # gate. The 0x42 count is the only stable truth; SKS is recorded.
         sks = (
-            sks_reply[1][0]
+            sks_reply[1].hex()
             if isinstance(sks_reply, list) and len(sks_reply) == 2
             and isinstance(sks_reply[1], bytes) and len(sks_reply[1]) == 4
             else None
@@ -168,8 +166,6 @@ def main() -> int:
         summary["warm_gate_detail"] = {"identity_count": count, "sks": sks}
         if count < 1 or any(u != args.macos_user_id for u in uids):
             return fail("warm gate failed: no trusted identity for this UID")
-        if sks != WARM_SKS_STATE:
-            return fail(f"warm gate failed: SKS state {sks} is not warm")
         summary["warm_gate"] = True
 
         # Sequoia prelude, in order. Any deviation aborts the run.
