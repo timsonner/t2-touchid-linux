@@ -18,7 +18,8 @@ park is lifted. See `PARKED_2026-09-08.md` for the authorization record.
 | bent: 257 ↔ missing accessory/device-group context; same `0x54` first_byte=0 on their Linux | bent touch-id / catacomb handoff |
 | `no_catacomb(0xffffffff)` cleared `0x42` here; reset alone did **not** | `RESET_THEN_LOAD40_2026-09-07.md` |
 
-**Air right now:** `0x42` count **0** (after reset-load run).
+**Air right now:** `0x42` count **1** (re-warmed 2026-09-13 via single-boot
+macOS trip → warm reboot, no sensor reset; verified SKS `0x10`).
 
 ## Next (in order)
 
@@ -64,10 +65,13 @@ See `PARKED_2026-09-08.md`.
 macOS Touch ID → Omarchy warm handoff to restore `0x42` when you need a
 non-empty list again (match UX, etc.). Proven; independent of (1).
 
-### 2b. Next macOS trip checklist (single boot covers all)
+### 2b. Next macOS trip checklist (single boot covers all) — DONE 2026-09-13
 
-SEP is empty as of 2026-09-13 — this trip also re-warms. Kit procedure:
-`README.md` + `CHECKLIST.md`; exports/teardown: `BACKUP_AND_TEARDOWN.md`.
+Trip completed unlock-only variant (existing uid-501 enrollment kept, no
+live enroll); evidence in `MESA64_FRESHBOOT_MINE_2026-09-13.md`. SEP was
+empty pre-trip; re-warm verified post-trip (`0x42`=1, SKS `0x10`).
+Kit procedure: `README.md` + `CHECKLIST.md`; exports/teardown:
+`BACKUP_AND_TEARDOWN.md`.
 
 1. Install capture daemon → `chmod 755` + `a+r` on `/var/log/t2-aks-capture`
    → install `EnablePrivateLogging.mobileconfig` → confirm `PRIVATE_DATA`
@@ -103,7 +107,11 @@ EP7 AKS stays muted (separate transport dead-end); fingerprint path is BridgeXPC
   - 2026-09-13: Fork A match opens (status 0, no 261) but yields no
     `match_result` in 5 windows incl. calibrated + confirmed touch —
     see `MATCH_FORKA_2026-09-13.md`. Warm `0x42=1` preserved throughout.
-- Sequoia Mesa decimal-64 boot mine (unblocked with fork)
+- Sequoia Mesa decimal-64 boot mine — DONE 2026-09-13 (third independent
+  confirmation): full-boot sweep **0 hits** for `performCommand … 64`;
+  boot histogram without 64; unlock framing `48 → 84 → 39 → 84 → 12 → 74`
+  with match traffic on 74 — see `MESA64_FRESHBOOT_MINE_2026-09-13.md`.
+  Path B is a command macOS doesn't use; closed.
 - Blind `0x40` / reset-load loops (open)
   - 2026-09-13: no-reset `0x40` master+user re-run on warm `0x42=1` boot:
     **257/257**, snapshots identical before/after, warm preserved.
