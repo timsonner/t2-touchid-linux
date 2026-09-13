@@ -166,6 +166,21 @@ EP7 AKS stays muted (separate transport dead-end); fingerprint path is BridgeXPC
   `apfsutil`, before any password prompt. T2 + Sequoia + FileVault
   container keybag is SEP-wrapped — no Linux tooling unwraps it.
   Mount track dead; framework binaries stay behind a macOS boot.
+- Warm-SEP insmod crashes (2026-09-13, 2/2, journal-proven): loading
+  `t2_sep_transport` on a **warm** SEP kills the machine with no panic
+  or oops — the journal just stops (boot -3 died mid-load at 01:18:45;
+  boot -1 completed bring-up then `cdc_ncm enp116s0f1u1: NETDEV
+  WATCHDOG: transmit queue timed out` 9 s later, then death). Cold-SEP
+  loads are stable for hours. Warm bring-up also shows a different
+  outbox (`0x29901` vs cold `0x20001`). Suspect: CPU-start poke /
+  OOL-DMA registration against a session-active SEP wedges the T2
+  (which owns power). Rule until disproven: **no insmod on warm SEP**
+  with default params. Minimal-bring-up hypothesis (untested):
+  `aks_start_cpu=0 aks_discover=0 aks_acm_canary=0
+  aks_device_state_canary=0`. Decisive decoupling: Fork A / 74 match
+  traffic rides **BridgeXPC/NCM in userspace and needs no module** —
+  warm match work proceeds with the module unloaded; insmod returns
+  only for ACM-specific steps, minimally parameterized.
 
 ## Doc index
 
