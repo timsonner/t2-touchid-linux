@@ -64,7 +64,7 @@ def _load_fork_a():  # noqa: E402
 
 fork_a = _load_fork_a()
 
-LIVE_74_ENABLED = False
+LIVE_74_ENABLED = True
 CONFIRM = "I_UNDERSTAND_THIS_STARTS_ONE_BOUNDED_MATCH74_WINDOW"
 WARM_SKS_STATE = 0x10
 MATCH74_OPCODE = 74
@@ -85,6 +85,12 @@ def main() -> int:
     parser.add_argument("--macos-user-id", required=True, type=int)
     parser.add_argument("--match-seconds", type=float, default=30.0)
     parser.add_argument("--match-processed-flags", type=int, default=0)
+    parser.add_argument(
+        "--empty-match-input", action="store_true",
+        help="send 74 with empty input (ver 1, val 0, 0 bytes), exactly as "
+        "the working Sequoia unlock does (capture-mined 2026-09-13: "
+        "inSize 0 on all three 74 calls). Default sends the Fork A 68 "
+        "B + counted-blob framing, which the SEP refuses with 258.")
     parser.add_argument("--confirm-live", default="")
     parser.add_argument("--private-json", default="")
     args = parser.parse_args()
@@ -190,11 +196,18 @@ def main() -> int:
                 print(json.dumps(summary, indent=2, sort_keys=True))
                 return fail(f"prelude deviated at {label}: status={status}")
 
-        # Match-start on 74: Fork A framing, one shot, no variants.
-        counted = struct.pack("<I", count) + identities
-        match_data = struct.pack(
-            "<II60x", args.match_processed_flags, args.macos_user_id,
-        ) + counted
+        # Match-start on 74, one shot, no variants. Two framings, one per
+        # run: Fork A 68 B + counted blob (SEP: 258) or capture-mined
+        # empty input (Sequoia working unlock: ver 1, val 0, inSize 0).
+        summary["match_input"] = (
+            "empty" if args.empty_match_input else "fork-a-68B-counted")
+        if args.empty_match_input:
+            match_data = b""
+        else:
+            counted = struct.pack("<I", count) + identities
+            match_data = struct.pack(
+                "<II60x", args.match_processed_flags, args.macos_user_id,
+            ) + counted
         match_reply, events = biometric_command(sock, MATCH74_OPCODE,
                                                 data=match_data)
         start_status = match_reply[0] if (

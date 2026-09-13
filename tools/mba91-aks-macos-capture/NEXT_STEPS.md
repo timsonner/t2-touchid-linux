@@ -206,6 +206,34 @@ EP7 AKS stays muted (separate transport dead-end); fingerprint path is BridgeXPC
   Every "EP7 dead-end" note above is revised accordingly: the wall was
   never the transport, it was the missing credential. Password handling
   throughout: operator terminal only, no disk/git/log copies.
+- Authorized enroll dispatch (2026-09-13, warm SEP, `bridge-xpc-
+  authorized-enroll.py`): bind `status=0`, policy satisfied, then
+  command-3 v2 dispatch refused — `0xe00002c2` on a 52 B payload
+  (authoring bug, fixed to canonical 68 B), then **22** on the exact
+  68 B shape, with and without read-only session prep (0x52/0x53/0x43/
+  0x4C/0x30 all status 0 standalone). Session-state hypothesis dead;
+  prime suspect is credential generation (tracking `0x24` vs legacy
+  `0x01` external form) — `--legacy-context-create` staged, one
+  bounded attempt pending. SKS drifts `0x10 → 0x810 → 0x239` with
+  `0x42=1` intact throughout: session coloring, not a gate.
+- Legacy form also refused **22** (2026-09-13, full prep green, cancel
+  0, identities 1→1, context cleaned). Generation ruled out. The 22
+  now points below shape entirely — likely the v2 enroll *flow*
+  (`0x03` bare start + `0x0e` continue protocol + adjacent `0x65`,
+  per Sequoia enroll-phase histogram) rather than inline-token `0x03`,
+  a Catalina-era model never live-proven. Live enroll attempts parked
+  (5 contexts spent, warm SEP intact, machine 40+ min stable on
+  minimal bring-up).
+- Unlock-minute arg shapes, capture-mined 2026-09-13 (48 performCommand
+  lines, ver/val/inSize only — trailing hex is buffer pointers, not
+  sizes; payloads never extracted): `48` v1/0/empty, `84` v1/0/20 B,
+  `39` v1/0/4 B, `12` v1/0/empty, **`74` v1/0/empty ×3**. macOS sends
+  74 with NO input — our 68 B Fork A framing was a shape rejection
+  (258), not necessarily a credential gate. `--empty-match-input`
+  staged for one bounded window-9 attempt. Save cluster after: 60/80
+  empty, 61/62/63 v2/24 B context. No 03/04/65/14 anywhere
+  (unlock-only trip; enroll choreography still unmined — the 09-06
+  raw log is gone, only its histogram survives).
 
 ## Doc index
 
