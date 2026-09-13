@@ -100,3 +100,36 @@ Before and after staging, inspect the effective command with:
 ```sh
 systemctl show -p ExecStart fprintd.service
 ```
+
+## Warm-verify drop-in (MBA91)
+
+`fprintd.service.d/30-warm-verify.conf` is a separate, uninstalled
+candidate for warm-preserve verification. It changes only the daemon's
+exact `ExecStart` by adding `--warm-verify` (skip sensor reset +
+calibration load); the normal service, installer, and upgrades remain
+default (reset + load). Do not stage it except on a freshly warmed
+macOS → Omarchy handoff with `0x42 count=1`.
+
+Stage explicitly:
+
+```sh
+sudo install -d -o root -g root -m 0755 \
+  /etc/systemd/system/fprintd.service.d
+sudo install -o root -g root -m 0644 \
+  systemd/research/fprintd.service.d/30-warm-verify.conf \
+  /etc/systemd/system/fprintd.service.d/30-warm-verify.conf
+sudo systemctl daemon-reload
+sudo systemctl restart fprintd.service
+```
+
+Rollback removes only that exact drop-in:
+
+```sh
+sudo rm /etc/systemd/system/fprintd.service.d/30-warm-verify.conf
+sudo systemctl daemon-reload
+sudo systemctl restart fprintd.service
+```
+
+Do not combine with `--enable-native-enrollment` / `--enable-native-deletion`
+until the standard warm-verify positive + negative controls pass and the
+native-mutation gates in `FPRINT_INTEGRATION.md` are met.

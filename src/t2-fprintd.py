@@ -55,6 +55,10 @@ ENROLLED_FINGER = os.environ.get(
 AUTO_SYNC_ADAPTIVE_VALUE = os.environ.get(
     "T2_TOUCHID_AUTO_SYNC_ADAPTIVE", "0"
 )
+SKIP_RESET_SENSOR_VALUE = os.environ.get("T2_TOUCHID_SKIP_RESET", "0")
+SKIP_LOAD_CALIBRATION_VALUE = os.environ.get(
+    "T2_TOUCHID_SKIP_CALIBRATION", "0"
+)
 ALLOWED_PAM_USERS = (LINUX_USER,)
 UNSTARTED_CLAIM_SECONDS = 5.0
 COMPLETED_CLAIM_SECONDS = 0.5
@@ -83,6 +87,12 @@ if ENROLLED_FINGER not in {
 if AUTO_SYNC_ADAPTIVE_VALUE not in {"0", "1"}:
     raise RuntimeError("T2_TOUCHID_AUTO_SYNC_ADAPTIVE is invalid")
 AUTO_SYNC_ADAPTIVE = AUTO_SYNC_ADAPTIVE_VALUE == "1"
+if SKIP_RESET_SENSOR_VALUE not in {"0", "1"}:
+    raise RuntimeError("T2_TOUCHID_SKIP_RESET is invalid")
+if SKIP_LOAD_CALIBRATION_VALUE not in {"0", "1"}:
+    raise RuntimeError("T2_TOUCHID_SKIP_CALIBRATION is invalid")
+SKIP_RESET_SENSOR_DEFAULT = SKIP_RESET_SENSOR_VALUE == "1"
+SKIP_LOAD_CALIBRATION_DEFAULT = SKIP_LOAD_CALIBRATION_VALUE == "1"
 
 
 def verdict_from_result(
@@ -231,6 +241,8 @@ class T2Backend:
         project_dir: Path,
         match_seconds: float,
         auto_sync_adaptive: bool = AUTO_SYNC_ADAPTIVE,
+        skip_reset_sensor: bool = SKIP_RESET_SENSOR_DEFAULT,
+        skip_load_calibration: bool = SKIP_LOAD_CALIBRATION_DEFAULT,
     ) -> None:
         if not LINUX_USER:
             raise RuntimeError("T2_TOUCHID_USER is not configured")
@@ -240,7 +252,13 @@ class T2Backend:
         self.operation_lock = asyncio.Lock()
         if type(auto_sync_adaptive) is not bool:
             raise RuntimeError("adaptive Catacomb sync activation is invalid")
+        if type(skip_reset_sensor) is not bool:
+            raise RuntimeError("warm-safe reset-sensor skip is invalid")
+        if type(skip_load_calibration) is not bool:
+            raise RuntimeError("warm-safe load-calibration skip is invalid")
         self.auto_sync_adaptive = auto_sync_adaptive
+        self.skip_reset_sensor = skip_reset_sensor
+        self.skip_load_calibration = skip_load_calibration
         self.adaptive_sync_tasks: set[asyncio.Task] = set()
         self.port: int | None = None
         self.port_from_cache = False
@@ -326,16 +344,22 @@ class T2Backend:
             "--port",
             str(port),
             "--initialize",
-            "--reset-sensor",
-            "--cancel-operation",
-            "--load-calibration",
-            "--identity-list",
-            "--macos-user-id",
-            str(MACOS_USER_ID),
-            "--match-seconds",
-            str(self.match_seconds),
-            "--stop-on-match-result",
         ]
+        if not self.skip_reset_sensor:
+            command.append("--reset-sensor")
+        command.append("--cancel-operation")
+        if not self.skip_load_calibration:
+            command.append("--load-calibration")
+        command.extend(
+            [
+                "--identity-list",
+                "--macos-user-id",
+                str(MACOS_USER_ID),
+                "--match-seconds",
+                str(self.match_seconds),
+                "--stop-on-match-result",
+            ]
+        )
         if target_finger is not None:
             command.extend(["--match-finger-name", target_finger])
         if resolve_any_finger:
@@ -1361,7 +1385,18 @@ async def main_async(args: argparse.Namespace) -> None:
             "T2_TOUCHID_PROJECT_DIR", Path(__file__).resolve().parent.parent
         )
     )
-    backend = T2Backend(project_dir, args.match_seconds)
+    backend = T2Backend(
+        project_dir,
+        args.match_seconds,
+        skip_reset_sensor=bool(
+            getattr(args, "skip_reset_sensor", False)
+            or getattr(args, "warm_verify", False)
+        ),
+        skip_load_calibration=bool(
+            getattr(args, "skip_load_calibration", False)
+            or getattr(args, "warm_verify", False)
+        ),
+    )
     bus = await SenderAwareMessageBus(
         bus_type=BusType.SYSTEM, negotiate_unix_fd=True
     ).connect()
@@ -1407,6 +1442,30 @@ async def main_async(args: argparse.Namespace) -> None:
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--match-seconds", type=float, default=20.0)
+    parser.add_argument(
+        "--skip-reset-sensor",
+        action="store_true",
+        help=(
+            "omit the sensor reset from verify (MBA91 warm preserve; "
+            "default still resets)"
+        ),
+    )
+    parser.add_argument(
+        "--skip-load-calibration",
+        action="store_true",
+        help=(
+            "omit FDR calibration load from verify (MBA91 warm preserve; "
+            "default still loads)"
+        ),
+    )
+    parser.add_argument(
+        "--warm-verify",
+        action="store_true",
+        help=(
+            "MBA91 warm-preserve preset: skip both sensor reset and "
+            "calibration load"
+        ),
+    )
     parser.add_argument(
         "--enable-native-enrollment",
         action="store_true",

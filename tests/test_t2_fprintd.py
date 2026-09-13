@@ -1661,5 +1661,140 @@ class NativeDeletionActivationTests(unittest.TestCase):
         self.assertNotIn("20-native-identity-management.conf", installer)
 
 
+class WarmVerifyTests(unittest.TestCase):
+    def make_backend(self, **kwargs):
+        backend = MODULE.T2Backend.__new__(MODULE.T2Backend)
+        backend.project_dir = Path("/tmp/t2-test-project")
+        backend.match_seconds = 20.0
+        backend.process = None
+        backend.operation_lock = asyncio.Lock()
+        backend.auto_sync_adaptive = False
+        backend.skip_reset_sensor = kwargs.get("skip_reset_sensor", False)
+        backend.skip_load_calibration = kwargs.get(
+            "skip_load_calibration", False
+        )
+        return backend
+
+    def run_probe_command(self, backend):
+        captured = {}
+
+        class FakeProcess:
+            returncode = 0
+
+            async def communicate(self):
+                return (b"{}", None)
+
+        async def fake_create(*command, **kwargs):
+            captured["command"] = command
+            return FakeProcess()
+
+        async def run():
+            with mock.patch.object(
+                MODULE.asyncio, "create_subprocess_exec", fake_create
+            ):
+                await backend._run_probe(50001)
+
+        asyncio.run(run())
+        return captured["command"]
+
+    def test_default_verify_includes_reset_and_calibration(self):
+        command = self.run_probe_command(self.make_backend())
+        self.assertIn("--reset-sensor", command)
+        self.assertIn("--load-calibration", command)
+        self.assertIn("--cancel-operation", command)
+        self.assertIn("--initialize", command)
+        self.assertIn("--identity-list", command)
+
+    def test_skip_reset_omits_only_reset(self):
+        command = self.run_probe_command(
+            self.make_backend(skip_reset_sensor=True)
+        )
+        self.assertNotIn("--reset-sensor", command)
+        self.assertIn("--load-calibration", command)
+        self.assertIn("--cancel-operation", command)
+
+    def test_skip_calibration_omits_only_calibration(self):
+        command = self.run_probe_command(
+            self.make_backend(skip_load_calibration=True)
+        )
+        self.assertIn("--reset-sensor", command)
+        self.assertNotIn("--load-calibration", command)
+        self.assertIn("--cancel-operation", command)
+
+    def test_warm_preset_omits_both(self):
+        command = self.run_probe_command(
+            self.make_backend(
+                skip_reset_sensor=True, skip_load_calibration=True
+            )
+        )
+        self.assertNotIn("--reset-sensor", command)
+        self.assertNotIn("--load-calibration", command)
+        self.assertIn("--cancel-operation", command)
+        self.assertIn("--initialize", command)
+
+    def test_main_async_warm_verify_sets_both_skips(self):
+        seen = {}
+
+        class FakeBackend:
+            def __init__(self, project_dir, match_seconds, **kwargs):
+                seen.update(kwargs)
+
+        async def fake_main_async(args):
+            backend_kwargs = {
+                "skip_reset_sensor": bool(
+                    getattr(args, "skip_reset_sensor", False)
+                    or getattr(args, "warm_verify", False)
+                ),
+                "skip_load_calibration": bool(
+                    getattr(args, "skip_load_calibration", False)
+                    or getattr(args, "warm_verify", False)
+                ),
+            }
+            FakeBackend(Path("/tmp"), 20.0, **backend_kwargs)
+
+        asyncio.run(
+            fake_main_async(argparse.Namespace(
+                skip_reset_sensor=False,
+                skip_load_calibration=False,
+                warm_verify=True,
+            ))
+        )
+        self.assertTrue(seen["skip_reset_sensor"])
+        self.assertTrue(seen["skip_load_calibration"])
+
+    def test_installed_service_stays_default(self):
+        unit = (
+            MODULE_PATH.parents[1]
+            / "systemd/system/fprintd.service"
+        ).read_text(encoding="utf-8")
+        self.assertNotIn("--warm-verify", unit)
+        self.assertNotIn("--skip-reset-sensor", unit)
+        self.assertNotIn("--skip-load-calibration", unit)
+
+    def test_warm_dropin_contains_only_preset(self):
+        root = MODULE_PATH.parents[1]
+        candidate = (
+            root
+            / "systemd/research/fprintd.service.d/30-warm-verify.conf"
+        ).read_text(encoding="utf-8")
+        directives = [
+            line
+            for line in candidate.splitlines()
+            if line and not line.startswith("#")
+        ]
+        self.assertEqual(
+            directives,
+            [
+                "[Service]",
+                "ExecStart=",
+                "ExecStart=/opt/t2-touchid/.venv/bin/python "
+                "/opt/t2-touchid/src/t2-fprintd.py "
+                "--warm-verify",
+            ],
+        )
+        installer = (root / "install.sh").read_text(encoding="utf-8")
+        self.assertNotIn("30-warm-verify.conf", installer)
+
+
 if __name__ == "__main__":
     unittest.main()
