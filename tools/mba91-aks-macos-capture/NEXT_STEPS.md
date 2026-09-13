@@ -105,8 +105,11 @@ EP7 AKS stays muted (separate transport dead-end); fingerprint path is BridgeXPC
 - Mute AKS EP7 (dead-end transport; BridgeXPC path preferred)
 - Live Mesa match / `0x40` / ACM canaries (unblocked 2026-09-08)
   - 2026-09-13: Fork A match opens (status 0, no 261) but yields no
-    `match_result` in 5 windows incl. calibrated + confirmed touch —
-    see `MATCH_FORKA_2026-09-13.md`. Warm `0x42=1` preserved throughout.
+    `match_result` in 6 windows incl. calibrated + confirmed touch +
+    60 s continuous-contact hold —
+    see `MATCH_FORKA_2026-09-13.md`. Sequoia unlock prelude comparison:
+    working unlock sends zero opcode-4 (`48 → 84 → 39 → 84 → 12 → 74`).
+    Warm `0x42=1` preserved throughout.
 - Sequoia Mesa decimal-64 boot mine — DONE 2026-09-13 (third independent
   confirmation): full-boot sweep **0 hits** for `performCommand … 64`;
   boot histogram without 64; unlock framing `48 → 84 → 39 → 84 → 12 → 74`

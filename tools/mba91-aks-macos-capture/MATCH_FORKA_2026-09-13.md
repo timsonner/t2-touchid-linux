@@ -26,7 +26,7 @@ T2 NCM `enp116s0f1u1` · peer `fe80::aede:48ff:fe33:4455` (ping-verified).
 
 Sensor read-only: `sensor_ready=true`, info `[1,12,3]`.
 
-## Match attempts (5 windows, 0 verdicts)
+## Match attempts (6 windows, 0 verdicts)
 
 All via `bridge-xpc-probe.py --initialize --identity-list --match-seconds N
 --stop-on-match-result`. No `--reset-sensor` in any window (warm preserve).
@@ -41,6 +41,7 @@ matching has no local baseline — plain all-identities match used instead.
 | 3 | `--match-processed-flags 1` | 30s | held full window | 0 | none | 0 (8 events) |
 | 4 | `--load-calibration` (FDR 61407 B, status 0) | 10s | **not touched** (operator confirmed) | 0 | none | 0 |
 | 5 | `--load-calibration` (FDR 61407 B, status 0) | 10s | **touched immediately** (operator confirmed) | 0 | none | 0 (4 status + 3 statistics) |
+| 6 | default (flags 0) | 60s | **held continuously** (operator confirmed full-window contact) | 0 | none | 0 (6 status + 3 statistics; ordinals 63/64/80/81/90/91) |
 
 Cancel after every window: status 0. Warm `0x42 count=1` re-verified after
 all attempts — none of these paths clear the identity.
@@ -56,6 +57,12 @@ all attempts — none of these paths clear the identity.
   finger — no finger-present signature observed at this layer.
 * Calibration is **not** the missing lever for opening match (opens without
   it) nor sufficient for a verdict (still mute with it, status 0 both).
+* Continuous full-window contact is **not** the lever either (window 6,
+  60 s held, still mute with the same status-ordinal cycle).
+* Sequoia comparison (2026-09-13 fresh log, 30k lines): working unlock
+  sends **zero opcode-4** — prelude is `48 → 84 → 39 → 84 → 12 → 74`.
+  Open-but-mute on 4 is consistent with 4 being, like 64, a command macOS
+  doesn't use on this path; the verdict likely lives on the 74/ACM side.
 * This is an **open-but-mute** result, distinct from the EP7 mailbox mute:
   transport + session + identity list + match-start all succeed; only the
   verdict event is absent.
