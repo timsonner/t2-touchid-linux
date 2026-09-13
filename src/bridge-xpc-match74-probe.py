@@ -91,6 +91,11 @@ def main() -> int:
         "the working Sequoia unlock does (capture-mined 2026-09-13: "
         "inSize 0 on all three 74 calls). Default sends the Fork A 68 "
         "B + counted-blob framing, which the SEP refuses with 258.")
+    parser.add_argument(
+        "--match-version", type=int, default=1, choices=(1, 2),
+        help="wire version for the single 74 dispatch only (default 1, "
+        "the macOS-exact framing; 2 = C3 version-gate candidate, "
+        "never attempted anywhere). Prelude stays version-pinned.")
     parser.add_argument("--confirm-live", default="")
     parser.add_argument("--private-json", default="")
     args = parser.parse_args()
@@ -204,11 +209,13 @@ def main() -> int:
             match_data = struct.pack(
                 "<II60x", args.match_processed_flags, args.macos_user_id,
             ) + counted
-        match_reply, events = biometric_command(sock, MATCH74_OPCODE,
-                                                data=match_data)
+        match_reply, events = biometric_command(
+            sock, MATCH74_OPCODE, version=args.match_version,
+            data=match_data)
         start_status = match_reply[0] if (
             isinstance(match_reply, list) and match_reply) else None
         summary["match_start_status"] = start_status
+        summary["match_version"] = args.match_version
         if start_status != 0:
             print(json.dumps(summary, indent=2, sort_keys=True))
             return fail(f"74 did not start: status={start_status}; "
