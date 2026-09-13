@@ -193,6 +193,19 @@ EP7 AKS stays muted (separate transport dead-end); fingerprint path is BridgeXPC
   a time if ever revisited). ACM lifecycle on warm SEP: create/delete
   + policy-1007 preflight (type-1, unsatisfied) identical to cold.
   Warm `0x42=1` intact throughout; SKS `0x810` stable.
+- EP7 is SELECTIVE, not mute (2026-09-13, warm SEP, minimal module):
+  `load-keybag` → status 0 handle 1; `set-system-keybag` → status 0;
+  `copy-keybag-uuid` → present; `unlock-keybag-stdin` (macOS login
+  password, operator-entered via ask-password, never stored) →
+  status 0; `verify-password-acm` → status 0 with **policy 1007
+  SATISFIED** — first authorized ACM context in program history. Only
+  the `0x19` device-state canary and capabilities query time out.
+  Staged: trip-exported login keybag, `/etc/t2-touchid.conf`
+  (uid 501 / -501 / tim), `/usr/local/sbin/t2-aks-tool` installed,
+  `/run/t2-touchid/keybag.env` (session 1, handle 1, special -501).
+  Every "EP7 dead-end" note above is revised accordingly: the wall was
+  never the transport, it was the missing credential. Password handling
+  throughout: operator terminal only, no disk/git/log copies.
 
 ## Doc index
 

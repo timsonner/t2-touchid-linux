@@ -43,6 +43,7 @@ matching has no local baseline — plain all-identities match used instead.
 | 5 | `--load-calibration` (FDR 61407 B, status 0) | 10s | **touched immediately** (operator confirmed) | 0 | none | 0 (4 status + 3 statistics) |
 | 6 | default (flags 0) | 60s | **held continuously** (operator confirmed full-window contact) | 0 | none | 0 (6 status + 3 statistics; ordinals 63/64/80/81/90/91) |
 | 7 | **74 framing** (same 68 B + counted blob, Sequoia prelude `48→84→39→84→12`) | n/a (refused at start) | held (irrelevant — never opened) | **258** | n/a | none (probe `bridge-xpc-match74-probe.py`, warm-gated, one shot, no variants) |
+| 8 | **74 framing + unlock flags 1** (same script/prelude) | n/a (refused at start) | held (irrelevant — never opened) | **258** | n/a | none (one shot, no variants; refusal is flags-independent) |
 
 Cancel after every window: status 0. Warm `0x42 count=1` re-verified after
 all attempts — none of these paths clear the identity.
@@ -70,6 +71,10 @@ all attempts — none of these paths clear the identity.
   different precondition (ACM-bound context? different payload class?)
   or is not match-start on this build (label stays medium-confidence).
   Single shot, no variants; warm `0x42=1` verified preserved after.
+* Window 8 (unlock flags 1): identical **258** refusal. The 74 gate is
+  flags-independent — 74-as-match-start with Fork A framing is closed
+  as a hypothesis. Remaining 74 path, if any, is ACM-context-gated
+  match (keybag track), not payload shape.
 * SKS side-observation: coupled-path `0x27` v1 read `0x10` at warm-verify
   and `0x810` (stable across re-reads) after the 74 run; `0x42` intact
   throughout. First observed post-run — correlation with the refused
