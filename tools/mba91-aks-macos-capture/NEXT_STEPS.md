@@ -80,12 +80,61 @@ EP7 AKS stays muted (separate transport dead-end); fingerprint path is BridgeXPC
 
 - Mute AKS EP7 (dead-end transport; BridgeXPC path preferred)
 - Live Mesa match / `0x40` / ACM canaries (unblocked 2026-09-08)
+  - 2026-09-13: Fork A match opens (status 0, no 261) but yields no
+    `match_result` in 5 windows incl. calibrated + confirmed touch —
+    see `MATCH_FORKA_2026-09-13.md`. Warm `0x42=1` preserved throughout.
 - Sequoia Mesa decimal-64 boot mine (unblocked with fork)
 - Blind `0x40` / reset-load loops (open)
+  - 2026-09-13: no-reset `0x40` master+user re-run on warm `0x42=1` boot:
+    **257/257**, snapshots identical before/after, warm preserved.
+  - 2026-09-13: full reset → `no_catacomb(0xffffffff)` → `0x40` re-run:
+    reset 0, `no_catacomb` 0, **257/257**, `0x42` went **1→0**.
+    Reset alone again did **not** clear (count 1 after reset).
+    Air now at `0x42` count **0** — re-warm via macOS before any match work.
 - Host-parity-only `0x40` (still 257)
 - `0x20` then `0x40` (cal OK, load still 257)
 - Assuming power-off clears enrolled `0x42` (falsified — noted)
 - `0x08` as alias for `0x42` (investigation open)
+- Linux-native ordinary (token-free) enroll `0x03` uid 501 (2026-09-13):
+  start rejected **status -3**, no events, no state change — with and
+  without same-session sensor context. Pre-enroll context probe passes
+  every precondition (bridge init, readiness, provisioning, protected
+  config, xART, catacomb consistency), so -3 is purely the dispatch
+  gate. SEP still empty.
+- ACM-token path, first live run as root (2026-09-13 late, `/dev/t2-acm`
+  generation 1): context **create/delete succeeded** (tracking 21 B),
+  policy-1007 preflight = unsatisfied **type-1 passcode requirement**
+  (state 1, flags 1), wall at exactly **`password-binding`** with
+  mandatory cleanup — no `/run/t2-touchid/keybag.env`, no installed
+  `t2-aks-tool`, EP7 canary still -110. No authorized 16 B form exists,
+  so no `authorized_enroll_fields` dispatch was built. Endpoint-10
+  itself is alive; the block is the keybag-bound password proof.
+- `0x30` getEnabledForUnlock shape recovered (2026-09-13, Linux-only):
+  v1 (empty or uid501) → status 0, 1 byte; reads **enabled=True** for
+  uid 501 even with empty SEP. v0 → `0xe00002c2`. `0x11` empty-in →
+  status 22 (needs its ~20 B input; not sprayed).
+- Re-mine of the 2026-09-06 cold-boot capture (2026-09-13 late, no boot):
+  **1,731** tagged `performCommand` events across boot/enroll/unlock
+  contain **zero opcode-64** — second independent confirmation Sequoia
+  never sends Mesa `0x40`. Path B is not a wrong constant, it is a
+  command macOS doesn't use. Unlock framing is `48 → 84 → 39 → 84 →
+  12 → 74` (match traffic on **74** between 84s); opcode **65** appears
+  exactly once, in enroll, unannotated.
+- Bounded read-only probes, operator-authorized, 9 calls (2026-09-13
+  late, empty SEP, state verified unchanged): `0x08` v1 → **status
+  265** (novel), v0 → `0xe00002c2`; the 400 returned bytes are
+  **all zero** — the daemon returns the preallocated out-buffer
+  unfilled on error paths, so `out_len == cap` on failures is
+  meaningless everywhere (status only). `0x11` zero-fill at 16/20/32 →
+  **22 every time**: content-gated, not length-gated; oracle closed.
+  `0x41` ver=1/val=0/empty → `0xe00002c2` (one call, not chased).
+  Lesson: brute-forcing small fields cannot converge — remaining
+  unknowns sit behind enrolled SEP state or the framework binary.
+- APFS offline-read attempt (2026-09-13 late): built `apfs-fuse-git`,
+  but open fails at **`KeyManager` init** in both `apfs-fuse` and
+  `apfsutil`, before any password prompt. T2 + Sequoia + FileVault
+  container keybag is SEP-wrapped — no Linux tooling unwraps it.
+  Mount track dead; framework binaries stay behind a macOS boot.
 
 ## Doc index
 
