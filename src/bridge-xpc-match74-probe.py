@@ -40,8 +40,12 @@ if str(LOCAL_SOURCE) not in sys.path:
 import importlib.util as _importlib_util
 
 from t2_bridge_wire import (  # noqa: E402
+    TYPE_HELO,
     biometric_command,
+    describe,
     receive_envelope,
+    receive_frame,
+    request,
     send_helo,
     send_message,
 )
@@ -110,7 +114,20 @@ def main() -> int:
     with socket.socket(socket.AF_INET6, socket.SOCK_STREAM) as sock:
         sock.settimeout(5.0)
         sock.connect((args.host, args.port, 0, scope_id))
-        send_helo(sock, 39)
+        frame_type, body = receive_frame(sock)
+        if frame_type != TYPE_HELO:
+            return fail(f"expected HELO frame, got type {frame_type}")
+        helo = describe(frame_type, body)
+        send_helo(sock, int(helo.get("BridgeXPCVersion", 39)))
+        version_reply = request(sock, [0])
+        if (not isinstance(version_reply, list)
+                or len(version_reply) != 2 or version_reply[0] != 0):
+            return fail(f"getBridgeVersion failed: {version_reply!r}")
+        client_version = min(version_reply[1], 2)
+        if request(sock, [10, client_version]) != [0]:
+            return fail("bridge client-version negotiation failed")
+        if request(sock, [1]) != [0, True]:
+            return fail("biometric service did not report opened")
 
         # Warm gate: identity list + SKS state. Abort cold, before match.
         list_reply, _ = biometric_command(
@@ -128,11 +145,16 @@ def main() -> int:
              for i in range(count)] if count > 0 else []
         )
         sks_reply, _ = biometric_command(
-            sock, 0x39, data=struct.pack("<I", args.macos_user_id),
+            sock, 0x27, data=struct.pack("<I", args.macos_user_id),
             output_capacity=4,
         )
+        # NOTE: the direct BiometricKit framing returns a 4-byte SKS payload
+        # whose layout differs from the coupled path (observed warm:
+        # 10080000). Only the first byte carries the known state across
+        # all readings (0x10 warm, 0x15 cold on the coupled path); gate on
+        # it and let the 0x42 count carry the hard fail-closed decision.
         sks = (
-            struct.unpack("<I", sks_reply[1])[0]
+            sks_reply[1][0]
             if isinstance(sks_reply, list) and len(sks_reply) == 2
             and isinstance(sks_reply[1], bytes) and len(sks_reply[1]) == 4
             else None
@@ -148,7 +170,7 @@ def main() -> int:
         prelude_steps = [
             (0x30, 1, 0, struct.pack("<I", args.macos_user_id), 1, "getEnabledForUnlock"),
             (0x54, 1, 0, struct.pack("<I", 2) + bytes(16), 83, "accessory-B"),
-            (0x39, 1, 0, struct.pack("<I", args.macos_user_id), 4, "sks-lock"),
+            (0x27, 1, 0, struct.pack("<I", args.macos_user_id), 4, "sks-lock"),
             (0x54, 1, 0, struct.pack("<I", 2) + bytes(16), 83, "accessory-B"),
             (0x0C, 1, 0, b"", 0, "cancel-idle"),
         ]
