@@ -42,6 +42,7 @@ matching has no local baseline — plain all-identities match used instead.
 | 4 | `--load-calibration` (FDR 61407 B, status 0) | 10s | **not touched** (operator confirmed) | 0 | none | 0 |
 | 5 | `--load-calibration` (FDR 61407 B, status 0) | 10s | **touched immediately** (operator confirmed) | 0 | none | 0 (4 status + 3 statistics) |
 | 6 | default (flags 0) | 60s | **held continuously** (operator confirmed full-window contact) | 0 | none | 0 (6 status + 3 statistics; ordinals 63/64/80/81/90/91) |
+| 7 | **74 framing** (same 68 B + counted blob, Sequoia prelude `48→84→39→84→12`) | n/a (refused at start) | held (irrelevant — never opened) | **258** | n/a | none (probe `bridge-xpc-match74-probe.py`, warm-gated, one shot, no variants) |
 
 Cancel after every window: status 0. Warm `0x42 count=1` re-verified after
 all attempts — none of these paths clear the identity.
@@ -63,6 +64,18 @@ all attempts — none of these paths clear the identity.
   sends **zero opcode-4** — prelude is `48 → 84 → 39 → 84 → 12 → 74`.
   Open-but-mute on 4 is consistent with 4 being, like 64, a command macOS
   doesn't use on this path; the verdict likely lives on the 74/ACM side.
+* Window 7 (2026-09-13, warm SEP, no module loaded): 74 with Fork A
+  framing refused at dispatch (**258**) after a clean all-zero Sequoia
+  prelude. 4 opens / 74 refuses with identical payloads — 74 wants a
+  different precondition (ACM-bound context? different payload class?)
+  or is not match-start on this build (label stays medium-confidence).
+  Single shot, no variants; warm `0x42=1` verified preserved after.
+* SKS side-observation: coupled-path `0x27` v1 read `0x10` at warm-verify
+  and `0x810` (stable across re-reads) after the 74 run; `0x42` intact
+  throughout. First observed post-run — correlation with the refused
+  start is unproven (intervening read-only sessions exist). Meaning of
+  `0x810` unknown; no action taken. Related framing note: direct-path
+  SKS payload layout differs from coupled path (warm bytes `10080000`).
 * This is an **open-but-mute** result, distinct from the EP7 mailbox mute:
   transport + session + identity list + match-start all succeed; only the
   verdict event is absent.

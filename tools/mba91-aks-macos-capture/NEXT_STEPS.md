@@ -110,6 +110,10 @@ EP7 AKS stays muted (separate transport dead-end); fingerprint path is BridgeXPC
     see `MATCH_FORKA_2026-09-13.md`. Sequoia unlock prelude comparison:
     working unlock sends zero opcode-4 (`48 → 84 → 39 → 84 → 12 → 74`).
     Warm `0x42=1` preserved throughout.
+  - 2026-09-13 window 7: 74 with Fork A framing refused at dispatch
+    (**258**) after clean Sequoia prelude, no module loaded, one shot
+    no variants. SKS read `0x810` (stable) afterwards vs `0x10` at
+    warm-verify; `0x42` intact. 4-opens/74-refuses, identical payloads.
 - Sequoia Mesa decimal-64 boot mine — DONE 2026-09-13 (third independent
   confirmation): full-boot sweep **0 hits** for `performCommand … 64`;
   boot histogram without 64; unlock framing `48 → 84 → 39 → 84 → 12 → 74`
