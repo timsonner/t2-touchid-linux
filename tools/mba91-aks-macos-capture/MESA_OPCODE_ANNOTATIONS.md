@@ -80,6 +80,18 @@ Linux `t2_sep` mailbox AppleKeyStore EP7 capability frames we falsified.
 Annotation helps understand macOS biometric ordering (device list → enroll/match
 → catacomb save). It does **not** by itself give a drop-in EP7 replay list.
 
+## Follow-up: decimal-65 resolved (2026-09-13 enroll-phase trip)
+
+Enroll-minute sweep (`ENROLL_ARG_SHAPES_2026-09-13.md`): decimal `65`
+appears exactly once, ver=1, inValue=0, inSize=**4**, ~10 s before enroll
+start. That shape matches the existing `0x41` free-capacity codec (uid
+4 B, v1) — treat decimal 65 as `0x41` free-capacity here, confidence
+medium-high for this call site. Decimal `101` (`0x65` proper) appears
+zero times in the 30 k-line boot log, so the trip note's "`0x65`" was
+decimal-65 shorthand. `0x03`/`0x0e` are unaffected (same value in hex
+and decimal digits). The `3,4,26,38,40,65` "unannotated" table row above
+is superseded for 65 only; the rest stay low-confidence single samples.
+
 ## Files
 
 - Full tagged timeline (private): `~/Private/t2-aks-capture/mesa-bridge-timeline.txt`

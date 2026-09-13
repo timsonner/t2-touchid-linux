@@ -231,6 +231,49 @@ EP7 AKS stays muted (separate transport dead-end); fingerprint path is BridgeXPC
   shape is unmined anywhere accessible (no codec on disk; the 09-06
   raw enroll log is gone, only its histogram survives). No further
   `0x0e` windows until arg shapes are recovered.
+- Enroll arg shapes recovered (2026-09-13 enroll-phase trip, boot
+  `62D1A28F-…` `20260913T092455Z`, macOS 15.7.9 — new finger enrolled,
+  then one lock-screen unlock verified `MATCH` uid 501): see
+  `ENROLL_ARG_SHAPES_2026-09-13.md`. Sweep over the enroll minute:
+  `3` ×1 (ver 2, inValue 0, **68 B token**), `14` ×**8** (ver 1,
+  inValue 0, **0 B every time**), decimal `65` (= `0x41`) ×1 (ver 1,
+  inValue 0, **4 B**, ~10 s pre-enroll), `4` ×1 post-enroll (ver 1,
+  inValue 0, **68 B**). Notation: trip note "`0x65`" was decimal-65
+  shorthand; decimal 101 (`0x65` proper) appears zero times in the
+  30 k-line boot log. Linux-side: `t2_enrollment_protocol` /
+  `t2_enrollment_bridge` are already shape-faithful (v2 68 B start,
+  empty v1 continue), and decimal 65 matches the existing `0x41`
+  free-capacity codec (uid 4 B, v1). What this closes: the `0x0e`
+  input-size sequence (the missing datum — all empty, N=8, pacing
+  ~1–2 s, each glued to `enrollContinue → Success`) and the
+  `0x03` bare-vs-token question (token). What it does not recover:
+  the 68 B token *contents* (never logged). The live 22-on-68 B
+  refusal and the parked live-enroll stance are unchanged — no new
+  preflight, no live attempt proposed here.
+- Authorized-74 window (2026-09-13, warm SEP, minimal module,
+  `bridge-xpc-match74-authorized.py` staged): fresh ACM tracking context,
+  `verify-password-acm` status 0 (policy 1007 SATISFIED), warm gate true
+  (`0x42` count 2, SKS `0x11` — new drift value, `0x42` intact
+  throughout), Sequoia prelude all status 0
+  (`48`→1 B, `84`→83 B, `39`→4 B, `84`→83 B, `12`→nil), then **74
+  empty refused 258** — identical to plain empty-74 (window 9) and
+  Fork-A 68 B 74 (windows 7–8). First attempt's silence was a harness
+  bug (diagnostic printed on one path only, plus an over-strict SKS
+  gate); fixed to record-and-raise with SKS informational, second run
+  reporting fully. Conclusion: the 74 gate is **neither input-shape nor
+  ambient password-context**. Remaining 74 hypotheses, if any, are
+  credential-in-payload (inline token à la `0x03`'s 68 B authorized
+  form) or 74-isn't-match-start on this build (label stays
+  medium-confidence) — both design questions, no live attempt staged.
+  Gate re-disabled in source; `0x42`=2 preserved, capacity
+  repeat-equal. SKS `0x11` joins `0x10/0x810/0x239` as observed-warm
+  session coloring, never a gate.
+- C3 version-gate closed (2026-09-13, warm SEP, no module needed):
+  74 empty at wire **ver 2** → **`0xe00002c2`** (bad argument), prelude
+  all 0, warm gate true (`0x42`=2, SKS `0x11` stable). The SEP knows 74
+  at ver 1 only; the version axis is dead in one shot as designed.
+  Remaining payload candidates (C4/C1/C2) stay parked behind the Fork B
+  mine per the design note. Gate re-disabled; `0x42`=2 preserved.
 - Unlock-minute arg shapes, capture-mined 2026-09-13 (48 performCommand
   lines, ver/val/inSize only — trailing hex is buffer pointers, not
   sizes; payloads never extracted): `48` v1/0/empty, `84` v1/0/20 B,
