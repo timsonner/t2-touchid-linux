@@ -64,6 +64,26 @@ See `PARKED_2026-09-08.md`.
 macOS Touch ID → Omarchy warm handoff to restore `0x42` when you need a
 non-empty list again (match UX, etc.). Proven; independent of (1).
 
+### 2b. Next macOS trip checklist (single boot covers all)
+
+SEP is empty as of 2026-09-13 — this trip also re-warms. Kit procedure:
+`README.md` + `CHECKLIST.md`; exports/teardown: `BACKUP_AND_TEARDOWN.md`.
+
+1. Install capture daemon → `chmod 755` + `a+r` on `/var/log/t2-aks-capture`
+   → install `EnablePrivateLogging.mobileconfig` → confirm `PRIVATE_DATA`
+   → cold reboot.
+2. **B mine:** around `loadCatacombForComponent` / `loadCatacombForUser`,
+   search for `performCommand … 64` (decimal). Record present/absent (+
+   `inValue`/`inSize` if present). Prediction: absent (boot load is
+   host-side unarchive).
+3. Enroll one finger, lock-screen unlock once; confirm both succeed.
+4. Export newest capture set + `/Library/Catacomb/<UUID>/` +
+   `t2-keybags.tar.gz` to `~/Private/` and USB. **Skip ESP FDR** (absent/N/A).
+5. `sudo ./uninstall.sh`; remove the Device Management profile.
+6. Warm reboot to Omarchy (no sensor reset) to restore `0x42=1`.
+7. Report back: `sw_vers`, `PRIVATE_DATA` state, enroll/unlock success,
+   Mesa-64 verdict, USB contents confirmed.
+
 ### 3. Retry `0x40` / match
 
 Live `0x40` or match/`0x04` / ACM work is open for assisted research.
