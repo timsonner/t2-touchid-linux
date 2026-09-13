@@ -44,6 +44,7 @@ matching has no local baseline — plain all-identities match used instead.
 | 6 | default (flags 0) | 60s | **held continuously** (operator confirmed full-window contact) | 0 | none | 0 (6 status + 3 statistics; ordinals 63/64/80/81/90/91) |
 | 7 | **74 framing** (same 68 B + counted blob, Sequoia prelude `48→84→39→84→12`) | n/a (refused at start) | held (irrelevant — never opened) | **258** | n/a | none (probe `bridge-xpc-match74-probe.py`, warm-gated, one shot, no variants) |
 | 8 | **74 framing + unlock flags 1** (same script/prelude) | n/a (refused at start) | held (irrelevant — never opened) | **258** | n/a | none (one shot, no variants; refusal is flags-independent) |
+| 9 | **74 empty input** (capture-exact: ver 1, val 0, 0 B) | n/a (refused at start) | held (irrelevant — never opened) | **258** | n/a | none (one shot, no variants; shape hypothesis dead — refusal is not input-shape) |
 
 Cancel after every window: status 0. Warm `0x42 count=1` re-verified after
 all attempts — none of these paths clear the identity.

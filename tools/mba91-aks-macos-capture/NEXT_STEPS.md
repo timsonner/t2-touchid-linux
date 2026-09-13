@@ -224,6 +224,13 @@ EP7 AKS stays muted (separate transport dead-end); fingerprint path is BridgeXPC
   a Catalina-era model never live-proven. Live enroll attempts parked
   (5 contexts spent, warm SEP intact, machine 40+ min stable on
   minimal bring-up).
+- `0x0e` enrollContinue mapped (2026-09-13, warm SEP): opens **status
+  0** with empty input, emits **zero events in 30 s fingerless and
+  60 s held**, cancels clean, no state change (`0x42`=1 throughout).
+  It arms a channel that needs structured follow-up input — whose
+  shape is unmined anywhere accessible (no codec on disk; the 09-06
+  raw enroll log is gone, only its histogram survives). No further
+  `0x0e` windows until arg shapes are recovered.
 - Unlock-minute arg shapes, capture-mined 2026-09-13 (48 performCommand
   lines, ver/val/inSize only — trailing hex is buffer pointers, not
   sizes; payloads never extracted): `48` v1/0/empty, `84` v1/0/20 B,
