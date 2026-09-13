@@ -185,6 +185,14 @@ EP7 AKS stays muted (separate transport dead-end); fingerprint path is BridgeXPC
   traffic rides **BridgeXPC/NCM in userspace and needs no module** —
   warm match work proceeds with the module unloaded; insmod returns
   only for ACM-specific steps, minimally parameterized.
+- Minimal-bring-up SURVIVED warm SEP (2026-09-13): `register_ool=1
+  register_acm=1 aks_start_cpu=0 aks_ep0_nop=0 aks_discover=0
+  aks_device_state_canary=0` → all three nodes registered, NCM alive
+  past the 9 s death mark, 20+ min uptime, no watchdog. Prime suspect
+  remains the CPU-start poke (untested in isolation — one variable at
+  a time if ever revisited). ACM lifecycle on warm SEP: create/delete
+  + policy-1007 preflight (type-1, unsatisfied) identical to cold.
+  Warm `0x42=1` intact throughout; SKS `0x810` stable.
 
 ## Doc index
 
