@@ -42,7 +42,17 @@ Stages (one shot each, separate verified-stable baselines, never combined):
   parked the open-session hypothesis; do not repeat s2.
 - s2b: like s2 but with explicit 12-cancel + drain + 3 s gap after the
   early cluster (mirrors the macOS ~3 s prelude/verdict gap) before the
-  verdict framing + 74 empty. STAGED, not yet run.
+  verdict framing + 74 empty.
+  RUN 2026-09-16: sep-cancel 0, 3 drained events, prelude all 0,
+  74 -> clean 258. Full session-shape closed as the gate; the 4-standin
+  is now suspect for S2's nil (open session breaks 74 dispatch).
+- s3: 00:00-style no-4 session (UNLOCK_VERDICTS_2026-09-16: prelude
+  varies, 4 not mandatory): 46 -> 48-empty -> 46, then a 3 s zero-Mesa
+  gap (sleep in-session, no cancel — nothing opened), then corrected
+  verdict order 48 -> 84 -> 39 -> 12 -> 84 -> 74 (12 before the second
+  84 per the 00:07 canonical), empty 74. STAGED, not yet run.
+  258 rules the prelude out entirely; 0 opens the first real touch
+  window; 22 reopens shape, targeted.
 
 Deliberate limits: single 74 dispatch per run, 60 s event cap, cancel
 always, post-0x42==2 required (halt all live work otherwise). Any 74
@@ -110,7 +120,7 @@ def main() -> int:
     parser.add_argument("--port", required=True, type=int)
     parser.add_argument("--interface", required=True)
     parser.add_argument("--macos-user-id", required=True, type=int)
-    parser.add_argument("--stage", required=True, choices=("s1", "s2", "s2b"))
+    parser.add_argument("--stage", required=True, choices=("s1", "s2", "s2b", "s3"))
     parser.add_argument("--match-seconds", type=float, default=30.0)
     parser.add_argument("--confirm-live", default="")
     parser.add_argument("--private-json", default="")
@@ -252,16 +262,48 @@ def main() -> int:
                 summary["s2b_drained_events"] = drained
                 time.sleep(3.0)
 
+        # S3: 00:00-style no-4 session (UNLOCK_VERDICTS_2026-09-16). No
+        # match-type command opens here, so no cancel — just the zero-Mesa
+        # gap macOS shows, slept in-session.
+        if args.stage == "s3":
+            early = [
+                (0x2E, 1, 0, struct.pack("<I", uid), 33, "early-46-a"),
+                (0x30, 1, 0, b"", 1, "early-48-empty"),
+                (0x2E, 1, 0, struct.pack("<I", uid), 33, "early-46-b"),
+            ]
+            for op, ver, val, data, cap, label in early:
+                status = run_step(op, ver, val, data, cap, label,
+                                  summary["early_cluster"])
+                if status != 0:
+                    close_session()
+                    print(json.dumps(summary, indent=2, sort_keys=True))
+                    return fail(f"early cluster deviated at {label}: "
+                                f"status={status}")
+            time.sleep(3.0)
+
         # Verdict framing, capture-exact (48 EMPTY — the fix vs 48+uid).
-        prelude = [
-            (0x30, 1, 0, b"", 1, "getEnabledForUnlock-empty"),
-            (0x54, 1, 0, struct.pack("<I", 2) + bytes(16), 83,
-             "accessory-B"),
-            (0x27, 1, 0, struct.pack("<I", uid), 4, "sks-lock"),
-            (0x54, 1, 0, struct.pack("<I", 2) + bytes(16), 83,
-             "accessory-B"),
-            (0x0C, 1, 0, b"", 0, "cancel-idle"),
-        ]
+        # S3 uses the 00:07 canonical order (12 before the second 84);
+        # older stages keep their as-run order as historical record.
+        if args.stage == "s3":
+            prelude = [
+                (0x30, 1, 0, b"", 1, "getEnabledForUnlock-empty"),
+                (0x54, 1, 0, struct.pack("<I", 2) + bytes(16), 83,
+                 "accessory-B"),
+                (0x27, 1, 0, struct.pack("<I", uid), 4, "sks-lock"),
+                (0x0C, 1, 0, b"", 0, "cancel-idle"),
+                (0x54, 1, 0, struct.pack("<I", 2) + bytes(16), 83,
+                 "accessory-B"),
+            ]
+        else:
+            prelude = [
+                (0x30, 1, 0, b"", 1, "getEnabledForUnlock-empty"),
+                (0x54, 1, 0, struct.pack("<I", 2) + bytes(16), 83,
+                 "accessory-B"),
+                (0x27, 1, 0, struct.pack("<I", uid), 4, "sks-lock"),
+                (0x54, 1, 0, struct.pack("<I", 2) + bytes(16), 83,
+                 "accessory-B"),
+                (0x0C, 1, 0, b"", 0, "cancel-idle"),
+            ]
         for op, ver, val, data, cap, label in prelude:
             status = run_step(op, ver, val, data, cap, label,
                               summary["prelude"])
