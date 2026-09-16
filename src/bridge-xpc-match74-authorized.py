@@ -24,6 +24,15 @@ input (ver 1, val 0, 0 B), exactly once. A nonzero start status ends the
 run: no payload variants, no sprays, no enroll/load/reset/delete/EP7
 traffic of any kind.
 
+S4 update (UNLOCK_VERDICTS_2026-09-16, S3): the default prelude below is
+the as-run 2026-09-13 shape (48+uid deviation, proven benign by S1).
+Pass --exact-session for the 00:00-style no-4 session instead —
+46 -> 48-empty -> 46, 3 s zero-Mesa gap, corrected verdict order
+48 -> 84 -> 39 -> 12 -> 84 — with the authorized context live. That is
+the last untested authorized x session combination. Honest odds: low
+(ambient auth already 258 against the old prelude; S3 already 258
+without auth). One window; any non-258/22 halts everything.
+
 Deliberate limits: single attempt, 60 s event cap, cancel always,
 post-0x42 preserved check. match_result contents are never decoded:
 only (event_kind, ordinal, data_length, boolean matched) is recorded.
@@ -130,10 +139,12 @@ def reply_bytes(reply: object) -> bytes | None:
 
 
 def match74_consumer_factory(host, port, interface, user_id,
-                             fork_a, match_seconds):
+                             fork_a, match_seconds, exact_session=False):
     def consume(external_form: bytes) -> dict[str, object]:
         if not isinstance(external_form, bytes) or len(external_form) != 16:
             raise RuntimeError("authorized external form is invalid")
+        # The form is ambient-only by Fork-B verdict (74 carries no
+        # credential payload): validated, never placed on the wire.
         summary: dict[str, object] = {
             "opcode": MATCH74_OPCODE,
             "match_input": "empty-authorized",
@@ -147,11 +158,14 @@ def match74_consumer_factory(host, port, interface, user_id,
         }
         sock = open_bridge(host, port, interface)
 
+        class _ConsumerAbort(RuntimeError):
+            """Expected halt (gate/deviation/refusal): already diagnosed."""
+
         def abort(message: str) -> None:
             summary["consumer_error"] = message
             print("consumer diagnostic: "
                   + json.dumps(summary, sort_keys=True), file=sys.stderr)
-            raise RuntimeError(message)
+            raise _ConsumerAbort(message)
 
         try:
             list_reply, _ = biometric_command(
@@ -179,16 +193,50 @@ def match74_consumer_factory(host, port, interface, user_id,
             # alongside the dispatch verdict instead.
             summary["warm_gate"] = True
 
+            if exact_session:
+                # S4: 00:00-style no-4 session. Nothing match-type opens
+                # here, so no cancel — the zero-Mesa gap macOS shows.
+                for opcode, version, value, data, cap, label in [
+                    (0x2E, 1, 0, struct.pack("<I", user_id), 33,
+                     "early-46-a"),
+                    (0x30, 1, 0, b"", 1, "early-48-empty"),
+                    (0x2E, 1, 0, struct.pack("<I", user_id), 33,
+                     "early-46-b"),
+                ]:
+                    reply, _ = biometric_command(
+                        sock, opcode, version=version, value=value,
+                        data=data, output_capacity=cap)
+                    status = reply[0] if (
+                        isinstance(reply, list) and reply) else None
+                    out = reply_bytes(reply)
+                    summary["prelude"].append({
+                        "label": label, "opcode": opcode, "status": status,
+                        "out_len": None if out is None else len(out)})
+                    if status != 0:
+                        abort(f"early cluster deviated at {label}: "
+                              f"status={status}")
+                time.sleep(3.0)
+                summary["session"] = "s3-exact-no4"
+            else:
+                summary["session"] = "legacy-48-uid"
+
             prelude_steps = [
-                (0x30, 1, 0, struct.pack("<I", user_id), 1,
-                 "getEnabledForUnlock"),
+                (0x30, 1, 0, b"" if exact_session else struct.pack(
+                    "<I", user_id), 1, "getEnabledForUnlock"),
                 (0x54, 1, 0, struct.pack("<I", 2) + bytes(16), 83,
                  "accessory-B"),
                 (0x27, 1, 0, struct.pack("<I", user_id), 4, "sks-lock"),
-                (0x54, 1, 0, struct.pack("<I", 2) + bytes(16), 83,
-                 "accessory-B"),
-                (0x0C, 1, 0, b"", 0, "cancel-idle"),
             ]
+            if exact_session:
+                # 00:07 canonical: 12 before the second 84.
+                prelude_steps.append(
+                    (0x0C, 1, 0, b"", 0, "cancel-idle"))
+            prelude_steps.append(
+                (0x54, 1, 0, struct.pack("<I", 2) + bytes(16), 83,
+                 "accessory-B"))
+            if not exact_session:
+                prelude_steps.append(
+                    (0x0C, 1, 0, b"", 0, "cancel-idle"))
             for opcode, version, value, data, cap, label in prelude_steps:
                 reply, _ = biometric_command(
                     sock, opcode, version=version, value=value,
@@ -237,6 +285,15 @@ def match74_consumer_factory(host, port, interface, user_id,
                         summary["match_result_seen"] = True
                         break
             summary["observed_events"] = observed
+        except _ConsumerAbort:
+            raise
+        except BaseException as error:
+            # Unexpected transport/codec failure (e.g. peer closed on 74):
+            # dump the partial summary so the window is never a blank.
+            summary["consumer_exception"] = type(error).__name__
+            print("consumer diagnostic: "
+                  + json.dumps(summary, sort_keys=True), file=sys.stderr)
+            raise
         finally:
             try:
                 cancel_reply, _ = biometric_command(sock, 0x0C)
@@ -263,6 +320,11 @@ def main() -> int:
     parser.add_argument("--interface", required=True)
     parser.add_argument("--macos-user-id", required=True, type=int)
     parser.add_argument("--match-seconds", type=float, default=30.0)
+    parser.add_argument(
+        "--exact-session", action="store_true",
+        help="S4: 00:00-style no-4 session (46/48/46 + gap, 12 before "
+        "second 84) with the authorized context live. Default re-runs "
+        "the as-run 2026-09-13 shape.")
     parser.add_argument("--confirm-live", default="")
     parser.add_argument("--private-json", default="")
     args = parser.parse_args()
@@ -306,7 +368,8 @@ def main() -> int:
                 device, user_id, bind_password,
                 match74_consumer_factory(
                     args.host, args.port, args.interface, user_id,
-                    fork_a, args.match_seconds),
+                    fork_a, args.match_seconds,
+                    exact_session=args.exact_session),
                 tracking=True)
     except (OSError, ValueError, ACMDeviceError, RuntimeError) as error:
         return fail(f"{error}")
