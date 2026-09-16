@@ -282,6 +282,7 @@ def main() -> int:
                         "analyze, no further shots")
         start_status = (match_reply[0] if isinstance(match_reply, list)
                         and match_reply else None)
+        summary["match_start_status"] = start_status
         if start_status != 0:
             close_session()
             print(json.dumps(summary, indent=2, sort_keys=True))
