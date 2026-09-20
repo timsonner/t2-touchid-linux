@@ -160,6 +160,12 @@ install -o root -g root -m 0700 "$source_dir/src/t2-biometric-ready.sh" /usr/loc
 install -o root -g root -m 0700 "$source_dir/src/t2-biometric-port-refresh.sh" /usr/local/sbin/t2-biometric-port-refresh
 install -o root -g root -m 0700 "$source_dir/src/t2-sep-transport-load.sh" /usr/local/sbin/t2-sep-transport-load
 install -o root -g root -m 0644 "$source_dir/systemd/system/"*.service /etc/systemd/system/
+if [[ $mba91_warm_sep == 1 && -f $source_dir/systemd/system/fprintd.service.d/10-mba91.conf ]]; then
+  install -d -o root -g root -m 0755 /etc/systemd/system/fprintd.service.d
+  install -o root -g root -m 0644 \
+    "$source_dir/systemd/system/fprintd.service.d/10-mba91.conf" \
+    /etc/systemd/system/fprintd.service.d/10-mba91.conf
+fi
 install -d -o root -g root -m 0755 /etc/systemd/sleep.conf.d
 install -o root -g root -m 0644 \
   "$source_dir/systemd/sleep.conf.d/90-t2-touchid-s2idle.conf" \
