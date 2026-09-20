@@ -62,7 +62,7 @@ from t2_bridge_wire import (  # noqa: E402
     send_message,
 )
 
-LIVE_T_ENABLED = True
+LIVE_T_ENABLED = False
 CONFIRM = "I_UNDERSTAND_THIS_STARTS_ONE_TARGETED_MATCH_WINDOW"
 MATCH_OPCODE = 4
 # The counted blob is only honored as a selection with this flag (the
