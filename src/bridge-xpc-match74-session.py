@@ -53,6 +53,12 @@ Stages (one shot each, separate verified-stable baselines, never combined):
   84 per the 00:07 canonical), empty 74. STAGED, not yet run.
   258 rules the prelude out entirely; 0 opens the first real touch
   window; 22 reopens shape, targeted.
+- s5: HELO-identity probe (SESSION_IDENTITY_AUDIT_2026-09-20): swapped
+  HELO values only (ProcessName -> biometrickitd, OSBuild -> 24G830,
+  keys preserved) -> standard init -> S1 capture-exact framing
+  48 -> 84 -> 39 -> 84 -> 12 -> 74 (all v1/val0, empty 74). Isolates
+  the HELO variable against S1 (which refused 258 with stock HELO).
+  258 closes H1 and promotes H2; non-258 reopens the track.
 
 Deliberate limits: single 74 dispatch per run, 60 s event cap, cancel
 always, post-0x42==2 required (halt all live work otherwise). Any 74
@@ -120,7 +126,7 @@ def main() -> int:
     parser.add_argument("--port", required=True, type=int)
     parser.add_argument("--interface", required=True)
     parser.add_argument("--macos-user-id", required=True, type=int)
-    parser.add_argument("--stage", required=True, choices=("s1", "s2", "s2b", "s3"))
+    parser.add_argument("--stage", required=True, choices=("s1", "s2", "s2b", "s3", "s5"))
     parser.add_argument("--match-seconds", type=float, default=30.0)
     parser.add_argument("--confirm-live", default="")
     parser.add_argument("--private-json", default="")
@@ -158,7 +164,15 @@ def main() -> int:
         if frame_type != TYPE_HELO:
             return fail(f"expected HELO frame, got type {frame_type}")
         helo = describe(frame_type, body)
-        send_helo(sock, int(helo.get("BridgeXPCVersion", 39)))
+        if args.stage == "s5":
+            send_helo(sock, int(helo.get("BridgeXPCVersion", 39)),
+                      process_name="biometrickitd", os_build="24G830")
+            summary["helo_sent"] = {"ProcessName": "biometrickitd",
+                                    "OSBuild": "24G830"}
+        else:
+            send_helo(sock, int(helo.get("BridgeXPCVersion", 39)))
+            summary["helo_sent"] = {"ProcessName": "t2-touchid-probe",
+                                    "OSBuild": "Linux"}
         version_reply = request(sock, [0])
         if (not isinstance(version_reply, list)
                 or len(version_reply) != 2 or version_reply[0] != 0):

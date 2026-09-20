@@ -52,13 +52,19 @@ def receive_frame(sock: socket.socket) -> tuple[int, bytes]:
     return frame_type, receive_exact(sock, body_length)
 
 
-def send_helo(sock: socket.socket, bridge_xpc_version: int) -> None:
+def send_helo(
+    sock: socket.socket,
+    bridge_xpc_version: int,
+    *,
+    process_name: str = "t2-touchid-probe",
+    os_build: str = "Linux",
+) -> None:
     body = json.dumps(
         {
             "MaxSupportedProtocolVersion": PROTOCOL_VERSION,
-            "OSBuild": "Linux",
+            "OSBuild": os_build,
             "BridgeXPCVersion": bridge_xpc_version,
-            "ProcessName": "t2-touchid-probe",
+            "ProcessName": process_name,
         },
         separators=(",", ":"),
     ).encode()
