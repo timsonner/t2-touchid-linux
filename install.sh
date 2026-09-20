@@ -33,6 +33,10 @@ ensure_config_default() {
   local key=$1 value=$2
   grep -q "^${key}=" /etc/t2-touchid.conf || printf '%s=%s\n' "$key" "$value" >>/etc/t2-touchid.conf
 }
+ensure_config_default T2_TOUCHID_HOST ''
+ensure_config_default T2_TOUCHID_INTERFACE ''
+ensure_config_default T2_TOUCHID_PROJECT_DIR /opt/t2-touchid
+ensure_config_default T2_TOUCHID_MBA91_WARM_SEP 0
 ensure_config_default T2_TOUCHID_MACOS_USER_ID 501
 ensure_config_default T2_TOUCHID_SPECIAL_BAG -501
 ensure_config_default T2_TOUCHID_ENROLLED_FINGER right-index-finger
@@ -45,6 +49,17 @@ chmod 0600 /etc/t2-touchid.conf
 acm_research=$(sed -n 's/^T2_TOUCHID_ENABLE_ACM_RESEARCH=//p' /etc/t2-touchid.conf | tail -n 1)
 if [[ $acm_research != 0 && $acm_research != 1 ]]; then
   echo "T2_TOUCHID_ENABLE_ACM_RESEARCH must be exactly 0 or 1." >&2
+  exit 2
+fi
+mba91_warm_sep=$(sed -n 's/^T2_TOUCHID_MBA91_WARM_SEP=//p' /etc/t2-touchid.conf | tail -n 1)
+if [[ $mba91_warm_sep != 0 && $mba91_warm_sep != 1 ]]; then
+  echo "T2_TOUCHID_MBA91_WARM_SEP must be exactly 0 or 1." >&2
+  exit 2
+fi
+t2_host=$(sed -n 's/^T2_TOUCHID_HOST=//p' /etc/t2-touchid.conf | tail -n 1)
+t2_iface=$(sed -n 's/^T2_TOUCHID_INTERFACE=//p' /etc/t2-touchid.conf | tail -n 1)
+if [[ -z $t2_host || -z $t2_iface || $t2_host == *replace-with* || $t2_iface == *replace-with* ]]; then
+  echo "Set T2_TOUCHID_HOST and T2_TOUCHID_INTERFACE in /etc/t2-touchid.conf, then rerun." >&2
   exit 2
 fi
 auto_sync_adaptive=$(sed -n 's/^T2_TOUCHID_AUTO_SYNC_ADAPTIVE=//p' /etc/t2-touchid.conf | tail -n 1)
@@ -170,6 +185,12 @@ chmod 0644 \
   /etc/systemd/system/t2-touchid-adaptive-sync.service.d/05-account-home.conf
 install -d -o root -g root -m 0755 /etc/modprobe.d
 module_options='options t2_sep_transport register_ool=1 probe_capabilities=1'
+if [[ $mba91_warm_sep == 1 ]]; then
+  # MBA91 research build: the four warm-killers default true and must be
+  # pinned off, and ACM registration is required. Proven-track behavior
+  # is unchanged when the flag is 0.
+  module_options+=' register_acm=1 aks_start_cpu=0 aks_ep0_nop=0 aks_discover=0 aks_device_state_canary=0'
+fi
 if [[ $acm_research == 1 ]]; then
   module_options+=" register_acm=1 aks_platform_asid=$aks_platform_asid aks_platform_proc_uniqueid=1"
   if [[ -n $aks_platform_cdhash ]]; then
