@@ -204,6 +204,7 @@ install -d -o "$target_user" -g "$target_user" -m 0755 "$target_home/.config/sys
 install -o "$target_user" -g "$target_user" -m 0644 \
   "$source_dir/systemd/user/"*.service "$target_home/.config/systemd/user/"
 
+install -d -o root -g root -m 0755 /etc/dbus-1/system.d
 cat >/etc/dbus-1/system.d/99-t2-touchid-fprint.conf <<EOF
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE busconfig PUBLIC "-//freedesktop//DTD D-BUS Bus Configuration 1.0//EN"
