@@ -43,3 +43,14 @@ framings): there is nothing to mistime when the sensor is tomb.
    business as usual — nothing here changes the working reader.
 2. Activation paper continues as the sole native direction.
 3. Do-nots unchanged.
+
+## Postscript (wake, same boot)
+
+Operator unlock (`status=0` ×2) → SKS `0x219`→`0x228`
+immediately → token-free window with enrolled finger → terminal
+`match_result` `matched:true`. Third paired SKS observation;
+mute↔`0x219`, verdict↔`0x228` holds across the night. Nuance for
+the record: this verdict window carried NO ordinal-73 event —
+73-absence corroborates mute but is not itself the touch gate;
+the no-verdict endpoint plus September's confirmed-hold mutes
+carry the argument.
