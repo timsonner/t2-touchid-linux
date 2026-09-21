@@ -21,8 +21,9 @@ Body: open bridge -> warm gate (==3) -> resolve records fresh and
 select index 2 ONLY (any other index refused; the target is never
 accepted as bytes on the command line, never logged, never written
 outside the in-memory dispatch) -> journal intent (record index +
-pre-count, operator-private path, REQUIRED) -> single 0x0d v0/val0
-dispatch with the exact 20 B record -> best-effort cancel ->
+pre-count + wire version, operator-private path, REQUIRED) ->
+single 0x0d dispatch (version from --mesa-version, default 0; D2
+runs 1) with the exact 20 B record -> best-effort cancel ->
 post-0x42 must be exactly 2 AND byte-equal to records[0:2] (the
 survivors). Outcome (counts/indexes only, no UUIDs) appended to the
 journal and printed. Trust the stable inventory, never the command
@@ -81,6 +82,8 @@ def main() -> int:
     parser.add_argument("--macos-user-id", required=True, type=int)
     parser.add_argument("--confirm-live", default="")
     parser.add_argument("--acknowledge-single-deletion", default="")
+    parser.add_argument("--mesa-version", type=int, default=0,
+                        choices=(0, 1))
     parser.add_argument("--private-json", required=True)
     args = parser.parse_args()
 
@@ -97,7 +100,8 @@ def main() -> int:
     uid = args.macos_user_id
     journal: dict[str, object] = {
         "opcode": 13,
-        "stage": "d1",
+        "stage": "d1" if args.mesa_version == 0 else "d2",
+        "wire_version": args.mesa_version,
         "target_record_index": TARGET_INDEX,
         "warm_gate": False,
         "dispatch_status": None,
@@ -154,8 +158,8 @@ def main() -> int:
 
         try:
             del_reply, del_events = biometric_command(
-                sock, 0x0D, version=0, value=0, data=target,
-                output_capacity=0)
+                sock, 0x0D, version=args.mesa_version, value=0,
+                data=target, output_capacity=0)
         except Exception as error:
             journal["outcome"] = "transport-ambiguous-halt-everything"
             private_path.write_text(json.dumps(journal, indent=2))
