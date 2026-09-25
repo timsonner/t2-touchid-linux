@@ -35,6 +35,22 @@ enum t2_acm_reply_action {
 	T2_ACM_REPLY_CLEAR_CONTEXT_AND_REJECT,
 };
 
+/* One later create while an externalized type-5 input is still the active context. */
+static inline bool
+t2_acm_split_target_create_allowed(t2_acm_wire_u8 opcode,
+				   bool context_active,
+				   bool input_live,
+				   bool input_externalized,
+				   bool input_consumed,
+				   bool target_created,
+				   bool input_is_current,
+				   bool same_user)
+{
+	return (opcode == 0x01 || opcode == 0x24) && context_active &&
+		input_live && input_externalized && !input_consumed &&
+		!target_created && input_is_current && same_user;
+}
+
 static inline enum t2_acm_context_preflight
 t2_acm_context_preflight(t2_acm_wire_u8 opcode, bool context_active)
 {

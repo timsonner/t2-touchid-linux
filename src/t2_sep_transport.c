@@ -111,6 +111,14 @@ struct t2_sep_transport {
 	bool acm_poisoned;
 	bool acm_context_active;
 	u8 acm_context[T2_ACM_CONTEXT_SIZE];
+	u32 acm_context_user_id;
+	bool acm_identity_secret_set;
+	bool acm_identity_secret_live;
+	bool acm_identity_secret_externalized;
+	bool acm_identity_secret_consumed;
+	bool acm_identity_target_created;
+	u8 acm_identity_secret_context[T2_ACM_CONTEXT_SIZE];
+	u32 acm_identity_secret_user_id;
 	bool misc_registered;
 	bool acm_misc_registered;
 	bool lab_misc_registered;
@@ -1547,10 +1555,52 @@ static bool t2_acm_response_buffer_valid(const u8 *request,
 						response != 0);
 }
 
+static void t2_acm_forget_identity_locked(struct t2_sep_transport *sep)
+{
+	sep->acm_identity_secret_set = false;
+	sep->acm_identity_secret_live = false;
+	sep->acm_identity_secret_externalized = false;
+	sep->acm_identity_secret_consumed = false;
+	sep->acm_identity_target_created = false;
+	sep->acm_identity_secret_user_id = 0;
+	memzero_explicit(sep->acm_identity_secret_context,
+			 sizeof(sep->acm_identity_secret_context));
+}
+
 static void t2_acm_clear_context_locked(struct t2_sep_transport *sep)
 {
 	memzero_explicit(sep->acm_context, sizeof(sep->acm_context));
 	sep->acm_context_active = false;
+	sep->acm_context_user_id = 0;
+}
+
+static bool t2_acm_identity_is_current_locked(const struct t2_sep_transport *sep)
+{
+	return sep->acm_context_active &&
+		!memcmp(sep->acm_context, sep->acm_identity_secret_context,
+			sizeof(sep->acm_context));
+}
+
+static bool t2_acm_split_target_create_allowed_locked(
+	const struct t2_sep_transport *sep, const u8 *request)
+{
+	return t2_acm_split_target_create_allowed(
+		request[4], sep->acm_context_active,
+		sep->acm_identity_secret_live,
+		sep->acm_identity_secret_externalized,
+		sep->acm_identity_secret_consumed,
+		sep->acm_identity_target_created,
+		t2_acm_identity_is_current_locked(sep),
+		get_unaligned_le32(request + 8) ==
+			sep->acm_identity_secret_user_id);
+}
+
+static void t2_acm_restore_identity_locked(struct t2_sep_transport *sep)
+{
+	memcpy(sep->acm_context, sep->acm_identity_secret_context,
+	       sizeof(sep->acm_context));
+	sep->acm_context_user_id = sep->acm_identity_secret_user_id;
+	sep->acm_context_active = true;
 }
 
 static void t2_acm_poison_locked(struct t2_sep_transport *sep)
@@ -1559,11 +1609,14 @@ static void t2_acm_poison_locked(struct t2_sep_transport *sep)
 	if (!++sep->acm_generation)
 		++sep->acm_generation;
 	t2_acm_clear_context_locked(sep);
+	t2_acm_forget_identity_locked(sep);
 }
 
 static int t2_acm_validate_context_locked(struct t2_sep_transport *sep,
 					  const u8 *request)
 {
+	if (t2_acm_split_target_create_allowed_locked(sep, request))
+		return 0;
 	switch (t2_acm_context_preflight(request[4],
 					 sep->acm_context_active)) {
 	case T2_ACM_CONTEXT_ALLOW:
@@ -1585,9 +1638,28 @@ static int t2_acm_record_reply_locked(struct t2_sep_transport *sep,
 				      const u8 *request, const u8 *response,
 				      size_t response_length, u32 response_info)
 {
+	bool split_target_create =
+		t2_acm_split_target_create_allowed_locked(sep, request);
+
 	switch (t2_acm_reply_action(request[4], response_length,
 				   response_info)) {
 	case T2_ACM_REPLY_ACCEPT:
+		if (request[4] == 0x28 && sep->acm_context_active &&
+		    !sep->acm_identity_target_created) {
+			memcpy(sep->acm_identity_secret_context, sep->acm_context,
+			       sizeof(sep->acm_identity_secret_context));
+			sep->acm_identity_secret_user_id = sep->acm_context_user_id;
+			sep->acm_identity_secret_set = true;
+			sep->acm_identity_secret_live = true;
+			sep->acm_identity_secret_externalized = false;
+			sep->acm_identity_secret_consumed = false;
+		} else if (request[4] == 0x13 &&
+			   sep->acm_identity_secret_set &&
+			   !memcmp(sep->acm_context,
+				   sep->acm_identity_secret_context,
+				   sizeof(sep->acm_context))) {
+			sep->acm_identity_secret_externalized = true;
+		}
 		return 0;
 	case T2_ACM_REPLY_REJECT:
 		return -EPROTO;
@@ -1596,18 +1668,49 @@ static int t2_acm_record_reply_locked(struct t2_sep_transport *sep,
 		t2_acm_poison_locked(sep);
 		return -EPROTO;
 	case T2_ACM_REPLY_SET_CONTEXT:
+		if (split_target_create &&
+		    !memcmp(response, sep->acm_identity_secret_context,
+			    sizeof(sep->acm_identity_secret_context))) {
+			t2_acm_poison_locked(sep);
+			return -EPROTO;
+		}
+		if (!split_target_create)
+			t2_acm_forget_identity_locked(sep);
+		else
+			sep->acm_identity_target_created = true;
 		memcpy(sep->acm_context, response, sizeof(sep->acm_context));
+		sep->acm_context_user_id = get_unaligned_le32(request + 8);
 		sep->acm_context_active = true;
 		return 0;
 	case T2_ACM_REPLY_SET_CONTEXT_AND_REJECT:
+		if (split_target_create &&
+		    !memcmp(response, sep->acm_identity_secret_context,
+			    sizeof(sep->acm_identity_secret_context))) {
+			t2_acm_poison_locked(sep);
+			return -EPROTO;
+		}
+		if (!split_target_create)
+			t2_acm_forget_identity_locked(sep);
+		else
+			sep->acm_identity_target_created = true;
 		memcpy(sep->acm_context, response, sizeof(sep->acm_context));
+		sep->acm_context_user_id = get_unaligned_le32(request + 8);
 		sep->acm_context_active = true;
 		return -EPROTO;
 	case T2_ACM_REPLY_CLEAR_CONTEXT:
-		t2_acm_clear_context_locked(sep);
+		if (sep->acm_identity_secret_live &&
+		    sep->acm_identity_target_created &&
+		    memcmp(request + 8, sep->acm_identity_secret_context,
+			   sizeof(sep->acm_identity_secret_context)))
+			t2_acm_restore_identity_locked(sep);
+		else {
+			t2_acm_clear_context_locked(sep);
+			t2_acm_forget_identity_locked(sep);
+		}
 		return 0;
 	case T2_ACM_REPLY_CLEAR_CONTEXT_AND_REJECT:
 		t2_acm_clear_context_locked(sep);
+		t2_acm_forget_identity_locked(sep);
 		return -EPROTO;
 	}
 	return -EPROTO;
@@ -1798,19 +1901,22 @@ static int t2_acm_release(struct inode *inode, struct file *file)
 	(void)inode;
 
 	mutex_lock(&sep->exchange_lock);
-	if (sep->acm_context_active && !sep->acm_poisoned) {
+	for (int pass = 0; pass < 2 && sep->acm_context_active &&
+	     !sep->acm_poisoned; pass++) {
 		memcpy(request + 8, sep->acm_context,
 		       sizeof(sep->acm_context));
+		response = NULL;
+		response_length = 0;
+		response_info = 0;
 		ret = t2_acm_exchange_locked(sep, 1, 0, request,
 					     sizeof(request), &response,
 					     &response_length, &response_info);
-		if (!ret && !response_info && !response_length)
-			t2_acm_clear_context_locked(sep);
-		else {
+		if (ret || response_info || response_length) {
 			dev_warn(&sep->pdev->dev,
 				 "automatic ACM context cleanup failed; endpoint disabled until reboot\n");
 			if (!sep->acm_poisoned)
 				t2_acm_poison_locked(sep);
+			break;
 		}
 	}
 	memzero_explicit(sep->acm_ool_in, T2_SEP_OOL_SIZE);

@@ -23,6 +23,14 @@ int main(void)
 	       T2_ACM_CONTEXT_MATCH_REQUIRED);
 	assert(t2_acm_context_preflight(0xff, false) ==
 	       T2_ACM_CONTEXT_DENY);
+	assert(t2_acm_split_target_create_allowed(
+		0x24, true, true, true, false, false, true, true));
+	assert(!t2_acm_split_target_create_allowed(
+		0x24, true, true, true, false, true, true, true));
+	assert(!t2_acm_split_target_create_allowed(
+		0x24, true, true, false, false, false, true, true));
+	assert(!t2_acm_split_target_create_allowed(
+		0x13, true, true, true, false, false, true, true));
 
 	assert(t2_acm_response_capacity_allowed(0x01, 17, true));
 	assert(!t2_acm_response_capacity_allowed(0x01, 18, true));
