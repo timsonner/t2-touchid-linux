@@ -1530,6 +1530,11 @@ static bool t2_acm_command_allowed(const u8 *request, size_t length)
 			!memcmp(request + 24, "TouchIdEnrollment\0", 18) &&
 			request[42] <= 1 &&
 			!memchr_inv(request + 43, 0, 8);
+	case 0x28: /* request-10 type-5 identity secret, no parameters */
+		return length >= 37 && length <= 36 + 0x80 &&
+			get_unaligned_le32(request + 24) == 5 &&
+			get_unaligned_le32(request + 28) == length - 36 &&
+			!memchr_inv(request + length - 4, 0, 4);
 	default:
 		return false;
 	}

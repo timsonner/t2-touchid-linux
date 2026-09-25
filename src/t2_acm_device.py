@@ -7,8 +7,9 @@ import fcntl
 import inspect
 import os
 import struct
+from collections.abc import Callable, Iterator
+from contextlib import contextmanager
 from pathlib import Path
-from collections.abc import Callable
 from typing import TypeVar, cast
 
 import t2_acm_protocol as protocol
@@ -265,6 +266,71 @@ def externalize_context(device: ACMDevice, handle: protocol.ContextHandle) -> by
     if response:
         raise ACMDeviceError("context externalization returned an unexpected body")
     return handle.context
+
+
+def set_identity_secret(
+    device: ACMDevice, handle: protocol.ContextHandle, secret: bytearray
+) -> None:
+    """Install request-10's transient type-5 data and wipe its command copy."""
+    command = protocol.build_identity_secret(handle, secret)
+    try:
+        response = device.exchange(command, 0)
+        if response:
+            raise ACMDeviceError("identity-secret command returned an unexpected body")
+    finally:
+        _zero(command)
+
+
+@contextmanager
+def identity_secret_context(
+    device: ACMDevice,
+    user_id: int,
+    secret: bytearray,
+    *,
+    tracking: bool = True,
+) -> Iterator[bytes]:
+    """Hold one type-5 ACM context open for a single consumer, then delete it."""
+    response_capacity = 21 if tracking else 17
+    response = device.exchange(
+        protocol.build_create(user_id=user_id, tracking=tracking), response_capacity
+    )
+    if len(response) < protocol.CONTEXT_SIZE:
+        raise ACMDeviceError(
+            "create response omitted the context required for mandatory cleanup"
+        )
+    cleanup_handle = protocol.ContextHandle(
+        response[: protocol.CONTEXT_SIZE], 0, tracking, False
+    )
+    primary_error: BaseException | None = None
+    stage = "create-response"
+    try:
+        handle = protocol.parse_create_response(response, tracking=tracking)
+        stage = "identity-secret"
+        set_identity_secret(device, handle, secret)
+        stage = "context-externalization"
+        external_form = externalize_context(device, handle)
+        stage = "credential-bearing-consumer"
+        yield external_form
+    except BaseException as error:
+        primary_error = error
+    try:
+        delete_response = device.exchange(protocol.build_delete(cleanup_handle), 0)
+        if delete_response:
+            raise ACMDeviceError("delete returned an unexpected response body")
+    except BaseException as cleanup_error:
+        if primary_error is not None:
+            raise ACMDeviceError(
+                f"identity provisioning failed at {stage} and mandatory context "
+                f"cleanup failed: {cleanup_error}"
+            ) from primary_error
+        raise ACMDeviceError(
+            f"identity provisioning completed but mandatory context cleanup failed: "
+            f"{cleanup_error}"
+        ) from cleanup_error
+    if primary_error is not None:
+        raise ACMDeviceError(
+            f"identity provisioning failed at {stage}; context was cleaned up"
+        ) from primary_error
 
 
 def with_authorized_context(

@@ -46,6 +46,7 @@ t2_acm_context_preflight(t2_acm_wire_u8 opcode, bool context_active)
 	case 0x02:
 	case 0x03:
 	case 0x13:
+	case 0x28: /* type-5 identity secret; same context match as externalize */
 		return context_active ? T2_ACM_CONTEXT_MATCH_REQUIRED :
 			T2_ACM_CONTEXT_STALE;
 	default:
@@ -64,6 +65,7 @@ t2_acm_response_capacity_allowed(t2_acm_wire_u8 opcode,
 		return capacity == 21 && has_buffer;
 	case 0x02:
 	case 0x13:
+	case 0x28:
 		return capacity == 0 && !has_buffer;
 	case 0x03:
 		return capacity == T2_ACM_POLICY_RESPONSE_SIZE && has_buffer;
@@ -93,6 +95,7 @@ t2_acm_reply_action(t2_acm_wire_u8 opcode, size_t response_length,
 		return response_length == 0 ? T2_ACM_REPLY_CLEAR_CONTEXT :
 			T2_ACM_REPLY_CLEAR_CONTEXT_AND_REJECT;
 	case 0x13:
+	case 0x28:
 		return response_length == 0 ? T2_ACM_REPLY_ACCEPT :
 			T2_ACM_REPLY_REJECT;
 	case 0x03:
