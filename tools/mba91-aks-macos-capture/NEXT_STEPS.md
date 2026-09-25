@@ -7,6 +7,41 @@ conducted under **Track A** — independent ownership research
 ([`docs/LAB_PROTOCOL.md`](../../docs/LAB_PROTOCOL.md)); the earlier 2026-09-08
 park is lifted. See `PARKED_2026-09-08.md` for the authorization record.
 
+## Standing state (2026-09-25)
+
+User 501's fingerprints and Catacomb entry are gone. Alias `-501` still
+holds the macOS keybag. A Linux-only first identity is not open.
+
+| Fact | Evidence |
+| --- | --- |
+| `0x48` for uid 501 returned 0. Identity count 2 → 0, twice. `0x3c` no longer lists 501. `0x38` returns 22 | `EMPTY_SEP_HALT_2026-09-25.md` |
+| `-501` still has the macOS bag. Primary-identity read `0x51` did not return absent | same |
+| No recovered command deletes that bag. Unload `0x05` removes one handle. `0x51` suboperations 1 and 2 transfer primary state; they are not a reset | `IDENTITY_RECONCILIATION.md` in the reference tree; this branch's halt notes |
+| DFU Revive reinstalls bridgeOS and leaves a provisioned T2. Erase All Content and Settings and DFU Restore are macOS or second-Mac procedures. Neither has been shown to leave this Air with primary identity absent | Apple Configurator revive/restore docs; reference `BRIDGEOS_DIAGNOSTICS.md` |
+| A bag we create can export and accept its creation reference. Installed as `-501`, with a user-501 Catacomb save, enroll still returns 22 | `NEW_BAG_501_VERDICT_2026-09-25.md` |
+| The saved scratch bag will not reload (`-9`). After the alias swap it will not reinstall as `-501` or `-502` (`-1`) | `SCRATCH_RELOAD_HALT_2026-09-25.md`, `CATACOMB_REBIND_HALT_2026-09-25.md` |
+| `t2touch`'s empty-SEP installer is real and was proven on MacBookPro16,1, same bridgeOS `23P6068`. It refuses to run until the primary identity is already absent. That result does not qualify this Air | reference `linux_native/README.md`, `CATACOMB_BOOTSTRAP.md` |
+
+**Air right now:** biometric user 501 is empty. The macOS keybag is still
+at `-501`. Do not send another removal, another `0x51` shape, or another
+create on top of that bag.
+
+## Next
+
+1. **Recovery, from macOS.** Enroll one finger. The Apple account and the
+   keybag are still in the T2. Then warm-reboot to Linux with no power-off.
+   Re-check `0x42` for uid 501 and a warm `load-keybag` before trusting the
+   reader. This is the way back to the working macOS-bag path.
+2. **Linux-only first identity stays closed** until a primary-identity read
+   returns absent. The only documented ways to chase that absence are Erase
+   All Content and Settings, or a DFU Restore from a second Mac. If that is
+   tried, stop at Setup Assistant and boot Linux before any new Apple
+   account. Then read whether `-501` and operation `0x51` suboperation 0 are
+   actually absent. If they are not, the erase did not clear the keybag.
+   Do not finish macOS setup first. That provisions the chip again.
+
+The 2026-09-07 list below is history. Its "Air right now" count is stale.
+
 ## What we know (2026-09-07)
 
 | Fact | Evidence |
@@ -18,8 +53,9 @@ park is lifted. See `PARKED_2026-09-08.md` for the authorization record.
 | bent: 257 ↔ missing accessory/device-group context; same `0x54` first_byte=0 on their Linux | bent touch-id / catacomb handoff |
 | `no_catacomb(0xffffffff)` cleared `0x42` here; reset alone did **not** | `RESET_THEN_LOAD40_2026-09-07.md` |
 
-**Air right now:** `0x42` count **1** (re-warmed 2026-09-13 via single-boot
+**Air on 2026-09-13:** `0x42` count **1** (re-warmed via single-boot
 macOS trip → warm reboot, no sensor reset; verified SKS `0x10`).
+Superseded by the standing state above: count is 0 as of 2026-09-25.
 
 ## Next (in order)
 
