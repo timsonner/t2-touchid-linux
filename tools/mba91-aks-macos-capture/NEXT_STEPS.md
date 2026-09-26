@@ -32,25 +32,28 @@ The warm pins are unchanged:
 
 ## Next
 
-After the reboot, `native-501.kb` reloaded as handle 1. Alias `-501` was
-absent and was bound again. The UUIDs match. No second bag was created.
+This boot reloaded `native-501.kb` as handle 2. Alias `-501` was already
+present and names that same bag. No bind and no second create.
 
-The retried enroll reached authorization. Operation `0x21` option `0x100`
-returned status 0. The zero-group start then returned status 1, so the
-finger dance was not run. Deleting the two ACM contexts used a second
-copy of the protocol class, so the delete was rejected. The kernel again
-reported `automatic ACM context cleanup failed; endpoint disabled until
-reboot`. Do not send another ACM command on this boot.
+`bridge-xpc-enroll-native-501.py --handle 2` then ran cleanly. Context
+cleanup no longer disables endpoint 10.
 
-The script now deletes through `t2_acm_device`'s own protocol module, and
-a rejected create response is deleted before the device closes.
+| Check | Result |
+| --- | --- |
+| Session prep, including xART and enabled-unlock | status 0 |
+| User 501 identity count | 0 |
+| Operation `0x21` option `0x100` | status 0 |
+| Zero-group enroll start | status 1 |
+| Finger dance | not run |
+| ACM cleanup | succeeded |
 
-1. **Reboot, reload `native-501.kb`, and bind that handle to `-501` if
-   the alias is absent.** Confirm the UUIDs match. Do not create a bag.
-2. **Run `bridge-xpc-enroll-native-501.py` once with `--handle` set to
-   the reloaded handle.** Stop if authorization is not 0, if the start
-   is not 0, or on any timeout. Status 1 is a refusal. The dance runs
-   only when the start returns 0.
+Status 1 is a refusal. It is not status `22` and it is not a timeout.
+The same start returned 1 on the previous boot, before the cleanup bug
+hid it. Do not repeat this dispatch until the status-1 reason is known.
+
+1. **Find why the authorized zero-group start returns 1 for an empty
+   user-501 inventory.** Do not send another start, another create, or
+   another `0x21` on top of this result.
 
 ## Prior standing state (2026-09-25)
 
