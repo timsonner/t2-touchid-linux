@@ -20,7 +20,7 @@ evaporate, and the saved file is the durable copy.
 | `t2_sep_boot_state` is `response-received:1` for bridgeOS `23.16.16068.0.0,0`, epoch 1.0. Capabilities then returned `0x2` | this boot, after `packaging/applesmc-t2-sep-boot/` |
 | Before that publication, cold boots left the SEP CPU stopped (`+0x8028=0x7f`) and one endpoint-7 read timed out | earlier 2026-09-26 boots |
 | User 501 `0x42` was status 0 with nil output. Alias `-501` was absent (`-3`) before the create | same boot, pre-create |
-| Operation `0x01` version 5 with a type-5 ACM secret returned status 0, live handle 1, KEK length 162. Export returned status 0, saved length 1540. Reload returned handle 2 and the bag UUID matched. `set-system-keybag` of handle 2 onto `-501` returned status 0, and the alias read back present | this boot |
+| Operation `0x01` version 5 with a type-5 ACM secret returned status 0, live handle 1, KEK length 162. Export returned status 0, saved length 1540. Reload returned handle 2 and the bag UUID matched. `set-system-keybag` of handle 2 onto `-501` returned status 0, and the alias read back present | `src/bridge-aks-native-501.py`, then `t2-aks-tool set-system-keybag 1 2 -501` |
 | Saved root-only files: `native-501.kb` (0600), `native-501.form` and `native-501.account` (0400), under `/var/lib/t2-touchid/` | same |
 | `t2-keybag-load.service` still starts the SEP transport through `Requires=` even when `t2-sep-transport.service` is disabled | this boot's journal |
 | A bag installed over an existing macOS `-501`, plus a Catacomb save, left enroll at 22. That was a different bag. Enroll with no credential returns `-3` | `NEW_BAG_501_VERDICT_2026-09-25.md`, `ENROLL_U1_VERDICT_2026-09-20.md` |
