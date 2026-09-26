@@ -32,14 +32,24 @@ The warm pins are unchanged:
 
 ## Next
 
-1. **Authorize through ACM, then one zero-group enroll dance, with the
-   operator at the sensor.** This is the first finger. The E4 script's
-   count-must-be-2 gate does not apply. Stop on status `22` or any timeout.
-   Write the Catacomb from the enrollment result. Do not send another
-   create.
-2. **If this boot is lost, reload `native-501.kb` before anything else.**
-   Confirm `-501` still names that bag, then resume at the dance. Do not
-   create a replacement.
+The enroll attempt on this boot stopped before operation `0x21`. Session
+prep all returned status 0, including xART and enabled-unlock, and user
+501's identity count was 0. The ACM context setup then raised
+`ACMProtocolError`. Closing the device made the kernel report
+`automatic ACM context cleanup failed; endpoint disabled until reboot`.
+Do not send another ACM command on this boot. `/dev/t2-acm` stays disabled
+until the next reboot. The saved bag was not modified.
+
+`src/bridge-xpc-enroll-native-501.py` is that attempt. Do not run it again
+until the create-response parse is fixed. It refused to reach the enroll
+dispatch.
+
+1. **Reboot, then reload `native-501.kb` before any other SEP command.**
+   Confirm `-501` still names that bag. Do not create a replacement.
+2. **Fix the ACM response parse, then one authorize-and-enroll hold.**
+   The zero-group start is sent only after operation `0x21` option `0x100`
+   returns status 0, while both contexts are still live. Stop on status
+   `22` or any timeout. The finger dance runs only if that start returns 0.
 
 ## Prior standing state (2026-09-25)
 
