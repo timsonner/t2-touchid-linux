@@ -7,56 +7,39 @@ conducted under **Track A** — independent ownership research
 ([`docs/LAB_PROTOCOL.md`](../../docs/LAB_PROTOCOL.md)); the earlier 2026-09-08
 park is lifted. See `PARKED_2026-09-08.md` for the authorization record.
 
-## Standing state (2026-09-26)
+## Standing state (2026-09-26, after the type-5 create)
 
-Fresh Omarchy and a fresh macOS volume are both installed. This Linux boot
-has no keybag file. Endpoint 7 did not answer either cold boot today. The
-module is pinned until reboot. Do not send another SEP command on this boot.
-
-The cold-start plan is the `t2touch` SMC boot-state publication, then this
-Air's existing warm pins. `aks_start_cpu` stays off.
+Fresh Omarchy and a fresh macOS volume are installed. This boot published
+the SMC boot record, endpoint 7 answered, and one Linux-owned bag for user
+501 is bound at `-501`. User 501 still has no fingerprint. Do not create a
+second bag. Do not reboot before the enroll dance: handles 1 and 2
+evaporate, and the saved file is the durable copy.
 
 | Fact | Evidence |
 | --- | --- |
-| Probe shows the SEP CPU stopped (`+0x8028=0x7f`). ACM endpoint 10 answers in 1 ms. One endpoint-7 capabilities read times out and advances the mailbox (`inbox=0x2aa01`, `outbox=0x2cc01`) | this boot's `dmesg`, after the 2026-09-26 reboot |
-| A Linux boot leaves SMC `EFMV` at `0xfe` until Apple's boot-state transaction runs. Endpoint 7 is not registered until that publication succeeds and xART opcode 8 returns 0. Status `0x2d` ends the generation | `macintog/t2touch` `applesmc-t2-sep-boot-state.patch`, `linux_native/APFS_XART_VOLUME.md` |
-| Turning `aks_start_cpu` on is the warm-path killer on this Air. The SMC transaction replaces it and must run before out-of-line registration | `warm-bringup-mba91.sh`; `t2touch` publisher |
-| Replacing the bag at `-501` and saving a user-501 Catacomb still left enroll at 22. Enroll with no credential returns `-3` | `NEW_BAG_501_VERDICT_2026-09-25.md`, `ENROLL_U1_VERDICT_2026-09-20.md` |
+| `t2_sep_boot_state` is `response-received:1` for bridgeOS `23.16.16068.0.0,0`, epoch 1.0. Capabilities then returned `0x2` | this boot, after `packaging/applesmc-t2-sep-boot/` |
+| Before that publication, cold boots left the SEP CPU stopped (`+0x8028=0x7f`) and one endpoint-7 read timed out | earlier 2026-09-26 boots |
+| User 501 `0x42` was status 0 with nil output. Alias `-501` was absent (`-3`) before the create | same boot, pre-create |
+| Operation `0x01` version 5 with a type-5 ACM secret returned status 0, live handle 1, KEK length 162. Export returned status 0, saved length 1540. Reload returned handle 2 and the bag UUID matched. `set-system-keybag` of handle 2 onto `-501` returned status 0, and the alias read back present | this boot |
+| Saved root-only files: `native-501.kb` (0600), `native-501.form` and `native-501.account` (0400), under `/var/lib/t2-touchid/` | same |
+| `t2-keybag-load.service` still starts the SEP transport through `Requires=` even when `t2-sep-transport.service` is disabled | this boot's journal |
+| A bag installed over an existing macOS `-501`, plus a Catacomb save, left enroll at 22. That was a different bag. Enroll with no credential returns `-3` | `NEW_BAG_501_VERDICT_2026-09-25.md`, `ENROLL_U1_VERDICT_2026-09-20.md` |
 
-**Prepared for the next boot, SEP not touched:**
-
-- `packaging/applesmc-t2-sep-boot/` is the `t2touch` publisher, source
-  hash `4edb24f48a39b1f56522be4dd5d6f8c2650e8b1c63d279cf9a3c2ccff6d561a6`.
-  The installed module is
-  `/lib/modules/7.2.6-arch2-Watanare-T2-4-t2/updates/applesmc.ko`.
-  `/etc/modprobe.d/applesmc-t2-sep-boot.conf` sets `t2_sep_boot_state=1`.
-- `t2-sep-transport.service` is disabled.
-  `/etc/modprobe.d/t2-sep-transport-hold.conf` blacklists `t2_sep_transport`
-  so PCI autoload cannot register endpoint 7. Explicit `modprobe` still works.
-- `/etc/modprobe.d/t2-sep-transport.conf` is unchanged:
-  `register_ool=1 register_acm=1 aks_start_cpu=0 aks_ep0_nop=0 aks_discover=0 aks_device_state_canary=0`.
+The publisher source hash is
+`4edb24f48a39b1f56522be4dd5d6f8c2650e8b1c63d279cf9a3c2ccff6d561a6`.
+The warm pins are unchanged:
+`register_ool=1 register_acm=1 aks_start_cpu=0 aks_ep0_nop=0 aks_discover=0 aks_device_state_canary=0`.
 
 ## Next
 
-The 2026-09-26 reboot published the SMC record and endpoint 7 answered.
-`t2-keybag-load.service` still pulled in the SEP driver after that
-publication. The pins were the warm set. Do not reboot this generation
-away before the create below.
-
-| Check | Result |
-| --- | --- |
-| `t2_sep_boot_state` | `response-received:1` for bridgeOS `23.16.16068.0.0,0`, epoch 1.0 |
-| Endpoint 7 capabilities | `0x2`, response length 16 |
-| User 501 `0x42` | status 0, nil output, no identity records |
-| Alias `-501` | absent, SEP status `-3` |
-
-1. **Create one bag, with the operator present.** `bridge-aks-create-c1.py`
-   is still live-disabled and asks for the password on the terminal. The
-   created bag needs no pre-existing keybag. Export, reload, and bind
-   `-501` only after that create returns status 0.
-2. **Authorize through ACM, then the zero-group enroll dance.** Write the
-   Catacomb from the enrollment result. Stop on status `22` or any timeout.
-   No second create on top of a bag that already bound.
+1. **Authorize through ACM, then one zero-group enroll dance, with the
+   operator at the sensor.** This is the first finger. The E4 script's
+   count-must-be-2 gate does not apply. Stop on status `22` or any timeout.
+   Write the Catacomb from the enrollment result. Do not send another
+   create.
+2. **If this boot is lost, reload `native-501.kb` before anything else.**
+   Confirm `-501` still names that bag, then resume at the dance. Do not
+   create a replacement.
 
 ## Prior standing state (2026-09-25)
 
