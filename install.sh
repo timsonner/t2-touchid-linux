@@ -110,6 +110,7 @@ install -o root -g root -m 0755 "$source_dir/src/"*.py "$target_dir/src/"
 install -o root -g root -m 0755 "$source_dir/src/t2-touchid-doctor.py" /usr/local/sbin/t2-touchid-doctor
 install -o root -g root -m 0755 "$source_dir/src/t2-touchid-inventory.py" /usr/local/sbin/t2-touchid-inventory
 install -o root -g root -m 0755 "$source_dir/src/t2-touchid-identities.py" /usr/local/sbin/t2-touchid-identities
+install -o root -g root -m 0755 "$source_dir/src/t2-touchid-provision-catacomb.py" /usr/local/sbin/t2-touchid-provision-catacomb
 install -o root -g root -m 0755 "$source_dir/src/t2-touchid-identify-finger.py" /usr/local/sbin/t2-touchid-identify-finger
 install -o root -g root -m 0755 "$source_dir/src/t2-touchid-manage.py" /usr/local/sbin/t2-touchid-manage
 install -o root -g root -m 0755 "$source_dir/src/t2-touchid-baseline.py" /usr/local/sbin/t2-touchid-baseline
@@ -154,10 +155,13 @@ install -o root -g root -m 0755 \
   /usr/local/sbin/t2-pam-fingerprint-prompt
 install -o root -g root -m 0644 "$source_dir/src/t2_sep_transport.ko" /usr/local/lib/t2-touchid/t2_sep_transport.ko
 install -o root -g root -m 0755 "$source_dir/src/t2-keybag-load.sh" /usr/local/sbin/t2-keybag-load
+install -o root -g root -m 0700 "$source_dir/src/t2-keybag-unlock.sh" /usr/local/sbin/t2-keybag-unlock
 install -o root -g root -m 0700 "$source_dir/src/t2-pam-unlock.sh" /usr/local/sbin/t2-pam-unlock
+install -o root -g root -m 0700 "$source_dir/src/t2-pam-fingerprint-ready.sh" /usr/local/sbin/t2-pam-fingerprint-ready
 install -o root -g root -m 0700 "$source_dir/src/t2-credential-unlock.sh" /usr/local/sbin/t2-credential-unlock
 install -o root -g root -m 0700 "$source_dir/src/t2-biometric-ready.sh" /usr/local/sbin/t2-biometric-ready
 install -o root -g root -m 0700 "$source_dir/src/t2-biometric-port-refresh.sh" /usr/local/sbin/t2-biometric-port-refresh
+install -o root -g root -m 0700 "$source_dir/src/t2-bridge-network-prepare.sh" /usr/local/sbin/t2-bridge-network-prepare
 install -o root -g root -m 0700 "$source_dir/src/t2-sep-transport-load.sh" /usr/local/sbin/t2-sep-transport-load
 install -o root -g root -m 0644 "$source_dir/systemd/system/"*.service /etc/systemd/system/
 if [[ $mba91_warm_sep == 1 && -f $source_dir/systemd/system/fprintd.service.d/10-mba91.conf ]]; then
@@ -198,7 +202,7 @@ if [[ $mba91_warm_sep == 1 ]]; then
   module_options+=' register_acm=1 aks_start_cpu=0 aks_ep0_nop=0 aks_discover=0 aks_device_state_canary=0'
 fi
 if [[ $acm_research == 1 ]]; then
-  module_options+=" register_acm=1 aks_platform_asid=$aks_platform_asid aks_platform_proc_uniqueid=1"
+  module_options+=$'\n'"options t2_sep_transport register_acm=1 aks_platform_asid=$aks_platform_asid aks_platform_proc_uniqueid=1"
   if [[ -n $aks_platform_cdhash ]]; then
     module_options+=" aks_platform_cdhash=${aks_platform_cdhash,,}"
   fi
@@ -224,6 +228,7 @@ EOF
 chmod 0644 /etc/dbus-1/system.d/99-t2-touchid-fprint.conf
 
 systemctl daemon-reload
+systemctl disable --now t2-interactive-unlock.service 2>/dev/null || true
 systemctl enable t2-sep-transport.service t2-biometric-port-refresh.service t2-keybag-load.service t2-credential-unlock.service t2-biometric-ready.service fprintd.service
 systemctl reload dbus.service
 target_runtime_dir=/run/user/$target_uid
