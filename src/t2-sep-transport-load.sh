@@ -25,12 +25,21 @@ if [[ -d /sys/module/$module ]]; then
   fi
 fi
 
-# Pass probe_capabilities explicitly: modprobe.d must stay observation-only by
-# default (early auto-load safety), so the service load cannot inherit it.
-# The v1 negotiation is a SEP-side prerequisite, not just a check — without it
-# SEP ignores all endpoint-7 exchanges (keybag-load and even the read-only
-# capabilities query time out). Observed MacBookPro15,2 2026-09-06.
-/usr/bin/modprobe "$module" register_ool=1 probe_capabilities=1
+# MacBookAir9,1 survives only the pinned warm set. A capability probe is not
+# part of that set: failure pins DMA and leaves /dev/t2-aks disabled until
+# reboot. Other machines still negotiate before the first keybag exchange.
+mba91_warm_sep=$(sed -n 's/^T2_TOUCHID_MBA91_WARM_SEP=//p' /etc/t2-touchid.conf 2>/dev/null | tail -n 1)
+if [[ $mba91_warm_sep == 1 ]]; then
+  /usr/bin/modprobe "$module" register_ool=1 register_acm=1 \
+    aks_start_cpu=0 aks_ep0_nop=0 aks_discover=0 aks_device_state_canary=0
+else
+  # Pass probe_capabilities explicitly: modprobe.d must stay observation-only by
+  # default (early auto-load safety), so the service load cannot inherit it.
+  # The v1 negotiation is a SEP-side prerequisite, not just a check — without it
+  # SEP ignores all endpoint-7 exchanges (keybag-load and even the read-only
+  # capabilities query time out). Observed MacBookPro15,2 2026-09-06.
+  /usr/bin/modprobe "$module" register_ool=1 probe_capabilities=1
+fi
 [[ -e /dev/t2-aks ]] || {
   echo "$module loaded without creating /dev/t2-aks" >&2
   exit 1

@@ -194,12 +194,13 @@ printf '[Service]\nBindReadOnlyPaths=%s\nEnvironment=SUDO_UID=%s\n' \
 chmod 0644 \
   /etc/systemd/system/t2-touchid-adaptive-sync.service.d/05-account-home.conf
 install -d -o root -g root -m 0755 /etc/modprobe.d
-module_options='options t2_sep_transport register_ool=1 probe_capabilities=1'
 if [[ $mba91_warm_sep == 1 ]]; then
-  # MBA91 research build: the four warm-killers default true and must be
-  # pinned off, and ACM registration is required. Proven-track behavior
-  # is unchanged when the flag is 0.
-  module_options+=' register_acm=1 aks_start_cpu=0 aks_ep0_nop=0 aks_discover=0 aks_device_state_canary=0'
+  # Proven MacBookAir9,1 warm set. probe_capabilities is omitted: a failed
+  # negotiation pins DMA and disables /dev/t2-aks until reboot, and the
+  # warm-surviving load does not send that probe.
+  module_options='options t2_sep_transport register_ool=1 register_acm=1 aks_start_cpu=0 aks_ep0_nop=0 aks_discover=0 aks_device_state_canary=0'
+else
+  module_options='options t2_sep_transport register_ool=1 probe_capabilities=1'
 fi
 if [[ $acm_research == 1 ]]; then
   module_options+=$'\n'"options t2_sep_transport register_acm=1 aks_platform_asid=$aks_platform_asid aks_platform_proc_uniqueid=1"
@@ -209,6 +210,24 @@ if [[ $acm_research == 1 ]]; then
 fi
 printf '%s\n' "$module_options" >/etc/modprobe.d/t2-sep-transport.conf
 chmod 0644 /etc/modprobe.d/t2-sep-transport.conf
+if [[ $mba91_warm_sep == 1 ]]; then
+  # Publish the SMC boot record on the next applesmc probe. A live
+  # applesmc is left resident; unloading it is not part of installation.
+  publisher="$source_dir/packaging/applesmc-t2-sep-boot"
+  kernel=$(uname -r)
+  if [[ ! -f /lib/modules/$kernel/build/Makefile ]]; then
+    echo "Kernel headers for $kernel are required to build the SEP boot-state publisher." >&2
+    exit 1
+  fi
+  make -C "$publisher" KERNELRELEASE="$kernel" KDIR="/lib/modules/$kernel/build"
+  install -d -o root -g root -m 0755 "/lib/modules/$kernel/updates"
+  install -o root -g root -m 0644 "$publisher/applesmc.ko" \
+    "/lib/modules/$kernel/updates/applesmc.ko"
+  depmod -a "$kernel"
+  printf '%s\n' 'options applesmc t2_sep_boot_state=1' \
+    >/etc/modprobe.d/applesmc-t2-sep-boot.conf
+  chmod 0644 /etc/modprobe.d/applesmc-t2-sep-boot.conf
+fi
 
 install -d -o "$target_user" -g "$target_user" -m 0755 "$target_home/.config/systemd/user"
 install -o "$target_user" -g "$target_user" -m 0644 \

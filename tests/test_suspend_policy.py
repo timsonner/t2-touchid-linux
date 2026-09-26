@@ -102,21 +102,22 @@ class SuspendPolicyTests(unittest.TestCase):
     def test_installer_negotiates_applekeystore_before_keybag_loading(self):
         installer = (ROOT / "install.sh").read_text(encoding="utf-8")
         loader = (ROOT / "src/t2-sep-transport-load.sh").read_text(encoding="utf-8")
-        # Upstream leaves modprobe.d observation-only. This branch keeps
-        # register_ool on that line so the MBA91 warm-SEP pins are applied
-        # at the same load, and the service loader still probes explicitly.
+        # Non-Air installs still negotiate from the service load. The Air
+        # flag selects the warm set and does not send that probe.
         self.assertIn(
             "options t2_sep_transport register_ool=1 probe_capabilities=1",
             installer,
         )
         self.assertIn(
-            "aks_start_cpu=0 aks_ep0_nop=0 aks_discover=0 aks_device_state_canary=0",
+            "options t2_sep_transport register_ool=1 register_acm=1 aks_start_cpu=0 aks_ep0_nop=0 aks_discover=0 aks_device_state_canary=0",
             installer,
         )
+        self.assertIn("register_ool=1 probe_capabilities=1", loader)
         self.assertIn(
-            "register_ool=1 probe_capabilities=1",
+            "aks_start_cpu=0 aks_ep0_nop=0 aks_discover=0 aks_device_state_canary=0",
             loader,
         )
+        self.assertIn("options applesmc t2_sep_boot_state=1", installer)
 
 
 if __name__ == "__main__":

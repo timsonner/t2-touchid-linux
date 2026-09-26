@@ -7,10 +7,62 @@ conducted under **Track A** — independent ownership research
 ([`docs/LAB_PROTOCOL.md`](../../docs/LAB_PROTOCOL.md)); the earlier 2026-09-08
 park is lifted. See `PARKED_2026-09-08.md` for the authorization record.
 
-## Standing state (2026-09-25)
+## Standing state (2026-09-26)
 
-User 501's fingerprints and Catacomb entry are gone. Alias `-501` still
-holds the macOS keybag. A Linux-only first identity is not open.
+Fresh Omarchy and a fresh macOS volume are both installed. This Linux boot
+has no keybag file. Endpoint 7 did not answer either cold boot today. The
+module is pinned until reboot. Do not send another SEP command on this boot.
+
+The cold-start plan is the `t2touch` SMC boot-state publication, then this
+Air's existing warm pins. `aks_start_cpu` stays off.
+
+| Fact | Evidence |
+| --- | --- |
+| Probe shows the SEP CPU stopped (`+0x8028=0x7f`). ACM endpoint 10 answers in 1 ms. One endpoint-7 capabilities read times out and advances the mailbox (`inbox=0x2aa01`, `outbox=0x2cc01`) | this boot's `dmesg`, after the 2026-09-26 reboot |
+| A Linux boot leaves SMC `EFMV` at `0xfe` until Apple's boot-state transaction runs. Endpoint 7 is not registered until that publication succeeds and xART opcode 8 returns 0. Status `0x2d` ends the generation | `macintog/t2touch` `applesmc-t2-sep-boot-state.patch`, `linux_native/APFS_XART_VOLUME.md` |
+| Turning `aks_start_cpu` on is the warm-path killer on this Air. The SMC transaction replaces it and must run before out-of-line registration | `warm-bringup-mba91.sh`; `t2touch` publisher |
+| Replacing the bag at `-501` and saving a user-501 Catacomb still left enroll at 22. Enroll with no credential returns `-3` | `NEW_BAG_501_VERDICT_2026-09-25.md`, `ENROLL_U1_VERDICT_2026-09-20.md` |
+
+**Prepared for the next boot, SEP not touched:**
+
+- `packaging/applesmc-t2-sep-boot/` is the `t2touch` publisher, source
+  hash `4edb24f48a39b1f56522be4dd5d6f8c2650e8b1c63d279cf9a3c2ccff6d561a6`.
+  The installed module is
+  `/lib/modules/7.2.6-arch2-Watanare-T2-4-t2/updates/applesmc.ko`.
+  `/etc/modprobe.d/applesmc-t2-sep-boot.conf` sets `t2_sep_boot_state=1`.
+- `t2-sep-transport.service` is disabled.
+  `/etc/modprobe.d/t2-sep-transport-hold.conf` blacklists `t2_sep_transport`
+  so PCI autoload cannot register endpoint 7. Explicit `modprobe` still works.
+- `/etc/modprobe.d/t2-sep-transport.conf` is unchanged:
+  `register_ool=1 register_acm=1 aks_start_cpu=0 aks_ep0_nop=0 aks_discover=0 aks_device_state_canary=0`.
+
+## Next
+
+The 2026-09-26 reboot published the SMC record and endpoint 7 answered.
+`t2-keybag-load.service` still pulled in the SEP driver after that
+publication. The pins were the warm set. Do not reboot this generation
+away before the create below.
+
+| Check | Result |
+| --- | --- |
+| `t2_sep_boot_state` | `response-received:1` for bridgeOS `23.16.16068.0.0,0`, epoch 1.0 |
+| Endpoint 7 capabilities | `0x2`, response length 16 |
+| User 501 `0x42` | status 0, nil output, no identity records |
+| Alias `-501` | absent, SEP status `-3` |
+
+1. **Create one bag, with the operator present.** `bridge-aks-create-c1.py`
+   is still live-disabled and asks for the password on the terminal. The
+   created bag needs no pre-existing keybag. Export, reload, and bind
+   `-501` only after that create returns status 0.
+2. **Authorize through ACM, then the zero-group enroll dance.** Write the
+   Catacomb from the enrollment result. Stop on status `22` or any timeout.
+   No second create on top of a bag that already bound.
+
+## Prior standing state (2026-09-25)
+
+User 501's fingerprints and Catacomb entry were removed. Alias `-501` still
+held the macOS keybag. A Linux-only first identity was not open. The macOS
+re-enroll recovery below was the plan before the fresh install.
 
 | Fact | Evidence |
 | --- | --- |
@@ -26,7 +78,7 @@ holds the macOS keybag. A Linux-only first identity is not open.
 at `-501`. Do not send another removal, another `0x51` shape, or another
 create on top of that bag.
 
-## Next
+## Superseded recovery (2026-09-25)
 
 1. **Recovery, from macOS.** Enroll one finger. The Apple account and the
    keybag are still in the T2. Then warm-reboot to Linux with no power-off.
