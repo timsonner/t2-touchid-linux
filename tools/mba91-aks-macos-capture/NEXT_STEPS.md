@@ -32,24 +32,25 @@ The warm pins are unchanged:
 
 ## Next
 
-The enroll attempt on this boot stopped before operation `0x21`. Session
-prep all returned status 0, including xART and enabled-unlock, and user
-501's identity count was 0. The ACM context setup then raised
-`ACMProtocolError`. Closing the device made the kernel report
-`automatic ACM context cleanup failed; endpoint disabled until reboot`.
-Do not send another ACM command on this boot. `/dev/t2-acm` stays disabled
-until the next reboot. The saved bag was not modified.
+After the reboot, `native-501.kb` reloaded as handle 1. Alias `-501` was
+absent and was bound again. The UUIDs match. No second bag was created.
 
-`src/bridge-xpc-enroll-native-501.py` is that attempt. Do not run it again
-until the create-response parse is fixed. It refused to reach the enroll
-dispatch.
+The retried enroll reached authorization. Operation `0x21` option `0x100`
+returned status 0. The zero-group start then returned status 1, so the
+finger dance was not run. Deleting the two ACM contexts used a second
+copy of the protocol class, so the delete was rejected. The kernel again
+reported `automatic ACM context cleanup failed; endpoint disabled until
+reboot`. Do not send another ACM command on this boot.
 
-1. **Reboot, then reload `native-501.kb` before any other SEP command.**
-   Confirm `-501` still names that bag. Do not create a replacement.
-2. **Fix the ACM response parse, then one authorize-and-enroll hold.**
-   The zero-group start is sent only after operation `0x21` option `0x100`
-   returns status 0, while both contexts are still live. Stop on status
-   `22` or any timeout. The finger dance runs only if that start returns 0.
+The script now deletes through `t2_acm_device`'s own protocol module, and
+a rejected create response is deleted before the device closes.
+
+1. **Reboot, reload `native-501.kb`, and bind that handle to `-501` if
+   the alias is absent.** Confirm the UUIDs match. Do not create a bag.
+2. **Run `bridge-xpc-enroll-native-501.py` once with `--handle` set to
+   the reloaded handle.** Stop if authorization is not 0, if the start
+   is not 0, or on any timeout. Status 1 is a refusal. The dance runs
+   only when the start returns 0.
 
 ## Prior standing state (2026-09-25)
 

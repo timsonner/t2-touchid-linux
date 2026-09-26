@@ -80,6 +80,16 @@ class ACMDeviceTests(unittest.TestCase):
         self.assertTrue(result["mutation_reconciled"])
         self.assertNotIn(context.hex(), str(result))
 
+    def test_adopt_rejects_nonboolean_flag_and_deletes(self):
+        context = bytes(range(16))
+        response = context + b"\x00" * 4 + b"\x02"
+        fake = FakeDevice(response)
+        with self.assertRaisesRegex(
+            device.ACMDeviceError, "terminal_flag_boolean=False"
+        ):
+            device.adopt_create_response(fake, response, tracking=True)
+        self.assertEqual(fake.commands[-1][0], protocol.OP_CONTEXT_DELETE)
+
     def test_invalid_response_is_cleaned_up_before_error(self):
         context = bytes(range(16))
         fake = FakeDevice(context + b"\x00" * 4 + b"\x02")

@@ -260,6 +260,36 @@ def policy_preflight_test(device: ACMDevice, user_id: int) -> dict[str, object]:
     }
 
 
+def adopt_create_response(
+    device: ACMDevice, response: bytes, *, tracking: bool
+) -> protocol.ContextHandle:
+    """Parse a create response, deleting the context if the body is rejected."""
+    if len(response) < protocol.CONTEXT_SIZE:
+        raise ACMDeviceError(
+            "create response omitted the context required for mandatory cleanup"
+        )
+    cleanup_handle = protocol.ContextHandle(
+        response[: protocol.CONTEXT_SIZE], 0, tracking, False
+    )
+    try:
+        return protocol.parse_create_response(response, tracking=tracking)
+    except protocol.ACMProtocolError as error:
+        terminal = response[-1] in (0, 1)
+        try:
+            delete_response = device.exchange(protocol.build_delete(cleanup_handle), 0)
+            if delete_response:
+                raise ACMDeviceError("delete returned an unexpected response body")
+        except Exception as cleanup_error:
+            raise ACMDeviceError(
+                f"create response was invalid and cleanup failed: {cleanup_error}"
+            ) from error
+        raise ACMDeviceError(
+            "create response was invalid "
+            f"(length={len(response)}, terminal_flag_boolean={terminal}); "
+            "context was cleaned up"
+        ) from error
+
+
 def externalize_context(device: ACMDevice, handle: protocol.ContextHandle) -> bytes:
     """Register an active context and return its exact 16-byte external form."""
     response = device.exchange(protocol.build_externalize(handle), 0)
