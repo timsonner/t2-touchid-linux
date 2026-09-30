@@ -1,0 +1,17 @@
+BLOCKED ON TIM PASSWORD (as of 2026-09-30 ~17:28 MDT)
+
+Diagnosis done:
+- Kernel upgraded 7.2.6 -> 7.2.7-arch1-Watanare-T2-2-t2
+- t2_sep_transport missing from /lib/modules (no dkms); service failed at boot
+- stock applesmc ignored t2_sep_boot_state (updates/applesmc.ko also missing)
+- User-built both .kos for current kernel under .build/
+
+Ready script (install + enable inventory oneshot + reboot):
+  sudo /home/tim/Projects/t2-touchid-linux/.build/install-modules.sh
+
+A floating Omarchy terminal is already open waiting for sudo -v.
+Or run the command above in any terminal.
+
+After reboot: t2-inventory-ro-501.service should write
+  tools/mba91-aks-macos-capture/INVENTORY_RO_501_*_REPORT.txt
+No enroll / bag create / 0x21 / second bag.

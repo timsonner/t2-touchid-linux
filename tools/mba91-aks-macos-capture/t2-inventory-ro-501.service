@@ -1,0 +1,13 @@
+[Unit]
+Description=Read-only BridgeXPC inventory for macOS uid 501 (one-shot research)
+After=t2-sep-transport.service t2-bridge-network.service t2-biometric-port-refresh.service
+Wants=t2-sep-transport.service t2-bridge-network.service t2-biometric-port-refresh.service
+ConditionPathExists=/dev/t2-aks
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/sbin/t2-inventory-ro-501
+RemainAfterExit=yes
+
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,52 @@
+rc=2
+host=fe80::aede:48ff:fe33:4455 iface=enp116s0f1u1 uid=501
+private=/var/lib/t2-touchid/inventory-journals/inventory-ro-501-20260930-173616.private.json
+--- public ---
+--- log ---
+usage: bridge-xpc-probe.py [-h] [--host HOST] [--macos-user-id MACOS_USER_ID]
+                           [--interface INTERFACE] [--port PORT]
+                           [--timeout TIMEOUT] [--service-open]
+                           [--bridge-version] [--initialize]
+                           [--match-seconds SECONDS]
+                           [--match-finger-name {left-thumb,left-index-finger,left-middle-finger,left-ring-finger,left-little-finger,right-thumb,right-index-finger,right-middle-finger,right-ring-finger,right-little-finger}]
+                           [--resolve-any-finger-name]
+                           [--resolve-any-identity-slot]
+                           [--match-processed-flags MATCH_PROCESSED_FLAGS]
+                           [--identity-blob-format {counted,raw}]
+                           [--stop-on-match-result] [--audible-match-alert]
+                           [--biometric-protocol] [--reset-sensor]
+                           [--cancel-operation] [--sensor-readiness]
+                           [--sensor-info] [--calibration-info]
+                           [--load-calibration] [--identity-list]
+                           [--global-identity-list] [--identity-capacity]
+                           [--catacomb-component-state] [--stability-check]
+                           [--full-inventory]
+                           [--private-inventory-output PATH]
+                           [--catacomb-state] [--sks-lock-state]
+                           [--load-catacomb-archive PATH]
+                           [--load-biolockout-archive PATH]
+                           [--catacomb-component {all,master,user}]
+                           [--strip-catacomb-file-header]
+bridge-xpc-probe.py: error: set --port or T2_TOUCHID_PORT
+--- dmesg sep ---
+[   18.772286] applesmc APP0001:00: received T2 SEP boot-policy response 1 for bridgeOS 23.16.16068.0.0,0 epoch 1.0
+[   56.804141] t2_sep_transport 0000:74:00.2: mailbox inbox=0x25501 empty=1 outbox=0x25501 full=0
+[   56.804157] t2_sep_transport 0000:74:00.2: research CPU controls probe-entry: +0x8028=0x7f +0x8040=0x0 +0x8048=0x0
+[   56.804314] t2_sep_transport 0000:74:00.2: research MSI allocated vectors 175 and 176
+[   56.804331] t2_sep_transport 0000:74:00.2: research OOL alloc: dma32=1 ool_in_dma=0x1398000 ool_out_dma=0x139c000
+[   56.805348] t2_sep_transport 0000:74:00.2: registered 16 KiB endpoint-7 OOL input/output buffers
+[   56.805437] t2_sep_transport 0000:74:00.2: research ACM SCRD sent: req=0008010a
+[   56.806781] t2_sep_transport 0000:74:00.2: research ACM SCRD rx: 0000010a 00000000 00000000 00109a00 waited_us=1000 msi0=0 msi1=0
+[   56.806882] t2_sep_transport 0000:74:00.2: research /dev/t2-sep-lab enabled (capability_ok=1)
+[   56.806912] t2_sep_transport 0000:74:00.2: root-only /dev/t2-aks exchange enabled for whitelisted operations
+[   56.806939] t2_sep_transport 0000:74:00.2: root-only generation-pinned /dev/t2-acm enabled
+--- mod ---
+crw------- 1 root root 10, 262 Sep 30 17:36 /dev/t2-aks
+filename:       /lib/modules/7.2.7-arch1-Watanare-T2-2-t2/extra/t2_sep_transport.ko
+license:        GPL
+description:    Staged Apple T2 SEP mailbox and OOL transport
+author:         T2 Touch ID Linux research project
+srcversion:     D2AEDFF0782E75F5EAC61E1
+alias:          pci:v0000106Bd00001802sv*sd*bc*sc*i*
+depends:        
+name:           t2_sep_transport

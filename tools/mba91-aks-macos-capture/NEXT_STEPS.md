@@ -7,7 +7,31 @@ conducted under **Track A** — independent ownership research
 ([`docs/LAB_PROTOCOL.md`](../../docs/LAB_PROTOCOL.md)); the earlier 2026-09-08
 park is lifted. See `PARKED_2026-09-08.md` for the authorization record.
 
-## Standing state (2026-09-26, after the type-5 create)
+## Standing state (2026-09-30, after RO inventory)
+
+Transport is loaded again on kernel `7.2.7-arch1-Watanare-T2-2-t2`
+(`t2_sep_transport` + patched `applesmc` boot_state). Read-only inventory
+for uid 501 completed public-only (private dump gated incomplete).
+
+| Fact | Evidence |
+| --- | --- |
+| Per-user `0x42` status **0**, output nil → identity count **0** | `INVENTORY_RO_501_20260930-174149_*` |
+| Catacomb UUID/hash (`0x38`/`0x3A`) status **22** — no user component for 501 | same |
+| SKS lock (`0x27`) **21** (`0x15`, cold) | same |
+| BridgeXPC port **49208**; private inventory not written (gate incomplete) | same; oneshot fix in `t2-inventory-ro-501.*` |
+| Kernel upgrade had dropped modules; rebuild+install restored transport | `AGENT_STATUS_2026-09-30.md`, `ELEVATE_NEEDED_2026-09-30.txt` |
+
+Hard bans unchanged: no enroll start, no bag create, no `0x21`, no second bag.
+
+## Next
+
+1. **macOS one-finger re-enroll** for uid 501 (System Settings → Touch ID).
+   Proven path to Catacomb user component + warm SKS + non-nil `0x42`.
+2. Warm-reboot to Linux; re-run RO inventory before any password-bound
+   Linux enroll research.
+
+## Prior standing state (2026-09-26, after the type-5 create)
+
 
 Fresh Omarchy and a fresh macOS volume are installed. This boot published
 the SMC boot record, endpoint 7 answered, and one Linux-owned bag for user

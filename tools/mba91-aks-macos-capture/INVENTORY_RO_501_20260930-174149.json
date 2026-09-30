@@ -1,0 +1,104 @@
+{
+  "peer_helo": {
+    "MaxSupportedProtocolVersion": 1,
+    "OSBuild": "23P6068",
+    "BridgeXPCVersion": 39,
+    "ProcessName": "bkremoted"
+  },
+  "sent": "HELO + read-only version negotiation, full inventory snapshots A/B",
+  "bridge_version_reply": [
+    0,
+    3
+  ],
+  "set_client_version_reply": [
+    0
+  ],
+  "bridge_client_version": 2,
+  "biometric_protocol_reply": {
+    "valid": true,
+    "status": -536870206,
+    "status_hex": "0xe00002c2",
+    "output_length": 4
+  },
+  "identity_list_reply": {
+    "valid": true,
+    "status": 0,
+    "status_hex": "0x00000000",
+    "output_length": null,
+    "output_kind": "nil-placeholder"
+  },
+  "identity_record_bytes_valid": false,
+  "identity_record_count": null,
+  "identity_user_field": null,
+  "global_identity_list_reply": {
+    "valid": true,
+    "status": 0,
+    "status_hex": "0x00000000",
+    "output_length": null,
+    "output_kind": "nil-placeholder"
+  },
+  "global_identity_record_bytes_valid": false,
+  "global_identity_record_count": null,
+  "configured_identity_records_reconciled": false,
+  "biometric_protocol_v2_attested": false,
+  "biometric_protocol_attestation": null,
+  "identity_capacity_reply": {
+    "valid": true,
+    "status": 0,
+    "status_hex": "0x00000000",
+    "output_length": 4
+  },
+  "identity_free_count_reply": {
+    "valid": true,
+    "status": 0,
+    "status_hex": "0x00000000",
+    "output_length": 4
+  },
+  "catacomb_uuid_reply": {
+    "valid": true,
+    "status": 22,
+    "status_hex": "0x00000016",
+    "output_length": 16
+  },
+  "catacomb_hash_reply": {
+    "valid": true,
+    "status": 22,
+    "status_hex": "0x00000016",
+    "output_length": 33
+  },
+  "catacomb_uuid_length_valid": false,
+  "catacomb_hash_length_valid": false,
+  "catacomb_state_reply": {
+    "valid": true,
+    "status": 0,
+    "status_hex": "0x00000000",
+    "output_length": 8
+  },
+  "sks_lock_state_reply": {
+    "valid": true,
+    "status": 0,
+    "status_hex": "0x00000000",
+    "output_length": 4
+  },
+  "identity_inventory_repeat_equal": true,
+  "global_identity_inventory_repeat_equal": true,
+  "identity_capacity_repeat_equal": true,
+  "catacomb_component_repeat_equal": true,
+  "catacomb_state_repeat_equal": true,
+  "sks_lock_state_repeat_equal": true,
+  "full_snapshot_repeat_equal": true,
+  "identity_maximum_capacity": 5,
+  "identity_free_count": 0,
+  "catacomb_state_words": [
+    4294967295,
+    1
+  ],
+  "sks_lock_state": 21,
+  "private_inventory_complete": false,
+  "private_inventory_gate_failures": [
+    "identity_lists_reconciled",
+    "protocol_v2_attested",
+    "catacomb_uuid_length",
+    "catacomb_hash_length"
+  ]
+}
