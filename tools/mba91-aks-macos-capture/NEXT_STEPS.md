@@ -57,9 +57,19 @@ question.
 
 ## Next
 
-Map the activation sequence in `NATIVE_C4_VERDICT_2026-09-20.md` and
-`NATIVE_C4C5_DESIGN_2026-09-20.md` onto this machine with no live
-dispatch. That paper is the open approved work.
+Immediate step: macOS export for the Omarchy reader, then boot back
+here. The handoff for the macOS agent is
+`MACOS_EXPORT_HANDOFF_2026-10-01.md`. It produces a private keybag
+archive and a private Catacomb archive. It does not enroll a finger,
+and it does not copy `native-501.kb` to `user.kb`.
+
+If that exported bag unlocks with status 0, the remaining Omarchy
+path is provision the local Catacomb, load `user.kb`, unlock both
+handles, `fprintd-verify`, then PAM. If the export also returns SEP
+`-5`, stop. The activation-sequence paper in
+`NATIVE_C4_VERDICT_2026-09-20.md` and
+`NATIVE_C4C5_DESIGN_2026-09-20.md` is the open research work, and it
+stays on paper.
 
 ## Dated records below
 
