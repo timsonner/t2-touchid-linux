@@ -1,8 +1,8 @@
 # NEXT_STEPS standing-state addendum — 2026-09-30 inventory (updated 22:28 MDT)
 
-> Prepend / replace the "Standing state" block in
-> `tools/mba91-aks-macos-capture/NEXT_STEPS.md` when root write is available
-> (that file is root-owned 0644 on MBA91).
+> Folded into the top of `tools/mba91-aks-macos-capture/NEXT_STEPS.md` on
+> 2026-10-01. This file remains the night's record. The live standing
+> state is the 2026-10-01 block in `NEXT_STEPS.md`.
 
 ## Standing state (2026-09-30, post macOS one-finger + private dump)
 

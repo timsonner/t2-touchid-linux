@@ -34,5 +34,9 @@ block (root-owned; needs `sudo` to prepend).
 
 ## Next (operator)
 
-**macOS one-finger re-enroll** for uid 501, then Linux RO re-inventory.
-Hard bans: no enroll / bag create / `0x21` / second bag on Linux.
+This handoff's next step, the macOS one-finger re-enroll, completed later
+the same night. The live standing state is the 2026-10-01 block in
+`tools/mba91-aks-macos-capture/NEXT_STEPS.md`: one identity, Catacomb
+present, bag file `native-501.kb`, next research is a password-bound match
+after an explicit yes. Hard bans remain: no enroll / bag create /
+creation-reference `0x21` / second bag on Linux.

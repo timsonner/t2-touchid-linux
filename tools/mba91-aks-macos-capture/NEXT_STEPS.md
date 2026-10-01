@@ -7,9 +7,43 @@ conducted under **Track A** — independent ownership research
 ([`docs/LAB_PROTOCOL.md`](../../docs/LAB_PROTOCOL.md)); the earlier 2026-09-08
 park is lifted. See `PARKED_2026-09-08.md` for the authorization record.
 
-## Standing state (2026-09-30, after RO inventory)
+## Standing state (2026-10-01)
 
-Transport is loaded again on kernel `7.2.7-arch1-Watanare-T2-2-t2`
+The macOS one-finger enroll for uid 501 is done, and it survived the warm
+reboot into Linux. Inventory `INVENTORY_RO_501_20260930-222840_*` is the
+current picture. The durable bag on this volume is the Linux-owned
+`/var/lib/t2-touchid/native-501.kb` from 2026-09-26. There is no macOS
+`user.kb`. `warm-bringup-mba91.sh` loads `native-501.kb` and leaves the
+systemd `user.kb` loader alone
+(`CORRECTION_NO_MACOS_USER_KB_2026-09-30.md`).
+
+| Fact | Evidence |
+| --- | --- |
+| Per-user `0x42` count **1** (status 0, 20 B) | `…-222840` |
+| Catacomb UUID/hash status **0**; user component present | same |
+| Catacomb state words **`[0xFFFFFFFF, 3, 501, 3]`** | same; `CATACOMB_IDENTITY_LAYOUT_20260930-222840.md` |
+| SKS lock **16 = 0x10** (warm) | same |
+| Free `0x41` **2** / capacity **5** | same |
+| Private dump persisted | `/var/lib/t2-touchid/inventory-journals/inventory-ro-501-20260930-222840.private.json` |
+| `native-501.kb` is still the 2026-09-26 export (1540 bytes, mode 0600) | `/var/lib/t2-touchid/native-501.kb` |
+| Authorized zero-group enroll start returned status **1** and stays halted | `STATUS1_DIAG_2026-09-30.md` |
+
+Hard bans: no enroll start, no bag create, no creation-reference `0x21`,
+no second bag. Filling the Catacomb removed the empty-user gate. It does
+not authorize another native enroll start.
+
+## Next
+
+1. **Password-bound match research**, not another enroll. Presence-check
+   the private inventory, then follow `MATCH_BROKER_DESIGN_2026-09-20.md`
+   and `MATCH_CANARY_PLAN_2026-09-30.md`. A live canary waits for an
+   explicit yes.
+2. When that yes is given, stage the session with `warm-bringup-mba91.sh`
+   against `native-501.kb`. Leave `user.kb` absent.
+
+## Prior standing state (2026-09-30 17:41, empty inventory)
+
+Transport was loaded again on kernel `7.2.7-arch1-Watanare-T2-2-t2`
 (`t2_sep_transport` + patched `applesmc` boot_state). Read-only inventory
 for uid 501 completed public-only (private dump gated incomplete).
 
@@ -21,14 +55,9 @@ for uid 501 completed public-only (private dump gated incomplete).
 | BridgeXPC port **49208**; private inventory not written (gate incomplete) | same; oneshot fix in `t2-inventory-ro-501.*` |
 | Kernel upgrade had dropped modules; rebuild+install restored transport | `AGENT_STATUS_2026-09-30.md`, `ELEVATE_NEEDED_2026-09-30.txt` |
 
-Hard bans unchanged: no enroll start, no bag create, no `0x21`, no second bag.
-
-## Next
-
-1. **macOS one-finger re-enroll** for uid 501 (System Settings → Touch ID).
-   Proven path to Catacomb user component + warm SKS + non-nil `0x42`.
-2. Warm-reboot to Linux; re-run RO inventory before any password-bound
-   Linux enroll research.
+The next step written here was the macOS one-finger re-enroll, then a warm
+reboot and another inventory. That step completed the same night. The
+result is the standing state above.
 
 ## Prior standing state (2026-09-26, after the type-5 create)
 
@@ -54,7 +83,7 @@ The publisher source hash is
 The warm pins are unchanged:
 `register_ool=1 register_acm=1 aks_start_cpu=0 aks_ep0_nop=0 aks_discover=0 aks_device_state_canary=0`.
 
-## Next
+## Recorded next (2026-09-26, halted)
 
 This boot reloaded `native-501.kb` as handle 2. Alias `-501` was already
 present and names that same bag. No bind and no second create.

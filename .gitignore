@@ -22,3 +22,5 @@ specs.md
 summary.txt
 linux-bringup-steps.md
 macSteps.md
+.build/
+tools/mba91-aks-macos-capture/mba91-bag-session-discovery-*.log

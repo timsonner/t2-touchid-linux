@@ -4,11 +4,8 @@ Branch: `research/mba91-aks-ep7`. Phase 1 only — docs/code analysis.
 No enroll start, create, `0x21`, reboot, or second bag was sent.
 Shapes/statuses/counts only.
 
-**Placement:** written under `tools/` because
-`tools/mba91-aks-macos-capture/` is root-owned on this host. Operator
-move when convenient:
-
-`sudo mv tools/STATUS1_DIAG_2026-09-30.md tools/mba91-aks-macos-capture/`
+**Placement:** this note lives in `tools/mba91-aks-macos-capture/`.
+The earlier move out of `tools/` is done.
 
 ## Standing fact (from NEXT_STEPS 2026-09-26)
 
