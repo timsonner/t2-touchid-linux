@@ -1,0 +1,100 @@
+{
+  "peer_helo": {
+    "MaxSupportedProtocolVersion": 1,
+    "OSBuild": "23P6068",
+    "BridgeXPCVersion": 39,
+    "ProcessName": "bkremoted"
+  },
+  "sent": "HELO + read-only version negotiation, full inventory snapshots A/B",
+  "bridge_version_reply": [
+    0,
+    3
+  ],
+  "set_client_version_reply": [
+    0
+  ],
+  "bridge_client_version": 2,
+  "biometric_protocol_reply": {
+    "valid": true,
+    "status": -536870206,
+    "status_hex": "0xe00002c2",
+    "output_length": 4
+  },
+  "identity_list_reply": {
+    "valid": true,
+    "status": 0,
+    "status_hex": "0x00000000",
+    "output_length": 20
+  },
+  "identity_record_bytes_valid": true,
+  "identity_record_count": 1,
+  "identity_user_field": "prefix",
+  "global_identity_list_reply": {
+    "valid": true,
+    "status": 0,
+    "status_hex": "0x00000000",
+    "output_length": 40
+  },
+  "global_identity_record_bytes_valid": true,
+  "global_identity_record_count": 1,
+  "configured_identity_records_reconciled": true,
+  "biometric_protocol_v2_attested": true,
+  "biometric_protocol_attestation": "v2-global-identity-command",
+  "identity_capacity_reply": {
+    "valid": true,
+    "status": 0,
+    "status_hex": "0x00000000",
+    "output_length": 4
+  },
+  "identity_free_count_reply": {
+    "valid": true,
+    "status": 0,
+    "status_hex": "0x00000000",
+    "output_length": 4
+  },
+  "catacomb_uuid_reply": {
+    "valid": true,
+    "status": 0,
+    "status_hex": "0x00000000",
+    "output_length": 16
+  },
+  "catacomb_hash_reply": {
+    "valid": true,
+    "status": 0,
+    "status_hex": "0x00000000",
+    "output_length": 33
+  },
+  "catacomb_uuid_length_valid": true,
+  "catacomb_hash_length_valid": true,
+  "catacomb_state_reply": {
+    "valid": true,
+    "status": 0,
+    "status_hex": "0x00000000",
+    "output_length": 16
+  },
+  "sks_lock_state_reply": {
+    "valid": true,
+    "status": 0,
+    "status_hex": "0x00000000",
+    "output_length": 4
+  },
+  "identity_inventory_repeat_equal": true,
+  "global_identity_inventory_repeat_equal": true,
+  "identity_capacity_repeat_equal": true,
+  "catacomb_component_repeat_equal": true,
+  "catacomb_state_repeat_equal": true,
+  "sks_lock_state_repeat_equal": true,
+  "full_snapshot_repeat_equal": true,
+  "identity_maximum_capacity": 5,
+  "identity_free_count": 2,
+  "catacomb_component_present": true,
+  "catacomb_state_words": [
+    4294967295,
+    3,
+    501,
+    3
+  ],
+  "sks_lock_state": 16,
+  "private_inventory_complete": true,
+  "private_inventory_gate_failures": []
+}

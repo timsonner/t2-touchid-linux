@@ -6,7 +6,7 @@ STAMP=/run/t2-touchid/inventory-ro-501.done
 OUT_DIR=/var/lib/t2-touchid/inventory-journals
 NOTE_DIR=$REPO/tools/mba91-aks-macos-capture
 PORT_FILE=/var/lib/t2-touchid/biometric-port
-mkdir -p /run/t2-touchid "$OUT_DIR"
+install -d -o root -g root -m 0700 /run/t2-touchid "$OUT_DIR"
 if [[ -e $STAMP ]]; then
   echo "already ran this boot" >&2
   exit 0

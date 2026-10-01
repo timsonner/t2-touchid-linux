@@ -1,29 +1,31 @@
-# NEXT_STEPS standing-state addendum — 2026-09-30 inventory
+# NEXT_STEPS standing-state addendum — 2026-09-30 inventory (updated 22:28 MDT)
 
 > Prepend / replace the "Standing state" block in
 > `tools/mba91-aks-macos-capture/NEXT_STEPS.md` when root write is available
-> (that file is root-owned 0644 on MBA91). Facts below are already in
-> `INVENTORY_RO_501_20260930-174149_PUBLIC_SUMMARY.md`.
+> (that file is root-owned 0644 on MBA91).
 
-## Standing state (2026-09-30, after RO inventory)
+## Standing state (2026-09-30, post macOS one-finger + private dump)
 
-Transport is loaded again on kernel `7.2.7-arch1-Watanare-T2-2-t2`
-(`t2_sep_transport` + patched `applesmc` boot_state). Read-only inventory
-for uid 501 completed public-only (private dump gated incomplete).
+Transport OK on `7.2.7-arch1-Watanare-T2-2-t2`. macOS one-finger enroll for
+uid 501 survived warm reboot. RO inventory public+private complete
+(`INVENTORY_RO_501_20260930-222840_*`; interpretation
+`CATACOMB_IDENTITY_LAYOUT_20260930-222840.md`).
 
 | Fact | Evidence |
 | --- | --- |
-| Per-user `0x42` status **0**, output nil → identity count **0** | `INVENTORY_RO_501_20260930-174149_*` |
-| Catacomb UUID/hash (`0x38`/`0x3A`) status **22** — no user component for 501 | same |
-| SKS lock (`0x27`) **21** (`0x15`, cold) | same |
-| BridgeXPC port **49208**; private inventory not written (gate incomplete) | same; oneshot fix in `t2-inventory-ro-501.*` |
-| Kernel upgrade had dropped modules; rebuild+install restored transport | `AGENT_STATUS_2026-09-30.md`, `ELEVATE_NEEDED_2026-09-30.txt` |
+| Per-user `0x42` count **1** (status 0, 20 B) | `…-222840` |
+| Catacomb UUID/hash status **0**; component present | same |
+| Catacomb state words **`[0xFFFFFFFF, 3, 501, 3]`** | same |
+| SKS lock **16 = 0x10** (warm) | same |
+| Free `0x41` **2** / capacity **5** | same |
+| Private dump persisted (`priv_rc=0`) after journal dir `0700` fix | `/var/lib/t2-touchid/inventory-journals/inventory-ro-501-20260930-222840.private.json` |
+| BridgeXPC port **49183** | same |
 
 Hard bans unchanged: no enroll start, no bag create, no `0x21`, no second bag.
 
 ## Next
 
-1. **macOS one-finger re-enroll** for uid 501 (System Settings → Touch ID).
-   Proven path to Catacomb user component + warm SKS + non-nil `0x42`.
-2. Warm-reboot to Linux; re-run RO inventory before any password-bound
-   Linux enroll research.
+1. **Password-bound match research** (not enroll): confirm private UUID/hash
+   presence, then follow `MATCH_BROKER_DESIGN_2026-09-20.md` /
+   `NEXT_STEPS.md` authorized-match path with explicit operator approval.
+2. Optional: patch oneshot `mkdir -p` → `install -d -m 0700` for journals.
