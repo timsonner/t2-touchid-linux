@@ -49,6 +49,6 @@ Public-safe. Follow-on to `COLD_SOFT_REBOOT_AB_2026-09-07.md`.
 
 ## Next
 
-1. USB/Private `.cat` → bounded `0x40` (does it flip `0x38`/`0x3c` / `0x54`?)
-2. Warm match canary (read-only path) only if Tim wants — still no enroll.
-3. Keep EP7 parked.
+Superseded. The identity-survives-power-off result in this note was
+reconfirmed on 2026-10-01. Endpoint 7 is not parked. Live orders are
+the standing block in `NEXT_STEPS.md`.

@@ -1,8 +1,11 @@
 # MATCH canary plan — password-bound path vs surviving macOS finger (2026-09-30)
 
-Branch: `research/mba91-aks-ep7` @ `23199a3`. **PREP ONLY — do not run a live
-match/enroll/create/`0x21`-creation-ref/second-bag from this note alone.**
-Operator must explicitly approve the live canary command after prerequisites.
+Branch: `research/mba91-aks-ep7`. Track A already approves this research
+(`docs/LAB_PROTOCOL.md`). The canary below was approved and run on
+2026-10-01. It stopped at unlock: session 1 handle 1, AKS operation
+`0x4`, SEP status **-5**, flags `0x0` (`EREMOTEIO`). Special `-501` was
+not unlocked. Sections B and C were not run. Do not treat this file as
+a second permission check.
 
 Standing baseline (RO inventory `…-222840`, interpretation
 `CATACOMB_IDENTITY_LAYOUT_20260930-222840.md`):
@@ -12,7 +15,7 @@ Standing baseline (RO inventory `…-222840`, interpretation
 | `0x42` uid 501 | count **1** (20 B) |
 | Catacomb | present; `0x3C` = `[0xFFFFFFFF, 3, 501, 3]` |
 | SKS `0x27` | **16 = 0x10** (warm) |
-| Port / host / iface | **49183** / `fe80::aede:48ff:fe33:4455` / `enp116s0f1u1` |
+| Port / host / iface | **49183** on 2026-09-30; **49213** on the 2026-10-01 cold boot. Host `fe80::aede:48ff:fe33:4455`, iface `enp116s0f1u1` |
 | Private inventory | written; UUID/hash **presence** already recorded in public summary (no raw material in git) |
 | Transport this boot | `t2_sep_transport` loaded; `/dev/t2-{aks,acm,sep-lab}` present |
 | Keybag session | Durable bag = **`native-501.kb`** (no macOS `user.kb` on this track). systemd `t2-keybag-load` still gates on `user.kb` → skipped; use MBA91 `warm-bringup` override. Session file may be absent until `--bring-up` / manual load |
@@ -27,7 +30,10 @@ proven ACM+`verify-password-acm` harness.
 `native-501.kb` via MBA91 warm-bringup
 (`CORRECTION_NO_MACOS_USER_KB_2026-09-30.md`).
 
-## Hard bans (unchanged)
+## Specimen halts
+
+Track A approval is unchanged. These are answered shots for this finger
+and this bag, collected in the standing block of `NEXT_STEPS.md`.
 
 - No Linux enroll start (`0x03` / enroll workers).
 - No bag **create**, no **second** bag, no alias rewrite.
@@ -39,8 +45,9 @@ proven ACM+`verify-password-acm` harness.
 
 **Clarify:** F1’s `verify-password-acm` also uses AKS op `0x21` in
 `t2-aks-tool`, but that is the **password-bind-into-ACM** request shape from the
-proven F1/R1 path — **not** the banned enroll creation-reference. Still: do not
-run it until Tim approves the live canary.
+proven F1/R1 path, and it is distinct from the creation-reference options
+`0x100`/`0x200`. The 2026-10-01 canary was approved and stopped at
+unlock `-5`, so this `0x21` was not sent.
 
 ## Prerequisites
 
@@ -211,15 +218,11 @@ K2 already says a production broker can be password-free at match time if bags
 stay unlocked; this canary still exercises the ACM path for regression against
 the one-finger macOS baseline.
 
-## Recommended ONE next command (wait — do not live-match yet)
+## Outcome (2026-10-01)
 
-```bash
-printf '\a'
-echo 'NEED SUDO: read-only bag/session discovery for match canary prep'
-sudo bash -lc 'ls -la /var/lib/t2-touchid/*.kb /var/lib/t2-touchid/biometric-port /run/t2-touchid/ 2>&1; /home/tim/Projects/t2-touchid-linux/tools/mba91-aks-macos-capture/warm-bringup-mba91.sh --check'
-```
-
-After that returns, Tim decides: if `native-501.kb` is present, approve
-`--bring-up` / manual load (not a `user.kb` restore), then unlock, then optional
-token-free control, then gated F1 — each with explicit approval. See
-`CORRECTION_NO_MACOS_USER_KB_2026-09-30.md`.
+The prep check, the one load of `native-501.kb`, the bind onto `-501`,
+and `unlock-keybag 1 1` are done. Unlock returned SEP `-5`. The plan's
+own rule was non-zero unlock means stop, so the token-free control and
+F1 were not started. The open approved work is the activation-sequence
+paper named in `NEXT_STEPS.md`. Another password attempt, another load,
+and a copy to `user.kb` are repeats of answered shots.

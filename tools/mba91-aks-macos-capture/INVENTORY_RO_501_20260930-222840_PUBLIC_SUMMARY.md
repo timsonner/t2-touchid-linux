@@ -27,8 +27,11 @@
 | SKS lock `0x27` | **21 = 0x15** cold | **16 = 0x10** warm |
 | Private complete | false (gate failures) | **true**, file written |
 
-## Hard bans (unchanged)
-No Linux enroll start, no bag create, no `0x21`, no second bag, no bag writes. No commit/push this turn.
+## What this session did not do
+
+This inventory turn did not start enroll, create a bag, send `0x21`,
+write a second bag, or commit. Live orders are the standing block in
+`NEXT_STEPS.md`, not this session log.
 
 ## Private presence (safe; no raw UUID/hash in git)
 

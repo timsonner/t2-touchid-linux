@@ -5,7 +5,8 @@ Public-safe. No identity UUIDs, catacomb bytes, keybags, or raw Mesa payloads.
 **Host:** MacBookAir9,1 (T2) · Omarchy hostname `MBA19-OMARCHY` · T2 NCM
 `enp116s0f1u1` (PCI `0000:74:00.1`, MAC `ac:de:48:00:11:22`).  
 **Peer HELO:** `bkremoted` / BridgeXPC **39** / OSBuild **23P6068**.  
-**EP7 AKS:** still parked.
+**EP7 AKS:** parked on this date only. Not current; the transport has
+been loaded since 2026-09-26. Live orders are `NEXT_STEPS.md`.
 
 Related: `BRIDGEXPC_PATH.md`, `MESA_BENT_OPCODE_CROSSWALK.md`, `NEXT_STEPS.md`.
 
@@ -66,7 +67,9 @@ sensor-context / SKS probes.
   - **Cold** restore / `loadCatacomb` (and why `0x54` first_byte stays 0 even warm)
   - Linux-native enroll / ACM policy
   - Do not treat `0x08` as `0x42`
-- Mute AKS EP7 stays parked; fingerprint path remains BridgeXPC.
+- On this date the AKS endpoint 7 mailbox was mute, and the fingerprint
+  path in use was BridgeXPC. Endpoint 7 is not parked now; see
+  `NEXT_STEPS.md`.
 
 ## T2 NCM LL (Omarchy)
 

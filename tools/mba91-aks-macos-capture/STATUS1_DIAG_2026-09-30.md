@@ -163,7 +163,11 @@ start or are already answered / blocked.
 
 ## Do-nots (carry forward)
 
+These are measured halts for this specimen. Track A approval is
+unchanged. Live orders are the standing block in `NEXT_STEPS.md`.
+
 - No second `bridge-xpc-enroll-native-501.py` start.
-- No second keybag create / alias rewrite / `0x21` on top of status 1.
+- No second keybag create, and no alias rewrite onto a different bag.
+- No creation-reference `0x21` option `0x100`/`0x200` on top of status 1.
 - No `0x40` / reset / `no_catacomb` / `0x48` near this window.
 - No commit of raw inventory payloads, forms, or keybags.

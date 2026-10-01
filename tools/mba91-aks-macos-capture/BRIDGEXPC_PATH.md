@@ -1,6 +1,9 @@
 # BridgeXPC biometric path (MBA91 exploration map)
 
-Date: 2026-09-07. Parallel to parked Linux **AKS EP7** mute.
+Date: 2026-09-07. Endpoint 7 was muted on this date. That is no longer
+current: `t2_sep_transport` is the approved path and has been loaded
+since 2026-09-26. Item 6 below is withdrawn. Live orders are the
+standing block in `NEXT_STEPS.md`.
 Host facts below are from live MacBookAir9,1 / macOS **15.7.9 (24G830)** unless
 noted as bent’s Linux work.
 
@@ -153,8 +156,8 @@ These are first-class inputs for bent’s **current** gap, not “later.”
    sensor reset; check identity list / optional match.
 5. **Read-only `loadCatacomb`-class probes** after Private bags present — before
    native enroll.
-6. Keep AKS EP7 parked; SIP-off EP7 capture only if Bridge fingerprint track
-   stalls on policy/keybag with Tim’s explicit OK.
+6. Withdrawn 2026-10-01. Endpoint 7 is in use under Track A. Do not read
+   this item as a park.
 
 ## Private artifacts
 

@@ -96,5 +96,8 @@ launchctl print system/com.timsonner.t2-aks-boot-capture 2>&1 | head
 
 ## After teardown
 
-- Linux AKS EP7 remains **parked/mute** — bags alone do not fix that.
-- Next lab choice: dual-boot Omarchy on free space, or keep mining Mesa/BridgeXPC on macOS.
+- As of this teardown note, bags alone had not brought up Linux endpoint 7.
+  That park is over: endpoint 7 is loaded under Track A. Live orders are
+  `NEXT_STEPS.md`.
+- The lab choice in this note (dual-boot Omarchy, or keep mining on macOS)
+  is the 2026-09 choice and is already done.

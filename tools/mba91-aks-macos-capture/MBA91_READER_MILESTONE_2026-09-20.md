@@ -38,5 +38,7 @@ fixed) → this milestone.
 - Per-boot keybag unlock is password-assisted until an
   unattended credential is provisioned (operator's call).
 - Lock-screen Touch ID flow installed, not yet exercised.
-- Linux-native enrollment out of scope; macOS-enrolled identities
-  are the working set; cross-OS survival untested.
+- Linux-native enroll start was later tried and returned status 1
+  (`STATUS1_DIAG_2026-09-30.md`). The working identity is the macOS
+  one-finger enroll, and it survived warm reboot and true power-off
+  (`INVENTORY_RO_501_20261001-063245`).

@@ -21,11 +21,12 @@ uid 501 survived warm reboot. RO inventory public+private complete
 | Private dump persisted (`priv_rc=0`) after journal dir `0700` fix | `/var/lib/t2-touchid/inventory-journals/inventory-ro-501-20260930-222840.private.json` |
 | BridgeXPC port **49183** | same |
 
-Hard bans unchanged: no enroll start, no bag create, no `0x21`, no second bag.
+The live orders are the standing block in
+`tools/mba91-aks-macos-capture/NEXT_STEPS.md`. This file does not add a
+permission gate. The 2026-10-01 canary is recorded there: handle-1
+unlock returned SEP `-5`, and the match stopped.
 
 ## Next
 
-1. **Password-bound match research** (not enroll): confirm private UUID/hash
-   presence, then follow `MATCH_BROKER_DESIGN_2026-09-20.md` /
-   `NEXT_STEPS.md` authorized-match path with explicit operator approval.
-2. Optional: patch oneshot `mkdir -p` → `install -d -m 0700` for journals.
+Superseded by the standing block in `NEXT_STEPS.md`. The open approved
+work is the activation-sequence paper, with no live dispatch.

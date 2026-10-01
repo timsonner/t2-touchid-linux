@@ -69,5 +69,7 @@ open measurements after native load — not assumed green.
 - Leaves `src/t2-keybag-load.sh` + `t2-keybag-load.service` on
   `user.kb` for macOS-export machines
 
-After patch: `--check` only until Tim approves load/unlock. Do not run
-enroll, create, or creation-ref `0x21` from this correction.
+Load and unlock were later approved and run (2026-10-01). Handle 1
+returned SEP `-5`. This correction still forbids copying the bag to
+`user.kb`. It does not forbid Track A research, and it is not a second
+approval gate. Current orders are the standing block in `NEXT_STEPS.md`.

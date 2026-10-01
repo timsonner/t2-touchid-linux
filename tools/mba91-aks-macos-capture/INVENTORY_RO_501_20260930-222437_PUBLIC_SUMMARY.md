@@ -41,12 +41,14 @@
 - Public gate failures: **none** (`private_inventory_gate_failures: []`, `private_inventory_complete: true`)
 - Private file not persisted solely due to journal-dir mode/ownership (not due to incomplete inventory)
 
-## Hard bans (unchanged)
-No Linux enroll start, no bag create, no `0x21`, no second bag, no bag writes.
+## What this session did not do
+
+This inventory turn did not start enroll, create a bag, send `0x21`,
+or write a second bag.
 
 ## Next recommended step
-**Interpret this RO result; do not Linux-enroll yet.**
 
-1. Optional hygiene (Tim sudo): fix `/var/lib/t2-touchid/inventory-journals` to root:root mode 0700, then re-run private dump for UUID/hash bytes if needed for match research.
-2. Compare Catacomb UUID/hash and identity record layout to prior macOS-bag working boots before any password-bound Linux add-finger / match.
-3. Still **no** Linux enroll / create / `0x21` until that interpretation is written down.
+Superseded. The layout was interpreted the same night
+(`CATACOMB_IDENTITY_LAYOUT_20260930-222840.md`), the macOS finger was
+enrolled, and the 2026-10-01 match canary stopped on SEP `-5`. Live
+orders are the standing block in `NEXT_STEPS.md`.

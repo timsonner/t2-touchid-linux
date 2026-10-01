@@ -71,11 +71,11 @@ mutation broker run.
    - Standing bans + history: `tools/mba91-aks-macos-capture/NEXT_STEPS.md`
    - Credential-in-payload notes: `MATCH74_CREDENTIAL_IN_PAYLOAD_DESIGN.md`
 
-Exact next **command** when Tim wants a live match canary (still no enroll):
-use the staged match harness named in NEXT_STEPS / MATCH_BROKER_DESIGN
-(e.g. authorized match path with `verify-password-acm` policy 1007) only after
-confirming private UUID/hash presence matches expectations — **operator must
-explicitly approve that live canary**; this note does not launch it.
+The live match canary named here was approved and run on 2026-10-01.
+Handle-1 unlock returned SEP `-5`, so the canary stopped before
+`verify-password-acm`. Current orders are the standing block in
+`NEXT_STEPS.md`. This note is the Catacomb layout record, not a
+permission gate.
 
 ## Hygiene leftover
 

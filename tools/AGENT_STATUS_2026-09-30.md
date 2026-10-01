@@ -27,16 +27,13 @@ Earlier oneshot failures (no port / private-gate raise) are kept as
 
 ## NEXT_STEPS.md
 
-Standing-state text for 2026-09-30 is in
-`tools/NEXT_STEPS_STANDING_2026-09-30.md`. The live
-`tools/mba91-aks-macos-capture/NEXT_STEPS.md` is still the 2026-09-26
-block (root-owned; needs `sudo` to prepend).
+This file is the 2026-09-30 17:50 handoff. The live standing state is the
+top block of `tools/mba91-aks-macos-capture/NEXT_STEPS.md`.
 
 ## Next (operator)
 
-This handoff's next step, the macOS one-finger re-enroll, completed later
-the same night. The live standing state is the 2026-10-01 block in
-`tools/mba91-aks-macos-capture/NEXT_STEPS.md`: one identity, Catacomb
-present, bag file `native-501.kb`, next research is a password-bound match
-after an explicit yes. Hard bans remain: no enroll / bag create /
-creation-reference `0x21` / second bag on Linux.
+The macOS one-finger re-enroll completed later the same night. On
+2026-10-01 the approved match canary loaded `native-501.kb` and the
+handle-1 unlock returned SEP `-5`. Current orders are the standing
+block in `NEXT_STEPS.md`. Track A approval is unchanged
+(`docs/LAB_PROTOCOL.md`).

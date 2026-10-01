@@ -7,7 +7,7 @@ Only counts, status codes, event kinds, and command shapes.
 T2 NCM `enp116s0f1u1` · peer `fe80::aede:48ff:fe33:4455` (ping-verified).
 **Peer HELO:** `bkremoted` / BridgeXPC **39** / OSBuild **23P6068**.
 **RSD BiometricKit port this boot:** `49225` (dynamic; rediscover every boot).
-**EP7 AKS:** untouched, still parked.
+**EP7 AKS:** untouched on this date. Not a current park; see `NEXT_STEPS.md`.
 **Authorization:** Track A (operator-owned hardware + own finger, `docs/LAB_PROTOCOL.md`).
 
 ## Warm gate (passed, no re-warm needed)
@@ -90,7 +90,9 @@ all attempts — none of these paths clear the identity.
 
 * `--reset-sensor` before match (would clear the warm identity; contradicts
   the preserve ladder — see `WARM_IDENTITY_AB_2026-09-07.md`).
-* `0x40` load / enroll / delete / EP7 (separate forks; out of scope).
+* `0x40` load / enroll / delete / EP7 were separate forks, not tried in
+  this session. Track A covers them; later measured halts are in
+  `NEXT_STEPS.md`.
 * `fprintd --warm-verify` daemon promotion (gated on a first probe verdict;
   code is staged: `--warm-verify` flag + `30-warm-verify.conf` + tests).
 

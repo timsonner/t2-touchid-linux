@@ -7,39 +7,66 @@ conducted under **Track A** — independent ownership research
 ([`docs/LAB_PROTOCOL.md`](../../docs/LAB_PROTOCOL.md)); the earlier 2026-09-08
 park is lifted. See `PARKED_2026-09-08.md` for the authorization record.
 
-## Standing state (2026-10-01)
+## Standing state (2026-10-01, after the approved match canary)
 
-The macOS one-finger enroll for uid 501 is done, and it survived the warm
-reboot into Linux. Inventory `INVENTORY_RO_501_20260930-222840_*` is the
-current picture. The durable bag on this volume is the Linux-owned
-`/var/lib/t2-touchid/native-501.kb` from 2026-09-26. There is no macOS
-`user.kb`. `warm-bringup-mba91.sh` loads `native-501.kb` and leaves the
-systemd `user.kb` loader alone
+Track A is the approval for this machine (`docs/LAB_PROTOCOL.md`,
+`PARKED_2026-09-08.md`). The halts in this block are results of that
+research. They do not withdraw the approval, and they are not a request
+for another permission check.
+
+The macOS one-finger enroll for uid 501 is done. It survived the warm
+reboot and the 2026-10-01 cold boot into Omarchy. The durable bag on
+this volume is the Linux-owned `/var/lib/t2-touchid/native-501.kb` from
+2026-09-26. There is no macOS `user.kb`. `warm-bringup-mba91.sh` loads
+`native-501.kb` and leaves the systemd `user.kb` loader alone
 (`CORRECTION_NO_MACOS_USER_KB_2026-09-30.md`).
 
 | Fact | Evidence |
 | --- | --- |
-| Per-user `0x42` count **1** (status 0, 20 B) | `…-222840` |
-| Catacomb UUID/hash status **0**; user component present | same |
-| Catacomb state words **`[0xFFFFFFFF, 3, 501, 3]`** | same; `CATACOMB_IDENTITY_LAYOUT_20260930-222840.md` |
-| SKS lock **16 = 0x10** (warm) | same |
+| Per-user `0x42` count **1** (status 0, 20 B) | `…-222840`; reconfirmed `INVENTORY_RO_501_20261001-063245` |
+| Catacomb UUID/hash status **0**; user component present | `…-222840`; `CATACOMB_IDENTITY_LAYOUT_20260930-222840.md` |
+| Catacomb state words **`[0xFFFFFFFF, 3, 501, 3]`** | same |
+| SKS lock **16 = 0x10** (warm), including after true power-off | `…-222840` and `…-063245` (`sks_lock_state: 16`) |
 | Free `0x41` **2** / capacity **5** | same |
+| BridgeXPC port this cold boot | **49213** (`…-063245`) |
 | Private dump persisted | `/var/lib/t2-touchid/inventory-journals/inventory-ro-501-20260930-222840.private.json` |
 | `native-501.kb` is still the 2026-09-26 export (1540 bytes, mode 0600) | `/var/lib/t2-touchid/native-501.kb` |
-| Authorized zero-group enroll start returned status **1** and stays halted | `STATUS1_DIAG_2026-09-30.md` |
+| Approved canary, 2026-10-01 | one `load-keybag` of that file, session 1 handle 1, `set-system-keybag` onto `-501` status 0. `unlock-keybag 1 1` was AKS operation `0x4`, SEP status **-5**, flags `0x0`, surfaced as `EREMOTEIO`. Special `-501` was not unlocked. The match window was not opened. |
 
-Hard bans: no enroll start, no bag create, no creation-reference `0x21`,
-no second bag. Filling the Catacomb removed the empty-user gate. It does
-not authorize another native enroll start.
+## Measured halts
+
+These shots have answered. Another copy of the same shot is not a new
+question.
+
+- The authorized zero-group enroll start returned status **1**
+  (`STATUS1_DIAG_2026-09-30.md`). Catacomb fill did not change that
+  result into a reason to start enroll again.
+- Password unlock of `native-501.kb` returned SEP **-5** on 2026-09-20
+  and again on 2026-10-01. The token-free control and F1 both need
+  unlock status 0, so the match canary stops here
+  (`MATCH_CANARY_PLAN_2026-09-30.md`, `NATIVE_C4_VERDICT_2026-09-20.md`).
+- No second bag, and no copy of `native-501.kb` to `user.kb`.
+- Creation-reference `0x21` options `0x100`/`0x200` are the enroll path
+  that preceded status 1. The password-bind `0x21` inside
+  `verify-password-acm` is a different shape and was not sent, because
+  unlock stopped the canary.
+- `0x40`, sensor reset, `no_catacomb`, and `0x48` cleared identities on
+  this Air in earlier approved runs. Leave them unused while this
+  finger is the specimen.
+- Opcode 74 is a closed matrix (`SESSION74_VERDICT_2026-09-17.md`).
 
 ## Next
 
-1. **Password-bound match research**, not another enroll. Presence-check
-   the private inventory, then follow `MATCH_BROKER_DESIGN_2026-09-20.md`
-   and `MATCH_CANARY_PLAN_2026-09-30.md`. A live canary waits for an
-   explicit yes.
-2. When that yes is given, stage the session with `warm-bringup-mba91.sh`
-   against `native-501.kb`. Leave `user.kb` absent.
+Map the activation sequence in `NATIVE_C4_VERDICT_2026-09-20.md` and
+`NATIVE_C4C5_DESIGN_2026-09-20.md` onto this machine with no live
+dispatch. That paper is the open approved work.
+
+## Dated records below
+
+Everything under this heading is a session record from the date in its
+heading. It is not a live order. Where an old paragraph says the work
+is parked, waiting for permission, or that endpoint 7 must stay parked,
+that sentence describes that day.
 
 ## Prior standing state (2026-09-30 17:41, empty inventory)
 
