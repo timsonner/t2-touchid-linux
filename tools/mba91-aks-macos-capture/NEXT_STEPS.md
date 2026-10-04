@@ -23,9 +23,10 @@ prompt. `recover-outcome` closed that journal: identity count stayed
 `persistent_identity_delta` false, and `live_enrollment_blocked` is
 false. The full handoff is `STATUS80_HANDOFF_2026-10-03.md`.
 
-Status 80 is a `BKOperation` state change. It is not Mesa opcode 80
-and not Catacomb command `0x50`. The client still has no recovered
-transition for it, so another start will stop in the same place.
+Status 80 is a `BKOperation` finish, recovered in
+`STATUS80_SELECTOR_2026-10-03.md`. It is not Mesa opcode 80 and not
+Catacomb command `0x50`. The Linux client still freezes on it, so
+another start will stop in the same place until the protocol patch.
 
 | Fact | Evidence |
 | --- | --- |
@@ -45,9 +46,10 @@ question.
 - Do not run `t2-touchid-enroll start` again until status 80 has a
   recovered `BKOperation` transition in `t2_enrollment_protocol.py`.
   The 2026-10-03 start already proved the password and the start.
-- Do not map status 80 to a silent no-op. The recovered 24G830 chain
-  says this ordinal changes operation state
-  (`enrollment_research/README.md`).
+- Do not map status 80 to a silent no-op or to `IGNORE_PHASE`.
+  The 24G830 handler calls `operationEndsWithReason:` with reason 2,
+  which stores state 4 and does not send `enrollContinue`
+  (`STATUS80_SELECTOR_2026-10-03.md`).
 - Do not run `bridge-xpc-enroll-native-501.py`. Its creation-reference
   `0x21` option `0x100` was accepted, and the zero-group start returned
   status **1** (`STATUS1_DIAG_2026-09-30.md`).
@@ -65,19 +67,20 @@ question.
 
 ## Next
 
-Reboot into the normal macOS install and recover status 80 there.
-The handoff is `STATUS80_HANDOFF_2026-10-03.md`. The macOS agent
-does the first section of that file and stops. Enrollment stays on
-Linux, after the patch.
+The macOS selector note is `STATUS80_SELECTOR_2026-10-03.md`.
+Enrollment stays on Linux, after the patch. Do not enroll on this
+macOS boot.
 
-1. On macOS 15.7.9 build 24G830, disassemble live `BiometricKit` for
-   `BKOperation` ordinal 80 only. Bring back the selector, the host
-   state change, whether `enrollContinue` is sent, and the image UUID.
-   Do not enroll or export a new bag on that boot.
+1. Done on macOS 15.7.9 build 24G830. Image UUID
+   `099725C6-A182-39C2-8104-DA810DE9EDD7`. Ordinal 80 calls
+   `operationEndsWithReason:` with reason 2. That stores
+   `BKOperation` state 4, may notify `operation:finishedWithReason:`
+   with reason 2, and does not send `enrollContinue`.
 2. Back on Omarchy, load `user.kb` again with `t2-keybag-load.service`.
    Do not run `warm-bringup-mba91.sh`. Teach only that transition in
    `t2_enrollment_protocol.py`, with a test that keeps the other eight
-   unmapped ordinals fail-closed.
+   unmapped ordinals fail-closed. Do not send `enrollContinue`. Do not
+   map 80 onto `IGNORE_PHASE`.
 3. Only after that patch: `t2-touchid-enroll start` again. The macOS
    password, then the new finger.
 
@@ -544,6 +547,7 @@ EP7 AKS stays muted (separate transport dead-end); fingerprint path is BridgeXPC
 
 | Note | Topic |
 | --- | --- |
+| `STATUS80_SELECTOR_2026-10-03.md` | Status 80 calls `operationEndsWithReason:` 2, state 4 |
 | `STATUS80_HANDOFF_2026-10-03.md` | Linux enroll froze on BKOperation status 80 |
 | `EXPORT_RETURN_FINDINGS_2026-10-03.md` | macOS `user.kb` and Catacomb return |
 | `WARM_IDENTITY_AB_2026-09-07.md` | smoke + warm |
