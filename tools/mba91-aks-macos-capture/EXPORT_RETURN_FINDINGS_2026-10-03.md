@@ -65,19 +65,22 @@ and has no enroll method.
 
 `t2-touchid-enroll` refuses to run until
 `/var/lib/t2-touchid/backups/` contains exactly one private archive
-whose filename is its SHA-256. That directory is absent. The stick was
-plugged back in on 2026-10-03 and the Catacomb archive hash above still
-matches. The backup file has not been installed.
+whose filename is its SHA-256. That directory was absent when this
+note was first written. The stick was plugged back in on 2026-10-03
+and the Catacomb archive hash above still matched.
 
-## Next
+## Next (closed the same day)
 
-1. Install the Catacomb archive as
-   `/var/lib/t2-touchid/backups/3a9c6dce463e20cb4c2bc4c685cc7a24b5ea19d2f808b6443f7f4e98c31705db.tar.gz`,
-   root:root, mode 0600. Do not commit it.
-2. Confirm a typed password `sudo` in a terminal that stays open.
-3. `t2-touchid-enroll preflight --acknowledge-password-fallback-tested`.
-   Read-only.
-4. `t2-touchid-enroll start` only after that preflight passes.
+The order at that moment was: install the Catacomb archive as the
+sole private backup, confirm a typed password `sudo`, run preflight,
+then `t2-touchid-enroll start`. Those four steps finished later on
+2026-10-03. The backup is installed. `sudo -k` with a typed password
+returned 0. Preflight was ready. The start accepted the macOS
+password, returned status 0, and froze on BiometricKit status 80
+before a finger prompt. `recover-outcome` found no identity delta.
+The live order is `STATUS80_HANDOFF_2026-10-03.md` and the standing
+block of `NEXT_STEPS.md`. Do not start enrollment again until that
+handoff's patch exists.
 
 ## Do-nots
 

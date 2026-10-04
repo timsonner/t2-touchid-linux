@@ -176,7 +176,8 @@ unchanged. Live orders are the standing block in `NEXT_STEPS.md`.
 
 The macOS export return installed a real `user.kb`, unlocked it with
 status 0, and `fprintd-verify` returned `verify-match`. That does not
-lift the halt on `bridge-xpc-enroll-native-501.py`. The Linux enroll
-path for the unlocked macOS bag is `t2-touchid-enroll`, recorded in
-`EXPORT_RETURN_FINDINGS_2026-10-03.md` and the standing block of
-`NEXT_STEPS.md`.
+lift the halt on `bridge-xpc-enroll-native-501.py`. The password-bound
+`t2-touchid-enroll start` later returned status 0 and froze on
+BiometricKit status 80 before a finger prompt. That halt is
+`STATUS80_HANDOFF_2026-10-03.md`. Live orders are the standing block
+of `NEXT_STEPS.md`.

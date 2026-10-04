@@ -7,7 +7,80 @@ conducted under **Track A** — independent ownership research
 ([`docs/LAB_PROTOCOL.md`](../../docs/LAB_PROTOCOL.md)); the earlier 2026-09-08
 park is lifted. See `PARKED_2026-09-08.md` for the authorization record.
 
-## Standing state (2026-10-03, macOS export return)
+## Standing state (2026-10-03, enroll stopped on status 80)
+
+Track A is the approval for this machine (`docs/LAB_PROTOCOL.md`,
+`PARKED_2026-09-08.md`). The halts in this block are results of that
+research. They do not withdraw the approval, and they are not a request
+for another permission check.
+
+The macOS bag is unlocked, fingerprint `sudo` works, and one macOS
+finger verifies. A Linux enroll through `t2-touchid-enroll start`
+accepted the macOS password and the enroll start returned status 0.
+The client then froze on BiometricKit status **80** before any finger
+prompt. `recover-outcome` closed that journal: identity count stayed
+**1**, `fingerprint_mutation_performed` false,
+`persistent_identity_delta` false, and `live_enrollment_blocked` is
+false. The full handoff is `STATUS80_HANDOFF_2026-10-03.md`.
+
+Status 80 is a `BKOperation` state change. It is not Mesa opcode 80
+and not Catacomb command `0x50`. The client still has no recovered
+transition for it, so another start will stop in the same place.
+
+| Fact | Evidence |
+| --- | --- |
+| Enroll start | status 0, protocol v2, 68-byte request. Password prompt appeared. No finger-progress line was printed |
+| Stop | `unmapped generic operation state status 80` |
+| `recover-outcome` | `outcome_unknown_reconciled` true, identity count 1, no fingerprint mutation, no persistent delta |
+| Gate after recovery | `unfinished_count` 0, `live_enrollment_blocked` false |
+| Read-only identity list after the stop, before recovery | count 1, free 2 / capacity 5, both repeats equal, status 0 |
+| `user.kb` / `native-501.kb` | 1560 and 1540 bytes, unchanged by the enroll |
+| Backup | `/var/lib/t2-touchid/backups/<catacomb-sha256>.tar.gz` is installed, mode 0600. The hash is in `EXPORT_RETURN_FINDINGS_2026-10-03.md` |
+
+## Measured halts
+
+These shots have answered. Another copy of the same shot is not a new
+question.
+
+- Do not run `t2-touchid-enroll start` again until status 80 has a
+  recovered `BKOperation` transition in `t2_enrollment_protocol.py`.
+  The 2026-10-03 start already proved the password and the start.
+- Do not map status 80 to a silent no-op. The recovered 24G830 chain
+  says this ordinal changes operation state
+  (`enrollment_research/README.md`).
+- Do not run `bridge-xpc-enroll-native-501.py`. Its creation-reference
+  `0x21` option `0x100` was accepted, and the zero-group start returned
+  status **1** (`STATUS1_DIAG_2026-09-30.md`).
+- Password unlock of `native-501.kb` returned SEP **-5** on 2026-09-20
+  and again on 2026-10-01. That file stays unloaded. The macOS
+  `user.kb` unlock is a different shot and returned 0.
+- No second bag, and no copy of `native-501.kb` to `user.kb`.
+- Do not run `warm-bringup-mba91.sh` on this boot. It loads
+  `native-501.kb`. The live loader is `t2-keybag-load.service`.
+- `0x40`, sensor reset, `no_catacomb`, and `0x48` cleared identities on
+  this Air in earlier approved runs. Leave them unused while this
+  finger is the specimen.
+- Opcode 74 is a closed matrix (`SESSION74_VERDICT_2026-09-17.md`).
+- This Air's `fprintd` is verify-only. It cannot enroll.
+
+## Next
+
+Recover the `BKOperation` transition for status 80, then enroll one
+new finger. The handoff for that work is
+`STATUS80_HANDOFF_2026-10-03.md`.
+
+1. From the 24G830 `BiometricKit` chain
+   `BKEnrollTouchIDOperation` → `BKEnrollOperation` → `BKOperation`,
+   name the selector and the state change for ordinal 80. Record
+   whether it sends `enrollContinue`.
+2. Teach only that transition in `t2_enrollment_protocol.py`, with a
+   test that keeps the other eight unmapped ordinals fail-closed.
+3. Only after that patch: `t2-touchid-enroll start` again. The macOS
+   password, then the new finger.
+
+## Dated records below
+
+## Prior standing state (2026-10-03, macOS export return)
 
 Track A is the approval for this machine (`docs/LAB_PROTOCOL.md`,
 `PARKED_2026-09-08.md`). The halts in this block are results of that
@@ -24,8 +97,8 @@ The 2026-10-01 macOS export is installed and the macOS bag unlocked.
 not copied onto `user.kb`. `t2-keybag-load.service` loaded `user.kb`
 and bound special `-501`. Both unlock calls returned status 0. The
 local Catacomb store is provisioned with one identity.
-`/var/lib/t2-touchid/backups/` does not exist yet, so
-`t2-touchid-enroll` cannot start.
+`/var/lib/t2-touchid/backups/` did not exist when this block was
+written, so `t2-touchid-enroll` could not start.
 
 | Fact | Evidence |
 | --- | --- |
@@ -40,45 +113,12 @@ local Catacomb store is provisioned with one identity.
 | PAM | `tools/install-pam.sh`. Originals in `/var/lib/t2-touchid/pam-backups`. Fingerprint `sudo` succeeded |
 | Export stick, remounted 2026-10-03 | Catacomb archive still 23665 bytes, SHA-256 `3a9c6dce463e20cb4c2bc4c685cc7a24b5ea19d2f808b6443f7f4e98c31705db`. Keybag archive still 12561 bytes |
 
-## Measured halts
-
-These shots have answered. Another copy of the same shot is not a new
-question.
-
-- Do not run `bridge-xpc-enroll-native-501.py`. Its creation-reference
-  `0x21` option `0x100` was accepted, and the zero-group start returned
-  status **1** (`STATUS1_DIAG_2026-09-30.md`). That is not the
-  password-bound policy-1007 path.
-- Password unlock of `native-501.kb` returned SEP **-5** on 2026-09-20
-  and again on 2026-10-01. That file stays unloaded. The macOS
-  `user.kb` unlock is a different shot and returned 0.
-- No second bag, and no copy of `native-501.kb` to `user.kb`.
-- Do not run `warm-bringup-mba91.sh` on this boot. It loads
-  `native-501.kb`. The live loader is `t2-keybag-load.service`.
-- `0x40`, sensor reset, `no_catacomb`, and `0x48` cleared identities on
-  this Air in earlier approved runs. Leave them unused while this
-  finger is the specimen.
-- Opcode 74 is a closed matrix (`SESSION74_VERDICT_2026-09-17.md`).
-- This Air's `fprintd` is verify-only. It cannot enroll.
-
-## Next
-
-Linux enrollment of one new finger, through `t2-touchid-enroll`, not
-through the status-1 script and not through `fprintd`.
-
-1. Install the Catacomb archive from the export stick as
-   `/var/lib/t2-touchid/backups/3a9c6dce463e20cb4c2bc4c685cc7a24b5ea19d2f808b6443f7f4e98c31705db.tar.gz`,
-   root:root, mode 0600. The stick copy is mode 644. Do not commit the
-   archive.
-2. Confirm a typed Linux password still succeeds at `sudo` in a
-   terminal that stays open. Fingerprint `sudo` already succeeded.
-   `t2-touchid-enroll preflight` needs
-   `--acknowledge-password-fallback-tested` from that check.
-3. Run preflight. It reads inventory and does not start enrollment.
-4. Only after preflight passes: `t2-touchid-enroll start`, with the
-   macOS password and the new finger. That step is separate.
-
-## Dated records below
+The next steps written with this block were: install that Catacomb
+archive as the sole private backup, confirm a typed password at
+`sudo`, run preflight, then `t2-touchid-enroll start`. Those four
+steps finished later on 2026-10-03. The start returned status 0 and
+froze on BiometricKit status 80 before a finger prompt. See the
+standing state above and `STATUS80_HANDOFF_2026-10-03.md`.
 
 ## Prior standing state (2026-10-01, after the approved match canary)
 
@@ -501,6 +541,8 @@ EP7 AKS stays muted (separate transport dead-end); fingerprint path is BridgeXPC
 
 | Note | Topic |
 | --- | --- |
+| `STATUS80_HANDOFF_2026-10-03.md` | Linux enroll froze on BKOperation status 80 |
+| `EXPORT_RETURN_FINDINGS_2026-10-03.md` | macOS `user.kb` and Catacomb return |
 | `WARM_IDENTITY_AB_2026-09-07.md` | smoke + warm |
 | `WARM_CATACOMB_PROBES_2026-09-07.md` | store API split |
 | `COLD_*_AB_2026-09-07.md` | preserve ladder |
