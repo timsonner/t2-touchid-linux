@@ -55,10 +55,11 @@ make ordinal 80 a silent `BKOperation` no-op.
 
 ## Bounds
 
-Statuses 51, 58, 60, 61, 62, 65, 99, and 502 stay unmapped. In this
-same switch, 60 and 61 call `changeState:` directly. Status 99 also
-reaches `operationEndsWithReason:` with reason 2, and 502 uses reason
-4. This note does not retune them.
+Statuses 51, 58, 60, 61, 62, 65, 99, and 502 are recovered in
+`GENERIC_STATE_SELECTORS_2026-10-03.md`. They stay fail-closed in the
+Linux client. This note does not retune them. In this same switch,
+60 and 61 call `changeState:` directly. Status 99 also reaches
+`operationEndsWithReason:` with reason 2, and 502 uses reason 4.
 
 The Linux client still freezes on unmapped status 80. The protocol
 patch is a later Linux boot, after `user.kb` is loaded again by

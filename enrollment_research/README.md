@@ -5,7 +5,7 @@ Touch ID enrollment, identity management, multi-user mapping, Catacomb
 persistence, and recovery on Intel Macs with an Apple T2.
 
 - [FINDINGS.md](FINDINGS.md) is a sanitized snapshot of the detailed research
-  ledger, last updated 2026-08-31.
+  ledger. The 2026-10-03 generic-status recovery is in that file.
 - [EVIDENCE_COLLECTION.md](EVIDENCE_COLLECTION.md) explains the remaining
   evidence gaps and how to collect data for each one later.
 - [`scripts/`](scripts/) contains collection and preflight helpers. They do not
@@ -428,10 +428,15 @@ terminal result, state change, or command. The reducer now encodes and tests
 that whole domain for both supported envelope versions.
 
 Generic statuses `51`, `58`, `60`, `61`, `62`, `65`, `80`, `99`, and `502` do
-change `BKOperation` state but their enrollment effects are not yet safely
-recovered, so they remain fail-closed. Accessory authorization status `501`
-also remains on its separately blocked path. This exhaustive boundary removes
-the need for another live attempt merely to classify a harmless phase ordinal.
+change `BKOperation` state. Their 24G830 arms were recovered on 2026-10-03
+from the live cache: seven call `operationEndsWithReason:` and store state 4,
+while 60 and 61 only call `changeState:` with 3 and 2. The client still
+freezes on all nine until the status-80 patch. The table is in
+[FINDINGS.md](FINDINGS.md), and the disassembly procedure is
+`tools/mba91-aks-macos-capture/BIOMETRICKIT_STATUS_TECHNIQUE_2026-10-03.md`.
+Accessory authorization status `501` remains on its separately blocked path.
+This exhaustive boundary removes the need for another live attempt merely to
+classify a harmless phase ordinal.
 
 The following approved attempt reached a genuine 23% progress event and sent
 the required `0x0e` continue. It stopped because that command returned a

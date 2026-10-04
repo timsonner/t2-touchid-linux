@@ -63,6 +63,10 @@ edit `src/t2_enrollment_protocol.py` from macOS.
 
 ## Linux agent — after that note returns
 
+The selector notes are in. Follow
+`STATUS80_LINUX_HANDOFF_2026-10-03.md`. It replaces the patch-shape
+list below. The history in this file still stands.
+
 Boot back to Omarchy and stop at the note. Alias `-501` does not
 survive reboot. `t2-keybag-load.service` loads
 `/var/lib/t2-touchid/user.kb` again. Do not run

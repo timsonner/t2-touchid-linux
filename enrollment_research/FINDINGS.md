@@ -528,6 +528,10 @@ Mesa enrollment statuses actionable:
 - Status **501** means accessory authorization is required; its details carry
   `BKAuthRequiredForAccessory`. Other statuses fall through to the generic
   operation handler.
+- On 2026-10-03 the live 24G830 image supplied the missing generic
+  transitions for statuses **51, 58, 60, 61, 62, 65, 80, 99, and 502**.
+  The procedure and the per-ordinal table are later in this file. The
+  Linux client still freezes on them until the status-80 patch.
 - Successful enrollment is delivered through the distinct
   `enrollResult:details:client:` callback containing the new server identity;
   it is not inferred from the progress range. Interruption maps to failure
@@ -726,7 +730,9 @@ stops at `SEP-identity-observed` pending persistence and inventory reconciliatio
 | `0xe3ff8003` with valid v1/v2 identity record | Active -> SEP-identity-observed | no | provisional identity only; `enroll-completed` waits for Catacomb and stable read-back |
 | version-1 `0xe3ff8004` statistics | Active -> unchanged; telemetry ignored after deduplication | no | no enrollment feedback or result |
 | `0xe3ff800e` / ordinal 501 accessory authorization | Active -> accessory-authorization-required | no guessed retry | unsupported for built-in-only Linux flow unless the accessory protocol is explicitly implemented |
-| generic state ordinals `51`, `58`, `60`, `61`, `62`, `65`, `80`, `99`, `502`; unknown envelope/version/length/operation/generation | no transition | no | incomplete semantic recovery or protocol error; freeze/reconcile if an operation was active |
+| generic state ordinals `51`, `58`, `62`, `65`, `80`, `99`, `502` | Active -> operation finished. `operationEndsWithReason:` with reasons 3, 1, 3, 1, 2, 2, and 4. Each stores state 4 and may notify `operation:finishedWithReason:`. No `enrollContinue` | no | recovered 2026-10-03; the client still freezes until a patch. Status 80 is the live halt and the only ordinal the next patch teaches. Do not reuse the status 66/67/68 actions |
+| generic state ordinals `60`, `61` | Active -> host state 3 or 2 via `changeState:` only. No finish callback, no connection teardown, no `enrollContinue` | no | recovered 2026-10-03; still fail-closed. Not the status-80 finish |
+| unknown envelope/version/length/operation/generation | no transition | no | protocol error; freeze/reconcile if an operation was active |
 
 “Exactly once” is scoped to a uniquely accepted event on the current operation
 and transport generation. A duplicate delivery must not send a second continue;
@@ -5791,6 +5797,47 @@ validated no-op ranges are `0..50`, `52..57`, `59`, `69`, `71..73`, `75..77`,
 `79`, `81..84`, `89..92`, `94..97`, `356..500`, and
 `503..UINT32_MAX`. The executable reducer tests those ranges and keeps the nine
 uninterpreted generic state transitions fail-closed.
+
+### Generic state ordinals recovered (2026-10-03, live 24G830)
+
+The same three-class walk was repeated for the nine ordinals the reducer
+still froze. The procedure is
+`tools/mba91-aks-macos-capture/BIOMETRICKIT_STATUS_TECHNIQUE_2026-10-03.md`.
+The cache family is `dyld_v1 x86_64h`, cache UUID
+`FDD97301-9818-3865-A1D2-FEC1D3914796`, BiometricKit image UUID
+`099725C6-A182-39C2-8104-DA810DE9EDD7`. Touch ID and enroll forward all
+nine. None of them sends `enrollContinue`. The capture mapper's "no
+capture error" result for 80 is a different switch.
+
+`operationEndsWithReason:` always stores state 4, may notify
+`operation:finishedWithReason:` with the reason, and then clears the
+XPC client. The reason is not the stored state.
+
+| Status | Generic arm |
+| --- | --- |
+| 51 | `operationEndsWithReason:` 3 |
+| 58 | `operationEndsWithReason:` 1 |
+| 62 | `operationEndsWithReason:` 3 |
+| 65 | `operationEndsWithReason:` 1 |
+| 80 | `operationEndsWithReason:` 2 |
+| 99 | `operationEndsWithReason:` 2 |
+| 502 | `operationEndsWithReason:` 4 |
+| 60 | `changeState:` 3 only |
+| 61 | `changeState:` 2 only |
+
+Status 61 stores the same state value status 64 stores after a
+finger-lift, without the presence callback. The operation keeps
+running. The image's log lines are `operationEndsWithReason: %ld` and
+`changeState %ld`; they do not name the integers.
+
+The Linux client still freezes on all nine. The next patch teaches
+status 80 only and leaves the other eight fail-closed. The handoff is
+`tools/mba91-aks-macos-capture/STATUS80_LINUX_HANDOFF_2026-10-03.md`.
+No other ordinal in this chain changes `BKOperation` state without an
+existing protocol arm or a row in this table. The checked domain is
+`BKEnrollTouchIDOperation` -> `BKEnrollOperation` -> `BKOperation`
+`statusMessage:client:`, plus the enroll details thunk and the Touch
+ID capture helper.
 
 The next approved attempt crossed those phase boundaries and produced a valid
 23% progress event. Linux dispatched the required `0x0e`, then stopped because

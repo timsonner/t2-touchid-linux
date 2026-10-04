@@ -24,9 +24,11 @@ prompt. `recover-outcome` closed that journal: identity count stayed
 false. The full handoff is `STATUS80_HANDOFF_2026-10-03.md`.
 
 Status 80 is a `BKOperation` finish, recovered in
-`STATUS80_SELECTOR_2026-10-03.md`. It is not Mesa opcode 80 and not
-Catacomb command `0x50`. The Linux client still freezes on it, so
-another start will stop in the same place until the protocol patch.
+`STATUS80_SELECTOR_2026-10-03.md`. The other eight fail-closed
+ordinals are recovered in `GENERIC_STATE_SELECTORS_2026-10-03.md`.
+Status 80 is not Mesa opcode 80 and not Catacomb command `0x50`.
+The Linux client still freezes on all nine, so another start will
+stop in the same place until the protocol patch.
 
 | Fact | Evidence |
 | --- | --- |
@@ -67,7 +69,8 @@ question.
 
 ## Next
 
-The macOS selector note is `STATUS80_SELECTOR_2026-10-03.md`.
+The macOS selector notes and the disassembly procedure are on this
+branch. The Linux agent follows `STATUS80_LINUX_HANDOFF_2026-10-03.md`.
 Enrollment stays on Linux, after the patch. Do not enroll on this
 macOS boot.
 
@@ -76,11 +79,11 @@ macOS boot.
    `operationEndsWithReason:` with reason 2. That stores
    `BKOperation` state 4, may notify `operation:finishedWithReason:`
    with reason 2, and does not send `enrollContinue`.
-2. Back on Omarchy, load `user.kb` again with `t2-keybag-load.service`.
-   Do not run `warm-bringup-mba91.sh`. Teach only that transition in
-   `t2_enrollment_protocol.py`, with a test that keeps the other eight
-   unmapped ordinals fail-closed. Do not send `enrollContinue`. Do not
-   map 80 onto `IGNORE_PHASE`.
+2. Back on Omarchy, follow `STATUS80_LINUX_HANDOFF_2026-10-03.md`.
+   Load `user.kb` again with `t2-keybag-load.service`. Do not run
+   `warm-bringup-mba91.sh`. Teach only the status-80 finish. Keep the
+   other eight fail-closed. Do not send `enrollContinue`. Do not map
+   80 onto `IGNORE_PHASE` or onto the status 66/67/68 actions.
 3. Only after that patch: `t2-touchid-enroll start` again. The macOS
    password, then the new finger.
 
@@ -547,6 +550,9 @@ EP7 AKS stays muted (separate transport dead-end); fingerprint path is BridgeXPC
 
 | Note | Topic |
 | --- | --- |
+| `STATUS80_LINUX_HANDOFF_2026-10-03.md` | Linux patch for status 80, then one enroll |
+| `BIOMETRICKIT_STATUS_TECHNIQUE_2026-10-03.md` | How the 24G830 status arms were read |
+| `GENERIC_STATE_SELECTORS_2026-10-03.md` | Eight fail-closed ordinals: finish reasons, or `changeState:` |
 | `STATUS80_SELECTOR_2026-10-03.md` | Status 80 calls `operationEndsWithReason:` 2, state 4 |
 | `STATUS80_HANDOFF_2026-10-03.md` | Linux enroll froze on BKOperation status 80 |
 | `EXPORT_RETURN_FINDINGS_2026-10-03.md` | macOS `user.kb` and Catacomb return |
