@@ -1,5 +1,9 @@
 # MBA91 research handoff (2026-09-30 ~17:50 MDT)
 
+Historical night-of note. Current narrative:
+[`docs/FINDINGS.md`](../docs/FINDINGS.md). Live standing:
+[`mba91-aks-macos-capture/NEXT_STEPS.md`](mba91-aks-macos-capture/NEXT_STEPS.md).
+
 ## Transport: FIXED for 7.2.7
 
 | Item | Result |

@@ -5,7 +5,9 @@ Touch ID enrollment, identity management, multi-user mapping, Catacomb
 persistence, and recovery on Intel Macs with an Apple T2.
 
 - [FINDINGS.md](FINDINGS.md) is a sanitized snapshot of the detailed research
-  ledger. The 2026-10-03 generic-status recovery is in that file.
+  ledger. The 2026-10-03 generic-status recovery and the 2026-10-04 Linux
+  patch are in that file. The human narrative is
+  [`docs/FINDINGS.md`](../docs/FINDINGS.md).
 - [EVIDENCE_COLLECTION.md](EVIDENCE_COLLECTION.md) explains the remaining
   evidence gaps and how to collect data for each one later.
 - [`scripts/`](scripts/) contains collection and preflight helpers. They do not

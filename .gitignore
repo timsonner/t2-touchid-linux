@@ -24,3 +24,6 @@ linux-bringup-steps.md
 macSteps.md
 .build/
 tools/mba91-aks-macos-capture/mba91-bag-session-discovery-*.log
+tools/mba91-aks-macos-capture/INVENTORY_RO_*.json
+tools/mba91-aks-macos-capture/INVENTORY_RO_*.log
+tools/mba91-aks-macos-capture/INVENTORY_RO_*.txt

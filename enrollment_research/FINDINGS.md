@@ -1,7 +1,10 @@
 # Linux-native T2 Touch ID management research
 
-Research-only ledger started 2026-08-28. No enrollment, deletion, or user-data
-command has been sent to the T2 during this work.
+Protocol and identity-model ledger started 2026-08-28. Current narrative
+for humans and agents: [`docs/FINDINGS.md`](../docs/FINDINGS.md).
+
+Linux enrollment is hardware-tested on MacBookPro16,2 and MacBookAir9,1.
+This file keeps the recovered event matrix and identity model.
 
 ## Objective
 
@@ -530,8 +533,8 @@ Mesa enrollment statuses actionable:
   operation handler.
 - On 2026-10-03 the live 24G830 image supplied the missing generic
   transitions for statuses **51, 58, 60, 61, 62, 65, 80, 99, and 502**.
-  The procedure and the per-ordinal table are later in this file. The
-  Linux client still freezes on them until the status-80 patch.
+  The procedure and the per-ordinal table are later in this file. Linux
+  patches `ddfcdf6` and `0b81657` teach those transitions.
 - Successful enrollment is delivered through the distinct
   `enrollResult:details:client:` callback containing the new server identity;
   it is not inferred from the progress range. Interruption maps to failure
@@ -730,8 +733,8 @@ stops at `SEP-identity-observed` pending persistence and inventory reconciliatio
 | `0xe3ff8003` with valid v1/v2 identity record | Active -> SEP-identity-observed | no | provisional identity only; `enroll-completed` waits for Catacomb and stable read-back |
 | version-1 `0xe3ff8004` statistics | Active -> unchanged; telemetry ignored after deduplication | no | no enrollment feedback or result |
 | `0xe3ff800e` / ordinal 501 accessory authorization | Active -> accessory-authorization-required | no guessed retry | unsupported for built-in-only Linux flow unless the accessory protocol is explicitly implemented |
-| generic state ordinals `51`, `58`, `62`, `65`, `80`, `99`, `502` | Active -> operation finished. `operationEndsWithReason:` with reasons 3, 1, 3, 1, 2, 2, and 4. Each stores state 4 and may notify `operation:finishedWithReason:`. No `enrollContinue` | no | recovered 2026-10-03; the client still freezes until a patch. Status 80 is the live halt and the only ordinal the next patch teaches. Do not reuse the status 66/67/68 actions |
-| generic state ordinals `60`, `61` | Active -> host state 3 or 2 via `changeState:` only. No finish callback, no connection teardown, no `enrollContinue` | no | recovered 2026-10-03; still fail-closed. Not the status-80 finish |
+| generic state ordinals `51`, `58`, `62`, `65`, `80`, `99`, `502` | Active -> operation finished. `operationEndsWithReason:` with reasons 3, 1, 3, 1, 2, 2, and 4. Each stores state 4 and may notify `operation:finishedWithReason:`. No `enrollContinue` | no | recovered 2026-10-03; taught as `operation-finished` (`ddfcdf6`, `0b81657`). Do not reuse the status 66/67/68 actions |
+| generic state ordinals `60`, `61` | Active -> host state 3 or 2 via `changeState:` only. No finish callback, no connection teardown, no `enrollContinue` | no | recovered 2026-10-03; taught as `operation-state-changed` (`0b81657`). Status 61 is not presence-false like 64 |
 | unknown envelope/version/length/operation/generation | no transition | no | protocol error; freeze/reconcile if an operation was active |
 
 “Exactly once” is scoped to a uniquely accepted event on the current operation
@@ -5795,8 +5798,9 @@ and `502`. Every remaining uint32 status reaches the common return path without
 a delegate callback, state change, or command. Consequently the complete
 validated no-op ranges are `0..50`, `52..57`, `59`, `69`, `71..73`, `75..77`,
 `79`, `81..84`, `89..92`, `94..97`, `356..500`, and
-`503..UINT32_MAX`. The executable reducer tests those ranges and keeps the nine
-uninterpreted generic state transitions fail-closed.
+`503..UINT32_MAX`. The executable reducer tests those ranges. The nine
+generic state transitions were later recovered and taught (`ddfcdf6`,
+`0b81657`); see the next subsection.
 
 ### Generic state ordinals recovered (2026-10-03, live 24G830)
 

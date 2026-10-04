@@ -3,11 +3,13 @@
 This project is experimental authentication software. Keep password login and
 an already-authenticated recovery terminal available while changing PAM.
 
-The complete research workflow has been proven on one machine and the core
-boot/authentication workflow on a second model; see the README's
-[proven configuration](README.md#proven-configuration) and
-[status table](README.md#status) for what is exposed and what has actually been
-tested on hardware.
+The complete research workflow has been proven on MacBookPro16,2, Linux
+enroll plus verify on MacBookAir9,1, and the core boot/authentication
+workflow on MacBookPro15,2; see the README's
+[proven configuration](README.md#proven-configuration),
+[status table](README.md#status), and
+[`docs/FINDINGS.md`](docs/FINDINGS.md) for what is exposed and what has
+actually been tested on hardware.
 
 ## Trust boundaries
 

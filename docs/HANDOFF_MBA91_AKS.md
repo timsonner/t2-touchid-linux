@@ -1,9 +1,9 @@
 # Handoff: MacBookAir9,1 AKS EP7 mute (for upstream / bent agents)
 
 **Branch:** https://github.com/timsonner/t2-touchid-linux/tree/research/mba91-aks-ep7  
-**Doc:** [`RESEARCH_MBA91_AKS.md`](RESEARCH_MBA91_AKS.md) (Linux EP7 parked; macOS capture done)  
-**Machine:** MacBookAir9,1 · bridgeOS `23.16.16068` · SEP PCI `106b:1802`  
-**Intent:** Reusable negative result + research tooling — not a claim of Air Touch ID support.
+**Doc:** [`RESEARCH_MBA91_AKS.md`](RESEARCH_MBA91_AKS.md) (EP7 mailbox mute). Live Touch ID: [`FINDINGS.md`](FINDINGS.md).  
+**Machine:** MacBookAir9,1 · bridgeOS `23.16.16068` / `23P6068` · SEP PCI `106b:1802`  
+**Intent:** EP7 negative result for other agents. Air Touch ID via BridgeXPC is proven separately (2026-10-04).
 
 **Authorization:** This research runs under **Track A** — independent ownership
 research: operator-owned hardware and biometric material, controlled private
@@ -12,7 +12,11 @@ BridgeXPC A/B/C forks (match, `0x40` load, empty-SEP envelope) are authorized
 and unblocked. See [`docs/LAB_PROTOCOL.md`](LAB_PROTOCOL.md) for scope,
 boundaries, and the future-agent due-diligence checklist.
 
-## What works on Air
+BridgeXPC verify, PAM, and a Linux-enrolled finger on this Air are
+documented in [`FINDINGS.md`](FINDINGS.md). The rest of this handoff is
+the EP7 mute result only.
+
+## What works on Air (EP7 / mailbox)
 
 - EP0 NOP, MSI (2), Apple `_startCPUGated`, AKS OOL register (16 KiB)
 - ACM EP10 SCRD (~1 ms)

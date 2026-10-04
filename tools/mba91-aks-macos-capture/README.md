@@ -1,4 +1,28 @@
-# MBA91 macOS AKS/SEP boot capture
+# MBA91 session log and macOS capture kit
+
+**Current Air status (2026-10-04):** BridgeXPC Touch ID works on this
+MacBookAir9,1. A Linux-enrolled finger matches after reboot. Read
+[`docs/FINDINGS.md`](../../docs/FINDINGS.md) and
+[`NEXT_STEPS.md`](NEXT_STEPS.md) first. This folder is the dated evidence
+log plus the original macOS os_log capture kit.
+
+Linux AKS **EP7** on this Air is still mute. BridgeXPC Touch ID is
+independent of that mailbox.
+
+| Current | File |
+| --- | --- |
+| Narrative | [`docs/FINDINGS.md`](../../docs/FINDINGS.md) |
+| Operator standing | [`NEXT_STEPS.md`](NEXT_STEPS.md) |
+| Linux enroll identity | [`LINUX_ENROLL_IDENTITY_2026-10-03.md`](LINUX_ENROLL_IDENTITY_2026-10-03.md) |
+| Generic-state protocol patch | [`GENERIC_STATE_LINUX_PATCH_2026-10-04.md`](GENERIC_STATE_LINUX_PATCH_2026-10-04.md) |
+| Status 80 selector | [`STATUS80_SELECTOR_2026-10-03.md`](STATUS80_SELECTOR_2026-10-03.md) |
+| Generic selectors | [`GENERIC_STATE_SELECTORS_2026-10-03.md`](GENERIC_STATE_SELECTORS_2026-10-03.md) |
+| Status-1 halt | [`STATUS1_DIAG_2026-09-30.md`](STATUS1_DIAG_2026-09-30.md) |
+
+Inventory `INVENTORY_RO_*.json` / `.log` / `_REPORT.txt` files are
+gitignored (DMA). Keep only `*_PUBLIC_SUMMARY.md` in git.
+
+---
 
 Early LaunchDaemon that records unified logs for AppleKeyStore / SEP /
 BiometricKit / LocalAuthentication from boot through Touch ID enroll.
@@ -6,7 +30,7 @@ BiometricKit / LocalAuthentication from boot through Touch ID enroll.
 **Scope:** sequence and os_log evidence for Linux T2 AKS research.  
 **Not in scope:** raw SEP mailbox / OOL wire bytes (later lever if logs are thin).
 
-Hardware context: MacBookAir9,1 — macOS side of `research/mba91-aks-ep7` (Linux EP7 park was on Omarchy; this kit runs in macOS).
+Hardware context: MacBookAir9,1 — `research/mba91-aks-ep7`.
 
 ## Verified on MBA91 (2026-09-06)
 

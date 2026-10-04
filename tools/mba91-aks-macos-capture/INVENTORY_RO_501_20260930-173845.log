@@ -1,9 +1,0 @@
-Traceback (most recent call last):
-  File "/home/tim/Projects/t2-touchid-linux/src/bridge-xpc-probe.py", line 1607, in <module>
-    main()
-    ~~~~^^
-  File "/home/tim/Projects/t2-touchid-linux/src/bridge-xpc-probe.py", line 1516, in main
-    raise ValueError(
-    ...<2 lines>...
-    )
-ValueError: refusing to write incomplete private inventory: identity_lists_reconciled, protocol_v2_attested, catacomb_uuid_length, catacomb_hash_length

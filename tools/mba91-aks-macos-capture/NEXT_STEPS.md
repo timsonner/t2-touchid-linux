@@ -1,5 +1,10 @@
 # MBA91 Touch ID / BridgeXPC — next steps
 
+Current narrative for humans and agents:
+[`docs/FINDINGS.md`](../../docs/FINDINGS.md). This file is the live
+operator standing. Dated notes below this standing block are the
+evidence log.
+
 Branch: `research/mba91-aks-ep7`. Host: MacBookAir9,1 · Omarchy `MBA19-OMARCHY` ·
 bridgeOS **23P6068** · BridgeXPC **39**.  
 Fingerprint path = **BridgeXPC** (`BRIDGEXPC_PATH.md`). This work is
@@ -551,7 +556,7 @@ EP7 AKS stays muted (separate transport dead-end); fingerprint path is BridgeXPC
 | Note | Topic |
 | --- | --- |
 | `GENERIC_STATE_LINUX_PATCH_2026-10-04.md` | Linux client teaches 60/61 and the six remaining finishes |
-| `LINUX_ENROLL_IDENTITY_2026-10-03.md` | Linux enroll saved a second uid-501 identity; E4 pending |
+| `LINUX_ENROLL_IDENTITY_2026-10-03.md` | Linux enroll saved a second uid-501 identity; E4 and verify-match done |
 | `STATUS80_LINUX_HANDOFF_2026-10-03.md` | Linux patch for status 80, then one enroll |
 | `BIOMETRICKIT_STATUS_TECHNIQUE_2026-10-03.md` | How the 24G830 status arms were read |
 | `GENERIC_STATE_SELECTORS_2026-10-03.md` | Eight fail-closed ordinals: finish reasons, or `changeState:` |

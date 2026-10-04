@@ -13,6 +13,7 @@ Read [Before you start](#before-you-start) before installing anything.
 ## Contents
 
 - [Status](#status)
+- [Documentation](#documentation)
 - [Related research (MacBookAir9,1)](#related-research-macbookair91)
 - [Normal operation after setup](#normal-operation-after-setup)
 - [Proven configuration](#proven-configuration)
@@ -39,14 +40,10 @@ Read [Before you start](#before-you-start) before installing anything.
 
 ## Status
 
-### Related research (MacBookAir9,1)
-
-Air-specific AppleKeyStore EP7 bring-up on branch [`research/mba91-aks-ep7`](https://github.com/timsonner/t2-touchid-linux/tree/research/mba91-aks-ep7): Linux mailbox AKS EP7 remains **PARKED** (mute). macOS os_log / Mesa / BridgeXPC cold-boot+enroll+unlock capture is **done** (2026-09-06); ESP FDR absent/N/A on this wiped Air. Scoreboard + kit: [`docs/RESEARCH_MBA91_AKS.md`](docs/RESEARCH_MBA91_AKS.md), [`tools/mba91-aks-macos-capture/`](tools/mba91-aks-macos-capture/). Useful to other T2
-agents as a negative result + `/dev/t2-sep-lab` research path — not a working
-Touch ID port for Air yet. This research runs under **Track A** — independent
-research on operator-owned hardware and biometric material, controlled lab,
-operator's written authorization ([`docs/LAB_PROTOCOL.md`](docs/LAB_PROTOCOL.md)).
-The BridgeXPC A/B/C forks are authorized and unblocked.
+Experimental research software. Verification through `fprintd` and PAM is
+installed. Linux enrollment is a separate root-only CLI, hardware-tested on
+MacBookPro16,2 and MacBookAir9,1. Current narrative:
+[`docs/FINDINGS.md`](docs/FINDINGS.md).
 
 "Exposed" means a user can invoke it on an installed system. "Hardware-tested"
 means it has been proven on the [proven configuration](#proven-configuration)
@@ -58,7 +55,7 @@ below, and nowhere else.
 | Keybag unlock (manual, PAM hook, or encrypted credential) | Yes, installed | Yes, including cold boot |
 | Persistent BridgeOS network and boot ordering | Yes, installed and enabled through service dependencies | Yes, including reboot and recovery from the observed SEP timeout race |
 | Diagnostics and identity inventory | Yes, installed | Yes |
-| Enrollment from Linux (`t2-touchid-enroll`) | Yes, separate root-only CLI | Yes, one identity enrolled and re-proven after Linux reboot; a later macOS boot removed it |
+| Enrollment from Linux (`t2-touchid-enroll`) | Yes, separate root-only CLI | Yes on MacBookPro16,2 and MacBookAir9,1; each re-proven after Linux reboot |
 | Label rename (`t2-touchid-manage rename-fprint`) | Yes, separate root-only CLI | Yes |
 | Adaptive Catacomb persistence | Yes, opt-in (`T2_TOUCHID_AUTO_SYNC_ADAPTIVE=1`) | Partly; the journaled path is installed but has no dedicated live control |
 | Single-identity deletion (`t2-touchid-manage delete`) | Yes, behind explicit acknowledgements | No; the first live hardware test has not been performed |
@@ -69,6 +66,20 @@ below, and nowhere else.
 
 The `fprintd` service never exposes enrollment or deletion. The experimental
 mutation commands are separate root-only, journaled brokers.
+
+## Documentation
+
+| Doc | Topic |
+| --- | --- |
+| [`docs/README.md`](docs/README.md) | Map of all docs |
+| [`docs/FINDINGS.md`](docs/FINDINGS.md) | What is proven, what is not |
+| [`docs/TESTING.md`](docs/TESTING.md) | Unit tests, CI, live hardware |
+| [`AGENTS.md`](AGENTS.md) | Entry point for future agents |
+| [`tools/mba91-aks-macos-capture/NEXT_STEPS.md`](tools/mba91-aks-macos-capture/NEXT_STEPS.md) | Operator standing on the Air |
+
+## Related research (MacBookAir9,1)
+
+On branch [`research/mba91-aks-ep7`](https://github.com/timsonner/t2-touchid-linux/tree/research/mba91-aks-ep7), MacBookAir9,1 (bridgeOS 23P6068, BridgeXPC 39) verifies through `fprintd` and PAM, and a finger enrolled from Linux matches after reboot. Linux AppleKeyStore **endpoint 7** on that Air remains mute; Touch ID uses BridgeXPC. Narrative: [`docs/FINDINGS.md`](docs/FINDINGS.md). EP7 mute scoreboard: [`docs/RESEARCH_MBA91_AKS.md`](docs/RESEARCH_MBA91_AKS.md). Session log: [`tools/mba91-aks-macos-capture/`](tools/mba91-aks-macos-capture/). Track A authorization: [`docs/LAB_PROTOCOL.md`](docs/LAB_PROTOCOL.md).
 
 ## Normal operation after setup
 
@@ -113,10 +124,17 @@ screen Touch ID were additionally verified on an Intel `MacBookPro15,2` with
 bridgeOS build `23P350`. This does not imply that enrollment, deletion, or every
 research command has been validated on that second model.
 
+On MacBookAir9,1 (bridgeOS `23P6068`, BridgeXPC 39, Omarchy), a macOS
+keybag and Catacomb export, Linux unlock, PAM fingerprint sudo, and a
+Linux-enrolled second finger were proven. After reboot, both the macOS
+index finger and the Linux-enrolled finger returned `verify-match`
+through `fprintd-verify -f any`. That Air's `fprintd` is verify-only and
+lists a compatibility finger name. See [`docs/FINDINGS.md`](docs/FINDINGS.md).
+
 A positive right-index control and a negative unenrolled-finger control were
-both verified at the raw bridge, `fprintd`, and sudo/PAM layers. After the
-first Linux enrollment and a reboot, the macOS-enrolled right index and the
-Linux-enrolled right thumb were reconciled and assigned the canonical
+both verified at the raw bridge, `fprintd`, and sudo/PAM layers on the Pro.
+After the first Linux enrollment and a reboot, the macOS-enrolled right index
+and the Linux-enrolled right thumb were reconciled and assigned the canonical
 `right-index-finger` and `right-thumb` labels. Both independently return
 `verify-match` through an explicit `fprintd-verify -f any "$USER"` request,
 while an unenrolled finger returns `verify-no-match`; named requests also
@@ -131,9 +149,10 @@ boundary and its host-only recovery are documented below.
 
 **Hardware and firmware**
 
-- An Intel Mac with an Apple T2 chip. Full research coverage is limited to
-  `MacBookPro16,2` on bridgeOS `23P1072`; the authentication path is also
-  verified on `MacBookPro15,2` on bridgeOS `23P350`.
+- An Intel Mac with an Apple T2 chip. Full research coverage is
+  `MacBookPro16,2` on bridgeOS `23P1072`. Authentication plus Linux enroll
+  is also proven on `MacBookAir9,1` on bridgeOS `23P6068`. The
+  authentication path is verified on `MacBookPro15,2` on bridgeOS `23P350`.
 - macOS still installed on the same machine, with at least one enrolled
   finger. macOS is both the source of the exported keybags and the recovery
   environment.
@@ -996,8 +1015,11 @@ to attach.
 - `pam/`: clamshell-safe Omarchy PAM templates.
 - `polkit/`: distinct non-transitive action definitions for future brokers.
 - `tools/macos/`: private export helpers; outputs must never be committed.
-- `enrollment_research/`: sanitized enrollment, multi-user, Catacomb, and
-  rollback findings, plus non-mutating and deferred collection helpers.
+- `docs/`: map, findings, testing, lab protocol, and internal status.
+- `enrollment_research/`: sanitized enrollment protocol ledger and
+  collection helpers.
+- `tools/mba91-aks-macos-capture/`: MBA91 session log and operator
+  `NEXT_STEPS.md`.
 - `tests/`: hardware-free fail-closed lifecycle tests.
 
 Exact keybag extraction and hardware bring-up remain machine-sensitive. Read
@@ -1031,10 +1053,13 @@ redacted conversation that produced it is published here:
 
 ## Tests
 
+See [`docs/TESTING.md`](docs/TESTING.md) for CI, unit tests, and live
+hardware checks.
+
 ```sh
 python -m venv .venv
 .venv/bin/pip install -r requirements.txt
-.venv/bin/python -m unittest discover -s tests -v
+T2_TOUCHID_USER=test .venv/bin/python -m unittest discover -s tests -v
 .venv/bin/python -m py_compile src/*.py
 tools/privacy-check.sh
 ```

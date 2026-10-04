@@ -1,16 +1,21 @@
 # Research: MacBookAir9,1 AKS endpoint-7 bring-up
 
 Branch: `research/mba91-aks-ep7`  
-Status: **SPLIT** (updated 2026-09-06)
+Status: **EP7 mailbox mute; BridgeXPC Touch ID proven** (updated 2026-10-04)
+
+Linux Touch ID on this Air works over **BridgeXPC**, not EP7. Current
+narrative: [`FINDINGS.md`](FINDINGS.md). Operator standing:
+[`../tools/mba91-aks-macos-capture/NEXT_STEPS.md`](../tools/mba91-aks-macos-capture/NEXT_STEPS.md).
+This file is the EP7 mute scoreboard from 2026-09-06. Do not read it as
+"Air has no Touch ID."
 
 | Track | Status |
 | --- | --- |
 | Linux AKS EP7 mailbox | **PARKED** (2026-09-03/04) — mute under documented + bent-exact framing |
+| BridgeXPC verify + Linux enroll | **DONE** (2026-10-04) — see `FINDINGS.md` |
 | macOS os_log / Mesa / BridgeXPC capture | **DONE** (2026-09-06) — cold boot + enroll + unlock; see kit docs below |
 | ESP `FDRData` | **N/A** on this Air after wipe — absent; Touch ID still worked |
 | Raw SEP mailbox first-txn bytes | **Still open** — os_log is not mailbox OOL capture |
-
-Linux Touch ID remains blocked until EP7 speaks or a new bring-up lever appears.
 
 ## Hardware / software
 
@@ -62,8 +67,9 @@ answer** any documented opcode tried — including bent’s exact codec wires.
 Silence is true (no mailbox reply and no OOL DMA write). This is not a simple
 host wire-format bug relative to bent/MBP.
 
-Touch ID (keybag load → unlock → match → PAM) stays **parked** until EP7 speaks
-or a macOS capture shows a different bring-up/endpoint identity.
+EP7 Touch ID stays parked. BridgeXPC Touch ID on this Air is proven
+(2026-10-04): keybag load, unlock, match, PAM, and a Linux-enrolled
+finger. See [`FINDINGS.md`](FINDINGS.md).
 
 ## Falsified hypotheses
 
