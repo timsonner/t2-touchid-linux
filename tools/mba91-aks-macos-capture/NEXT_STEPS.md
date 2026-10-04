@@ -7,7 +7,80 @@ conducted under **Track A** — independent ownership research
 ([`docs/LAB_PROTOCOL.md`](../../docs/LAB_PROTOCOL.md)); the earlier 2026-09-08
 park is lifted. See `PARKED_2026-09-08.md` for the authorization record.
 
-## Standing state (2026-10-01, after the approved match canary)
+## Standing state (2026-10-03, macOS export return)
+
+Track A is the approval for this machine (`docs/LAB_PROTOCOL.md`,
+`PARKED_2026-09-08.md`). The halts in this block are results of that
+research. They do not withdraw the approval, and they are not a request
+for another permission check.
+
+The 2026-10-01 macOS export is installed and the macOS bag unlocked.
+`fprintd-verify -f any tim` returned `verify-match`, and fingerprint
+`sudo` succeeded on this boot. The full record is
+`EXPORT_RETURN_FINDINGS_2026-10-03.md`.
+
+`/var/lib/t2-touchid/user.kb` is the macOS export (1560 bytes, mode
+0600). `native-501.kb` is still the Linux-owned 1540-byte file and was
+not copied onto `user.kb`. `t2-keybag-load.service` loaded `user.kb`
+and bound special `-501`. Both unlock calls returned status 0. The
+local Catacomb store is provisioned with one identity.
+`/var/lib/t2-touchid/backups/` does not exist yet, so
+`t2-touchid-enroll` cannot start.
+
+| Fact | Evidence |
+| --- | --- |
+| Boot-policy response **3** for bridgeOS `23.16.16068.0.0,0`, epoch 1.0 | `INVENTORY_RO_501_20261003-194352` dmesg |
+| Identity count **1**, free **2** / capacity **5** | same public report |
+| Catacomb component present; state words **`[0xFFFFFFFF, 3, 501, 3]`** | same |
+| SKS lock **520** on this boot (the 2026-10-01 cold boot was 16) | same (`sks_lock_state: 520`) |
+| BridgeXPC port this boot | **49197** |
+| `user.kb` load and `set-system-keybag` onto `-501` | both status 0 (`t2-keybag-load.service`) |
+| Both keybag unlocks | status 0, `response_length` 16. `/run/t2-touchid/keybags-unlocked` is mode 0600 |
+| `fprintd-verify -f any tim` | `verify-match`. Daemon log: `mba91-fprintd: verify verify-match` |
+| PAM | `tools/install-pam.sh`. Originals in `/var/lib/t2-touchid/pam-backups`. Fingerprint `sudo` succeeded |
+| Export stick, remounted 2026-10-03 | Catacomb archive still 23665 bytes, SHA-256 `3a9c6dce463e20cb4c2bc4c685cc7a24b5ea19d2f808b6443f7f4e98c31705db`. Keybag archive still 12561 bytes |
+
+## Measured halts
+
+These shots have answered. Another copy of the same shot is not a new
+question.
+
+- Do not run `bridge-xpc-enroll-native-501.py`. Its creation-reference
+  `0x21` option `0x100` was accepted, and the zero-group start returned
+  status **1** (`STATUS1_DIAG_2026-09-30.md`). That is not the
+  password-bound policy-1007 path.
+- Password unlock of `native-501.kb` returned SEP **-5** on 2026-09-20
+  and again on 2026-10-01. That file stays unloaded. The macOS
+  `user.kb` unlock is a different shot and returned 0.
+- No second bag, and no copy of `native-501.kb` to `user.kb`.
+- Do not run `warm-bringup-mba91.sh` on this boot. It loads
+  `native-501.kb`. The live loader is `t2-keybag-load.service`.
+- `0x40`, sensor reset, `no_catacomb`, and `0x48` cleared identities on
+  this Air in earlier approved runs. Leave them unused while this
+  finger is the specimen.
+- Opcode 74 is a closed matrix (`SESSION74_VERDICT_2026-09-17.md`).
+- This Air's `fprintd` is verify-only. It cannot enroll.
+
+## Next
+
+Linux enrollment of one new finger, through `t2-touchid-enroll`, not
+through the status-1 script and not through `fprintd`.
+
+1. Install the Catacomb archive from the export stick as
+   `/var/lib/t2-touchid/backups/3a9c6dce463e20cb4c2bc4c685cc7a24b5ea19d2f808b6443f7f4e98c31705db.tar.gz`,
+   root:root, mode 0600. The stick copy is mode 644. Do not commit the
+   archive.
+2. Confirm a typed Linux password still succeeds at `sudo` in a
+   terminal that stays open. Fingerprint `sudo` already succeeded.
+   `t2-touchid-enroll preflight` needs
+   `--acknowledge-password-fallback-tested` from that check.
+3. Run preflight. It reads inventory and does not start enrollment.
+4. Only after preflight passes: `t2-touchid-enroll start`, with the
+   macOS password and the new finger. That step is separate.
+
+## Dated records below
+
+## Prior standing state (2026-10-01, after the approved match canary)
 
 Track A is the approval for this machine (`docs/LAB_PROTOCOL.md`,
 `PARKED_2026-09-08.md`). The halts in this block are results of that
@@ -33,45 +106,9 @@ this volume is the Linux-owned `/var/lib/t2-touchid/native-501.kb` from
 | `native-501.kb` is still the 2026-09-26 export (1540 bytes, mode 0600) | `/var/lib/t2-touchid/native-501.kb` |
 | Approved canary, 2026-10-01 | one `load-keybag` of that file, session 1 handle 1, `set-system-keybag` onto `-501` status 0. `unlock-keybag 1 1` was AKS operation `0x4`, SEP status **-5**, flags `0x0`, surfaced as `EREMOTEIO`. Special `-501` was not unlocked. The match window was not opened. |
 
-## Measured halts
-
-These shots have answered. Another copy of the same shot is not a new
-question.
-
-- The authorized zero-group enroll start returned status **1**
-  (`STATUS1_DIAG_2026-09-30.md`). Catacomb fill did not change that
-  result into a reason to start enroll again.
-- Password unlock of `native-501.kb` returned SEP **-5** on 2026-09-20
-  and again on 2026-10-01. The token-free control and F1 both need
-  unlock status 0, so the match canary stops here
-  (`MATCH_CANARY_PLAN_2026-09-30.md`, `NATIVE_C4_VERDICT_2026-09-20.md`).
-- No second bag, and no copy of `native-501.kb` to `user.kb`.
-- Creation-reference `0x21` options `0x100`/`0x200` are the enroll path
-  that preceded status 1. The password-bind `0x21` inside
-  `verify-password-acm` is a different shape and was not sent, because
-  unlock stopped the canary.
-- `0x40`, sensor reset, `no_catacomb`, and `0x48` cleared identities on
-  this Air in earlier approved runs. Leave them unused while this
-  finger is the specimen.
-- Opcode 74 is a closed matrix (`SESSION74_VERDICT_2026-09-17.md`).
-
-## Next
-
-Immediate step: macOS export for the Omarchy reader, then boot back
-here. The handoff for the macOS agent is
-`MACOS_EXPORT_HANDOFF_2026-10-01.md`. It produces a private keybag
-archive and a private Catacomb archive. It does not enroll a finger,
-and it does not copy `native-501.kb` to `user.kb`.
-
-If that exported bag unlocks with status 0, the remaining Omarchy
-path is provision the local Catacomb, load `user.kb`, unlock both
-handles, `fprintd-verify`, then PAM. If the export also returns SEP
-`-5`, stop. The activation-sequence paper in
-`NATIVE_C4_VERDICT_2026-09-20.md` and
-`NATIVE_C4C5_DESIGN_2026-09-20.md` is the open research work, and it
-stays on paper.
-
-## Dated records below
+The next step written here was the macOS export. That return completed
+on 2026-10-03. See the standing state above. The sentence in this
+record that says there is no macOS `user.kb` describes 2026-10-01.
 
 Everything under this heading is a session record from the date in its
 heading. It is not a live order. Where an old paragraph says the work

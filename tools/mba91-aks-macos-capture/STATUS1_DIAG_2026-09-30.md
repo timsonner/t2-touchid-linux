@@ -171,3 +171,12 @@ unchanged. Live orders are the standing block in `NEXT_STEPS.md`.
 - No creation-reference `0x21` option `0x100`/`0x200` on top of status 1.
 - No `0x40` / reset / `no_catacomb` / `0x48` near this window.
 - No commit of raw inventory payloads, forms, or keybags.
+
+## Later (2026-10-03)
+
+The macOS export return installed a real `user.kb`, unlocked it with
+status 0, and `fprintd-verify` returned `verify-match`. That does not
+lift the halt on `bridge-xpc-enroll-native-501.py`. The Linux enroll
+path for the unlocked macOS bag is `t2-touchid-enroll`, recorded in
+`EXPORT_RETURN_FINDINGS_2026-10-03.md` and the standing block of
+`NEXT_STEPS.md`.
