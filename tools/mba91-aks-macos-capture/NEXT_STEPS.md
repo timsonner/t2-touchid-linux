@@ -65,16 +65,19 @@ question.
 
 ## Next
 
-Recover the `BKOperation` transition for status 80, then enroll one
-new finger. The handoff for that work is
-`STATUS80_HANDOFF_2026-10-03.md`.
+Reboot into the normal macOS install and recover status 80 there.
+The handoff is `STATUS80_HANDOFF_2026-10-03.md`. The macOS agent
+does the first section of that file and stops. Enrollment stays on
+Linux, after the patch.
 
-1. From the 24G830 `BiometricKit` chain
-   `BKEnrollTouchIDOperation` → `BKEnrollOperation` → `BKOperation`,
-   name the selector and the state change for ordinal 80. Record
-   whether it sends `enrollContinue`.
-2. Teach only that transition in `t2_enrollment_protocol.py`, with a
-   test that keeps the other eight unmapped ordinals fail-closed.
+1. On macOS 15.7.9 build 24G830, disassemble live `BiometricKit` for
+   `BKOperation` ordinal 80 only. Bring back the selector, the host
+   state change, whether `enrollContinue` is sent, and the image UUID.
+   Do not enroll or export a new bag on that boot.
+2. Back on Omarchy, load `user.kb` again with `t2-keybag-load.service`.
+   Do not run `warm-bringup-mba91.sh`. Teach only that transition in
+   `t2_enrollment_protocol.py`, with a test that keeps the other eight
+   unmapped ordinals fail-closed.
 3. Only after that patch: `t2-touchid-enroll start` again. The macOS
    password, then the new finger.
 
