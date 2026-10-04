@@ -124,6 +124,7 @@ class FprintEnrollmentRuntimeTests(unittest.TestCase):
             protocol.EnrollmentAction.CANCELLED,
             protocol.EnrollmentAction.IDENTITY_OBSERVED,
             protocol.EnrollmentAction.OPERATION_FINISHED,
+            protocol.EnrollmentAction.OPERATION_STATE_CHANGED,
         ):
             with self.subTest(action=action), self.assertRaises(
                 runtime.FprintEnrollmentRuntimeError

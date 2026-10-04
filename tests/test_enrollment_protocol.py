@@ -245,10 +245,18 @@ class EnrollmentProtocolTests(unittest.TestCase):
             87: enrollment.EnrollmentAction.RETRY_SCAN,
             88: enrollment.EnrollmentAction.RETRY_SCAN,
             93: enrollment.EnrollmentAction.DIRTY_SENSOR,
+            51: enrollment.EnrollmentAction.OPERATION_FINISHED,
+            58: enrollment.EnrollmentAction.OPERATION_FINISHED,
+            60: enrollment.EnrollmentAction.OPERATION_STATE_CHANGED,
+            61: enrollment.EnrollmentAction.OPERATION_STATE_CHANGED,
+            62: enrollment.EnrollmentAction.OPERATION_FINISHED,
+            65: enrollment.EnrollmentAction.OPERATION_FINISHED,
             80: enrollment.EnrollmentAction.OPERATION_FINISHED,
             98: enrollment.EnrollmentAction.RETRY_SCAN,
+            99: enrollment.EnrollmentAction.OPERATION_FINISHED,
+            502: enrollment.EnrollmentAction.OPERATION_FINISHED,
         }
-        blocked = {51, 58, 60, 61, 62, 65, 99, 501, 502}
+        blocked = {501}
         for version in (1, 2):
             for status in range(504):
                 machine = self.machine()
@@ -285,23 +293,46 @@ class EnrollmentProtocolTests(unittest.TestCase):
                         )
 
     def test_unmapped_generic_operation_states_remain_fail_closed(self):
-        expected = {51, 58, 60, 61, 62, 65, 99, 502}
         self.assertEqual(
-            set(enrollment.EXACT_UNMAPPED_GENERIC_STATE_STATUSES), expected
+            set(enrollment.EXACT_UNMAPPED_GENERIC_STATE_STATUSES), set()
         )
+        self.assertEqual(
+            set(enrollment.EXACT_OPERATION_FINISHED_STATUSES),
+            {51, 58, 62, 65, 80, 99, 502},
+        )
+        self.assertEqual(
+            set(enrollment.EXACT_OPERATION_STATE_CHANGED_STATUSES), {60, 61}
+        )
+
+    def test_operation_state_changes_stay_active_and_do_not_continue(self):
         for version in (1, 2):
-            for status in sorted(expected):
-                machine = self.machine()
+            for status in (60, 61):
                 with self.subTest(version=version, status=status):
-                    with self.assertRaisesRegex(
-                        enrollment.EnrollmentProtocolError,
-                        "unmapped generic operation state",
-                    ):
-                        self.accept(
-                            machine,
-                            event(1, enrollment.SERVICE_STATUS, version, status),
-                        )
-                    self.assertEqual(machine.state, enrollment.EnrollmentState.FROZEN)
+                    machine = self.machine()
+                    transition = self.accept(
+                        machine,
+                        event(1, enrollment.SERVICE_STATUS, version, status),
+                    )
+                    self.assertEqual(
+                        transition.action,
+                        enrollment.EnrollmentAction.OPERATION_STATE_CHANGED,
+                    )
+                    self.assertFalse(transition.continue_required)
+                    self.assertEqual(
+                        machine.state, enrollment.EnrollmentState.ACTIVE
+                    )
+                    self.assertIsNot(
+                        transition.action,
+                        enrollment.EnrollmentAction.FINGER_REMOVED,
+                    )
+                    self.assertIsNot(
+                        transition.action,
+                        enrollment.EnrollmentAction.OPERATION_FINISHED,
+                    )
+                    self.assertIsNot(
+                        transition.action,
+                        enrollment.EnrollmentAction.IGNORE_PHASE,
+                    )
 
     def test_structured_status_payload_is_validated_but_not_exposed(self):
         detail = b"private-node-data"
@@ -454,6 +485,30 @@ class EnrollmentProtocolTests(unittest.TestCase):
                 enrollment.EnrollmentAction.OPERATION_FINISHED,
                 enrollment.EnrollmentState.OPERATION_FINISHED,
             ),
+            51: (
+                enrollment.EnrollmentAction.OPERATION_FINISHED,
+                enrollment.EnrollmentState.OPERATION_FINISHED,
+            ),
+            58: (
+                enrollment.EnrollmentAction.OPERATION_FINISHED,
+                enrollment.EnrollmentState.OPERATION_FINISHED,
+            ),
+            62: (
+                enrollment.EnrollmentAction.OPERATION_FINISHED,
+                enrollment.EnrollmentState.OPERATION_FINISHED,
+            ),
+            65: (
+                enrollment.EnrollmentAction.OPERATION_FINISHED,
+                enrollment.EnrollmentState.OPERATION_FINISHED,
+            ),
+            99: (
+                enrollment.EnrollmentAction.OPERATION_FINISHED,
+                enrollment.EnrollmentState.OPERATION_FINISHED,
+            ),
+            502: (
+                enrollment.EnrollmentAction.OPERATION_FINISHED,
+                enrollment.EnrollmentState.OPERATION_FINISHED,
+            ),
         }
         for version in (1, 2):
             for status, (action, state) in cases.items():
@@ -569,7 +624,6 @@ class EnrollmentProtocolTests(unittest.TestCase):
         mismatched_length = (100).to_bytes(4, "little") + bytes(4) + (1).to_bytes(8, "little")
         cases = (
             event(1, enrollment.SERVICE_STATUS, 3, 100),
-            event(1, enrollment.SERVICE_STATUS, 2, 51),
             event(1, enrollment.SERVICE_STATUS, 1, 100, b"truncated"),
             event(1, enrollment.SERVICE_STATUS, 1, 100, mismatched_status),
             event(1, enrollment.SERVICE_STATUS, 1, 100, mismatched_length),

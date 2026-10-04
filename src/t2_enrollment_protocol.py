@@ -50,9 +50,16 @@ EXACT_NOOP_PHASE_RANGES = (
     (356, 500),
     (503, 0xFFFFFFFF),
 )
-EXACT_UNMAPPED_GENERIC_STATE_STATUSES = frozenset(
-    (51, 58, 60, 61, 62, 65, 99, 502)
+# Exact 24G830 BKOperation. These call operationEndsWithReason:, store
+# _state 4, and do not send enrollContinue. Reasons stay distinct: 51
+# and 62 use 3, 58 and 65 use 1, 80 and 99 use 2, 502 uses 4.
+EXACT_OPERATION_FINISHED_STATUSES = frozenset(
+    (51, 58, 62, 65, 80, 99, 502)
 )
+# changeState: only. 60 stores 3, 61 stores 2. The operation stays
+# running. Status 64 also stores 2, but only after presence false.
+EXACT_OPERATION_STATE_CHANGED_STATUSES = frozenset((60, 61))
+EXACT_UNMAPPED_GENERIC_STATE_STATUSES = frozenset()
 
 
 class EnrollmentProtocolError(ValueError):
@@ -87,6 +94,7 @@ class EnrollmentAction(Enum):
     FAILED = "failed"
     TIMED_OUT = "timed-out"
     OPERATION_FINISHED = "operation-finished"
+    OPERATION_STATE_CHANGED = "operation-state-changed"
     RESULT_WITNESSED = "result-witnessed"
     IDENTITY_OBSERVED = "identity-observed"
 
@@ -413,16 +421,20 @@ class EnrollmentStateMachine:
         if status == 68:
             self.state = EnrollmentState.TIMED_OUT
             return EnrollmentTransition(EnrollmentAction.TIMED_OUT, self.state)
-        # Exact 24G830 BKOperation calls operationEndsWithReason: with
-        # reason 2. That stores _state 4 and does not send enrollContinue.
-        # Statuses 66-68 are processEnrollFailReason:, a different selector.
-        if status == 80:
+        # Exact 24G830 BKOperation. 66-68 are processEnrollFailReason:.
+        # The finished set calls operationEndsWithReason: and does not
+        # send enrollContinue. 60 and 61 only changeState:.
+        if status in EXACT_OPERATION_FINISHED_STATUSES:
             self.state = EnrollmentState.OPERATION_FINISHED
             return EnrollmentTransition(
                 EnrollmentAction.OPERATION_FINISHED, self.state
             )
         if self.state is EnrollmentState.CANCEL_REQUESTED:
             self._freeze("nonterminal event arrived after cancellation was requested")
+        if status in EXACT_OPERATION_STATE_CHANGED_STATUSES:
+            return EnrollmentTransition(
+                EnrollmentAction.OPERATION_STATE_CHANGED, self.state
+            )
         # Exact macOS 15.7 / 24G830 BKOperation dispatches these two statuses
         # through operation:presenceStateChanged:. Status 63 supplies true;
         # status 64 supplies false and returns the host operation to its

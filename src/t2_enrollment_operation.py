@@ -215,6 +215,7 @@ class EnrollmentOperation:
                     protocol.EnrollmentAction.FAILED,
                     protocol.EnrollmentAction.TIMED_OUT,
                     protocol.EnrollmentAction.OPERATION_FINISHED,
+                    protocol.EnrollmentAction.OPERATION_STATE_CHANGED,
                 }:
                     try:
                         feedback_result = on_feedback(transition)
@@ -287,6 +288,22 @@ class EnrollmentOperation:
                         reconciliation_required=True,
                     )
 
+                if (
+                    transition.action
+                    is protocol.EnrollmentAction.OPERATION_STATE_CHANGED
+                ):
+                    self._append_during_active_operation(
+                        "ENROLL_OPERATION_STATE_OBSERVED",
+                        {
+                            "connection_generation": self.transport.connection_generation,
+                            "event_sequence": event.sequence,
+                            "envelope_type": event.envelope_type,
+                            "status": event.ordinal,
+                        },
+                        stage="active",
+                    )
+                    continue
+
                 if transition.action is protocol.EnrollmentAction.RESULT_WITNESSED:
                     self._append_during_active_operation(
                         "E2_TERMINAL_RESULT_WITNESSED",
@@ -311,8 +328,12 @@ class EnrollmentOperation:
                     protocol.EnrollmentAction.CANCELLED: 66,
                     protocol.EnrollmentAction.FAILED: 67,
                     protocol.EnrollmentAction.TIMED_OUT: 68,
-                    protocol.EnrollmentAction.OPERATION_FINISHED: 80,
                 }.get(transition.action)
+                if (
+                    transition.action
+                    is protocol.EnrollmentAction.OPERATION_FINISHED
+                ):
+                    terminal_status = event.ordinal
                 if terminal_status is not None:
                     self._append_during_active_operation(
                         "ENROLL_TERMINAL_FAILURE_OBSERVED",
