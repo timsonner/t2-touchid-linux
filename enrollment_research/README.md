@@ -432,7 +432,8 @@ change `BKOperation` state. Their 24G830 arms were recovered on 2026-10-03
 from the live cache: seven call `operationEndsWithReason:` and store state 4,
 while 60 and 61 only call `changeState:` with 3 and 2. Status 80 is patched
 (`ddfcdf6`, `operation-finished`). A live MBA91 enroll then reached 100%
-progress and saved a second uid-501 identity; the client still freezes on
+progress and saved a second uid-501 identity. After reboot that Linux
+finger returned `verify-match`. The client still freezes on
 the other eight. The table is in
 [FINDINGS.md](FINDINGS.md), and the disassembly procedure is
 `tools/mba91-aks-macos-capture/BIOMETRICKIT_STATUS_TECHNIQUE_2026-10-03.md`.

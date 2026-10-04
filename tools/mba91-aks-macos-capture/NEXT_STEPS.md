@@ -7,35 +7,33 @@ conducted under **Track A** — independent ownership research
 ([`docs/LAB_PROTOCOL.md`](../../docs/LAB_PROTOCOL.md)); the earlier 2026-09-08
 park is lifted. See `PARKED_2026-09-08.md` for the authorization record.
 
-## Standing state (2026-10-03, Linux finger on SEP, E4 pending)
+## Standing state (2026-10-04, Linux enrolled finger verifies)
 
 Track A is the approval for this machine (`docs/LAB_PROTOCOL.md`,
 `PARKED_2026-09-08.md`). The halts in this block are results of that
 research. They do not withdraw the approval, and they are not a request
 for another permission check.
 
-The status-80 patch (`ddfcdf6`) is installed under `/opt/t2-touchid/src`.
-One Linux enroll ran. Start returned status 0. The client sent
-`enrollContinue` through progress ordinals 70, 160, 220, 275, 339,
-341, 345, and **355**. Then it froze on a protocol error. The event
-after 355 was not journaled. Status 80 did not freeze this start.
+A finger enrolled from Linux on this Air matches. After reboot,
+`t2-keybag-load.service` loaded `user.kb`, both handles unlocked, and
+`verify-post-reboot` returned `post_reboot_verified` true with identity
+count 2. Two `fprintd-verify -f any tim` runs returned `verify-match`:
+the macOS index finger, then the Linux-enrolled finger. The write-up
+is `LINUX_ENROLL_IDENTITY_2026-10-03.md`.
 
-The SEP then had **2** identities for uid 501. The local Catacomb still
-had 1. `recover-outcome` refused (inventories diverge).
-`recover-observed` persisted the new identity. `t2-touchid-enroll list`
-now shows two live names: Finger 1 and Linux enrolled finger.
-`user_000001f5.cat` is 39314 bytes. The outcome-unknown journal is
-closed. Post-reboot verification is pending. The write-up is
-`LINUX_ENROLL_IDENTITY_2026-10-03.md`.
+The enroll that created that identity reached progress 355, then froze
+on an unmapped generic ordinal that was not journaled. Status 80 did
+not freeze that start (`ddfcdf6`). `recover-observed` persisted the
+SEP identity into the local Catacomb.
 
 | Fact | Evidence |
 | --- | --- |
-| Enroll start | status 0, protocol v2, 68-byte request |
-| Continues | ordinals 70, 160, 220, 275, 339, 341, 345, 355, each continue status 0 |
-| Stop | `ENROLL_OUTCOME_UNKNOWN`, protocol-error, after 355 |
-| `recover-outcome` | refused, host and SEP inventories diverge |
-| `recover-observed` | `observed_identity_recovered` true, local count 2 |
-| Gate | `unfinished_count` 0, `post_reboot_pending_count` 1, `live_enrollment_blocked` true |
+| `verify-post-reboot` | `post_reboot_verified` true, identity count 2 |
+| Gate | `unfinished_count` 0, `post_reboot_pending_count` 0, `live_enrollment_blocked` false |
+| `t2-touchid-enroll list` | Finger 1 and Linux enrolled finger, both live |
+| `fprintd-verify` | `verify-match` for the macOS index finger, then `verify-match` for the Linux-enrolled finger |
+| `fprintd-list` | compatibility name `right-index-finger` only |
+| Enroll start (prior boot) | status 0, continues 70, 160, 220, 275, 339, 341, 345, 355, freeze after 355 |
 | `user.kb` / `native-501.kb` | 1560 and 1540 bytes, unchanged |
 
 ## Measured halts
@@ -43,9 +41,9 @@ closed. Post-reboot verification is pending. The write-up is
 These shots have answered. Another copy of the same shot is not a new
 question.
 
-- Do not run `t2-touchid-enroll start` again until
-  `verify-post-reboot` returns `post_reboot_verified`. That check
-  needs a new Linux boot UUID.
+- Do not run `t2-touchid-enroll start` again until the post-355
+  ordinal is recovered the same way status 80 was. Do not name it
+  from the live log.
 - Do not name or patch the post-355 freeze from this live log. The
   eight fail-closed ordinals stay fail-closed
   (`GENERIC_STATE_SELECTORS_2026-10-03.md`).
@@ -67,15 +65,21 @@ question.
 
 ## Next
 
-E4 on a new Omarchy boot. The handoff is
-`LINUX_ENROLL_IDENTITY_2026-10-03.md`.
+Everyday match: unlock `user.kb`, then fingerprint `sudo` or
+`fprintd-verify -f any tim`. Either enrolled finger can match.
 
-1. Reboot. Load `user.kb` with `t2-keybag-load.service`. Unlock both
-   handles. Do not run `warm-bringup-mba91.sh`.
-2. `sudo t2-touchid-enroll verify-post-reboot`
-3. Optional: `fprintd-verify -f any tim` for the new finger.
+The remaining enroll-protocol work is the unmapped event after
+progress 355. Recover it from the 24G830 `BiometricKit` jump table
+the same way status 80 was recovered. Do not enroll again to classify
+it.
 
 ## Dated records below
+
+## Prior standing state (2026-10-03, Linux finger on SEP, E4 pending)
+
+The Linux enroll saved a second uid-501 identity. `recover-observed`
+persisted it. E4 and both `verify-match` runs completed on 2026-10-04.
+See the standing state above.
 
 ## Prior standing state (2026-10-03, enroll stopped on status 80)
 

@@ -61,23 +61,33 @@ returned `observed_identity_recovered` true, `persistence_ready` true,
 `user.kb` is still 1560 bytes. `native-501.kb` is still 1540 bytes and
 unloaded.
 
+## E4 and match (2026-10-04)
+
+A new Omarchy boot loaded `user.kb` via `t2-keybag-load.service`. Both
+handles unlocked. `warm-bringup-mba91.sh` was not run.
+
+`t2-touchid-enroll verify-post-reboot` returned
+`post_reboot_verified` true, identity count 2, `journal_updated` true.
+The gate then showed `unfinished_count` 0, `post_reboot_pending_count`
+0, `live_enrollment_blocked` false. `t2-touchid-enroll list` still
+shows Finger 1 and Linux enrolled finger, both live.
+
+Two `fprintd-verify -f any tim` runs returned `verify-match`. The
+daemon logged `mba91-fprintd: verify verify-match` twice. The first
+used the macOS index finger. The second used the Linux-enrolled
+finger. `fprintd-list` still shows only the compatibility name
+`right-index-finger`. This Air's `fprintd` is verify-only.
+
 ## Next
 
-E4 requires a different Linux boot UUID than this enroll boot.
-
-1. Reboot Omarchy.
-2. Load `user.kb` with `t2-keybag-load.service`. Unlock both handles.
-   Do not run `warm-bringup-mba91.sh`.
-3. `sudo t2-touchid-enroll verify-post-reboot`
-4. Optional match check: `fprintd-verify -f any tim` for the new finger.
-
-Do not start another enroll until that verification returns
-`post_reboot_verified` true. This Air's `fprintd` is still verify-only.
+The remaining protocol gap is the unmapped event after progress 355.
+Do not name it from this log. Everyday match uses fingerprint `sudo`
+or `fprintd-verify` after the bags are unlocked.
 
 ## Do-nots
 
-- No second `t2-touchid-enroll start` while post-reboot verification is
-  pending.
+- No second `t2-touchid-enroll start` until the post-355 ordinal is
+  recovered the same way status 80 was.
 - No mapping of the post-355 freeze from this live log.
 - No mapping of 60 or 61 onto the status-80 finish.
 - No `bridge-xpc-enroll-native-501.py`.
