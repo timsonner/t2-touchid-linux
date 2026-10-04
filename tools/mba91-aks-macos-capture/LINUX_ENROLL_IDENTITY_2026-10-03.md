@@ -80,14 +80,16 @@ finger. `fprintd-list` still shows only the compatibility name
 
 ## Next
 
-The remaining protocol gap is the unmapped event after progress 355.
-Do not name it from this log. Everyday match uses fingerprint `sudo`
-or `fprintd-verify` after the bags are unlocked.
+The eight remaining generic ordinals are taught
+(`GENERIC_STATE_LINUX_PATCH_2026-10-04.md`). Do not name the post-355
+event from this log. Everyday match uses fingerprint `sudo` or
+`fprintd-verify` after the bags are unlocked. Optional: one later
+enroll to see whether the host Catacomb persists without
+`recover-observed`.
 
 ## Do-nots
 
-- No second `t2-touchid-enroll start` until the post-355 ordinal is
-  recovered the same way status 80 was.
+- Do not name the post-355 freeze from this live log.
 - No mapping of the post-355 freeze from this live log.
 - No mapping of 60 or 61 onto the status-80 finish.
 - No `bridge-xpc-enroll-native-501.py`.

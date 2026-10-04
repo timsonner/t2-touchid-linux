@@ -7,9 +7,9 @@ build 24G830. Cache family `dyld_v1 x86_64h`, cache UUID
 
 These are the other members of `EXACT_UNMAPPED_GENERIC_STATE_STATUSES`:
 **51, 58, 60, 61, 62, 65, 99, 502**. Ordinal 80 is already recorded.
-No enroll, no keybag or Catacomb export, and no edit to
-`src/t2_enrollment_protocol.py`. The Linux client still freezes on
-all nine.
+No enroll, no keybag or Catacomb export on the macOS boot that
+recovered these arms. The Linux client froze on those nine until the
+status-80 patch and the 2026-10-04 generic-state patch.
 
 ## Shared path
 
@@ -87,7 +87,7 @@ describe the handler as a silent no-op: it does change
 
 ## Still fail-closed
 
-The live enroll froze on 80, not on these eight. A Linux patch for
-80 stays the next protocol change. These eight stay in
-`EXACT_UNMAPPED_GENERIC_STATE_STATUSES` until their own change, and
-that change must not fold 60 or 61 into the finish path.
+The live enroll froze on 80, not on these eight. Status 80 was
+patched first (`ddfcdf6`). The eight remaining ordinals were taught
+on 2026-10-04 (`GENERIC_STATE_LINUX_PATCH_2026-10-04.md`). 60 and 61
+must not use the finish path.

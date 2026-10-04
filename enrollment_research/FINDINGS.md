@@ -5833,8 +5833,9 @@ running. The image's log lines are `operationEndsWithReason: %ld` and
 Status 80 is patched (`ddfcdf6`, `operation-finished`). A live MBA91
 enroll then reached 100% progress and saved a second uid-501 identity.
 After reboot that Linux finger returned `verify-match`
-(`LINUX_ENROLL_IDENTITY_2026-10-03.md`). The client still freezes on
-the other eight. The status-80 handoff is
+(`LINUX_ENROLL_IDENTITY_2026-10-03.md`). The other eight are taught
+(`GENERIC_STATE_LINUX_PATCH_2026-10-04.md`): 60 and 61 stay running;
+the finishes join status 80. The status-80 handoff is
 `tools/mba91-aks-macos-capture/STATUS80_LINUX_HANDOFF_2026-10-03.md`.
 No other ordinal in this chain changes `BKOperation` state without an
 existing protocol arm or a row in this table. The checked domain is

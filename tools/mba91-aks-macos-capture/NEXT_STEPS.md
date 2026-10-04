@@ -22,9 +22,11 @@ the macOS index finger, then the Linux-enrolled finger. The write-up
 is `LINUX_ENROLL_IDENTITY_2026-10-03.md`.
 
 The enroll that created that identity reached progress 355, then froze
-on an unmapped generic ordinal that was not journaled. Status 80 did
-not freeze that start (`ddfcdf6`). `recover-observed` persisted the
-SEP identity into the local Catacomb.
+on a generic ordinal that was not journaled. Status 80 did not freeze
+that start (`ddfcdf6`). The other eight generic ordinals are now
+taught from `GENERIC_STATE_SELECTORS_2026-10-03.md`
+(`GENERIC_STATE_LINUX_PATCH_2026-10-04.md`). `recover-observed`
+persisted the SEP identity into the local Catacomb.
 
 | Fact | Evidence |
 | --- | --- |
@@ -41,13 +43,11 @@ SEP identity into the local Catacomb.
 These shots have answered. Another copy of the same shot is not a new
 question.
 
-- Do not run `t2-touchid-enroll start` again until the post-355
-  ordinal is recovered the same way status 80 was. Do not name it
-  from the live log.
-- Do not name or patch the post-355 freeze from this live log. The
-  eight fail-closed ordinals stay fail-closed
-  (`GENERIC_STATE_SELECTORS_2026-10-03.md`).
-- Do not map 60 or 61 onto the status-80 finish.
+- Do not name the post-355 freeze from the 2026-10-03 live log. The
+  eight generic ordinals are taught from the 24G830 selectors, not
+  from that journal.
+- Do not map 60 or 61 onto `operation-finished`, and do not map 61
+  onto status 64.
 - Do not run `bridge-xpc-enroll-native-501.py`. Its creation-reference
   `0x21` option `0x100` was accepted, and the zero-group start returned
   status **1** (`STATUS1_DIAG_2026-09-30.md`).
@@ -68,10 +68,10 @@ question.
 Everyday match: unlock `user.kb`, then fingerprint `sudo` or
 `fprintd-verify -f any tim`. Either enrolled finger can match.
 
-The remaining enroll-protocol work is the unmapped event after
-progress 355. Recover it from the 24G830 `BiometricKit` jump table
-the same way status 80 was recovered. Do not enroll again to classify
-it.
+Optional: one `t2-touchid-enroll start` to see whether the event after
+355 is 60, 61, or a finish, and whether the host Catacomb persists
+without `recover-observed`. The live client already has that patch.
+The two existing fingers stay the specimen until that start.
 
 ## Dated records below
 
@@ -550,6 +550,7 @@ EP7 AKS stays muted (separate transport dead-end); fingerprint path is BridgeXPC
 
 | Note | Topic |
 | --- | --- |
+| `GENERIC_STATE_LINUX_PATCH_2026-10-04.md` | Linux client teaches 60/61 and the six remaining finishes |
 | `LINUX_ENROLL_IDENTITY_2026-10-03.md` | Linux enroll saved a second uid-501 identity; E4 pending |
 | `STATUS80_LINUX_HANDOFF_2026-10-03.md` | Linux patch for status 80, then one enroll |
 | `BIOMETRICKIT_STATUS_TECHNIQUE_2026-10-03.md` | How the 24G830 status arms were read |

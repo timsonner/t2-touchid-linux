@@ -433,8 +433,9 @@ from the live cache: seven call `operationEndsWithReason:` and store state 4,
 while 60 and 61 only call `changeState:` with 3 and 2. Status 80 is patched
 (`ddfcdf6`, `operation-finished`). A live MBA91 enroll then reached 100%
 progress and saved a second uid-501 identity. After reboot that Linux
-finger returned `verify-match`. The client still freezes on
-the other eight. The table is in
+finger returned `verify-match`. The other eight are taught:
+60 and 61 stay running (`operation-state-changed`); the finishes join
+status 80 (`operation-finished`). The table is in
 [FINDINGS.md](FINDINGS.md), and the disassembly procedure is
 `tools/mba91-aks-macos-capture/BIOMETRICKIT_STATUS_TECHNIQUE_2026-10-03.md`.
 Accessory authorization status `501` remains on its separately blocked path.
