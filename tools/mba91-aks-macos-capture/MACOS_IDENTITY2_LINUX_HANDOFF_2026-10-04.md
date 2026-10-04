@@ -1,5 +1,12 @@
 # Linux handoff — identity 2 after the macOS boot delete (2026-10-04)
 
+**Confirm completed.** Result:
+[`MACOS_IDENTITY2_LINUX_CONFIRM_2026-10-04.md`](MACOS_IDENTITY2_LINUX_CONFIRM_2026-10-04.md).
+List failed (`local and live identity inventories disagree`). Finger 1
+matches. Identity 2 did not. Next:
+[`IDENTITY2_NEXT_HANDOFF_2026-10-04.md`](IDENTITY2_NEXT_HANDOFF_2026-10-04.md).
+The original confirm steps remain below as the shot that was run.
+
 Branch: `research/mba91-aks-ep7`. You are on Omarchy. The write-up is
 `MACOS_IDENTITY2_UNLOCK_2026-10-04.md`.
 
@@ -10,8 +17,9 @@ for uid 501. Unlock with that finger cannot work on macOS until the
 macOS Catacomb also holds it.
 
 The Linux two-identity Catacomb was not overwritten by that boot.
-This shot confirms the restore. It does not teach a protocol ordinal
-and it does not enroll.
+This shot was meant to confirm a restore onto SEP. The confirm found
+disagreement instead. It does not teach a protocol ordinal and it
+does not enroll.
 
 ## Do this
 

@@ -1,6 +1,6 @@
 # Findings
 
-Last updated 2026-10-04 (macOS identity-2 unlock). Branch
+Last updated 2026-10-04 (identity-2 Linux return). Branch
 `research/mba91-aks-ep7`.
 
 This is the current narrative for humans and agents. The protocol ledger
@@ -29,7 +29,7 @@ Catacomb export.
 | --- | --- | --- |
 | MacBookPro16,2 | 23P1072 | Full research: verify, Linux enroll, rename, post-reboot proof, PAM |
 | MacBookPro15,2 | 23P350 | Authentication path only (network, keybag, sudo/lock Touch ID) |
-| MacBookAir9,1 | 23P6068 / 23.16.16068, BridgeXPC 39 | Keybag unlock, PAM, Linux enroll of a second finger, both fingers `verify-match` after reboot |
+| MacBookAir9,1 | 23P6068 / 23.16.16068, BridgeXPC 39 | Keybag unlock, PAM, Linux enroll of a second finger, both fingers `verify-match` after a Linux reboot. A following macOS boot deletes that second SEP identity |
 
 Linux AppleKeyStore **endpoint 7** on the Air is mute. Touch ID on that
 Air uses BridgeXPC, not EP7. The EP7 scoreboard is
@@ -70,9 +70,17 @@ Air uses BridgeXPC, not EP7. The EP7 scoreboard is
    501. The Linux finger does not unlock macOS. Finger 1 still does.
    The Linux Catacomb still holds two identities. Write-up:
    `MACOS_IDENTITY2_UNLOCK_2026-10-04.md`.
+10. The next Omarchy boot loaded `user.kb` and unlocked both handles.
+    Finger 1 still matched. Identity 2 failed. `t2-touchid-enroll list`
+    exited 2: local and live inventories disagree. Linux did not put
+    identity 2 back on SEP. Write-up:
+    `MACOS_IDENTITY2_LINUX_CONFIRM_2026-10-04.md`. Next:
+    `IDENTITY2_NEXT_HANDOFF_2026-10-04.md`.
 
 Write-ups: `LINUX_ENROLL_IDENTITY_2026-10-03.md`,
 `MACOS_IDENTITY2_UNLOCK_2026-10-04.md`,
+`MACOS_IDENTITY2_LINUX_CONFIRM_2026-10-04.md`,
+`IDENTITY2_NEXT_HANDOFF_2026-10-04.md`,
 `GENERIC_STATE_LINUX_PATCH_2026-10-04.md`,
 `STATUS80_SELECTOR_2026-10-03.md`,
 `GENERIC_STATE_SELECTORS_2026-10-03.md`,
@@ -95,11 +103,13 @@ Write-ups: `LINUX_ENROLL_IDENTITY_2026-10-03.md`,
 | Single-identity deletion | not hardware-tested |
 | Enroll without a Catacomb backup | broker refuses |
 | Unlock this Mac with the Linux-enrolled finger | macOS `loadCatacomb` then `syncTemplateListForUser:` deletes the SEP identity that is missing from `/Library/Catacomb`. `bioutil` count 1. Finger 1 still unlocks. |
+| Match identity 2 on Linux after that macOS boot | SEP no longer holds it. Linux Catacomb still lists two. `t2-touchid-enroll list` disagrees. Finger 1 still matches. |
+| Copy Linux keybag onto macOS | Linux already uses the macOS `user.kb`. Identity 2 lives in the Catacomb. |
 | Copy Linux Catacomb onto `/Library/Catacomb` | decoder gate still closed |
 
 This Air's `fprintd` is verify-only. `fprintd-list` shows a compatibility
-name (`right-index-finger`). SEP can still hold two identities; `-f any`
-matches whichever enrolled finger is on the sensor.
+name (`right-index-finger`). After the macOS boot, SEP holds Finger 1.
+`-f any` matches that remaining enrolled finger.
 
 ## Protocol (short)
 
@@ -122,14 +132,17 @@ not contain `BiometricKit`.
 
 ## Open
 
-- On the next Omarchy boot, confirm identity count 2 and
-  `fprintd-verify` of the Linux finger
-  (`MACOS_IDENTITY2_LINUX_HANDOFF_2026-10-04.md`).
-- Cross-OS unlock of the Linux-enrolled finger. That is Catacomb
-  sync, with the decoder gate still closed.
+- Linux consistency, only if the operator asks:
+  `t2-touchid-manage reconcile-external-deletion` (Path L in
+  `IDENTITY2_NEXT_HANDOFF_2026-10-04.md`). Drops the stale local
+  identity 2. Finger 1 stays.
+- Cross-OS unlock: macOS decoder-only fixture of a copy of the
+  Linux-emitted Catacomb (Path M). No `loadCatacomb`, no replace of
+  `/Library/Catacomb`, until that note exists.
 - One enroll with the generic-state patch, to see whether the host
   Catacomb persists without `recover-observed`, and to journal the
-  ordinal after 355.
+  ordinal after 355. That start mints a new identity. The next macOS
+  boot will delete it unless Path M has passed.
 - Native `fprintd` enrollment/deletion exposure.
 - Multi-user mapped accounts.
 - Hardware deletion test.

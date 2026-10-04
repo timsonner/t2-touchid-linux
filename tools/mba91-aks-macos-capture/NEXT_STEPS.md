@@ -12,28 +12,26 @@ conducted under **Track A** — independent ownership research
 ([`docs/LAB_PROTOCOL.md`](../../docs/LAB_PROTOCOL.md)); the earlier 2026-09-08
 park is lifted. See `PARKED_2026-09-08.md` for the authorization record.
 
-## Standing state (2026-10-04, Linux finger verifies; macOS unlock is Finger 1)
+## Standing state (2026-10-04, Finger 1 only; identity 2 gone from SEP)
 
 Track A is the approval for this machine (`docs/LAB_PROTOCOL.md`,
 `PARKED_2026-09-08.md`). The halts in this block are results of that
 research. They do not withdraw the approval, and they are not a request
 for another permission check.
 
-A finger enrolled from Linux on this Air matches **on Linux**. After
-the Omarchy reboot, `t2-keybag-load.service` loaded `user.kb`, both
-handles unlocked, and `verify-post-reboot` returned
-`post_reboot_verified` true with identity count 2. Two
-`fprintd-verify -f any tim` runs returned `verify-match`: the macOS
-index finger, then the Linux-enrolled finger. The write-up is
-`LINUX_ENROLL_IDENTITY_2026-10-03.md`.
+A finger enrolled from Linux on this Air matched **on Linux** after the
+enroll reboot (`LINUX_ENROLL_IDENTITY_2026-10-03.md`). The next macOS
+boot loaded the one-finger `/Library/Catacomb` and
+`syncTemplateListForUser:` removed that SEP identity
+(`MACOS_IDENTITY2_UNLOCK_2026-10-04.md`). Finger 1 still unlocks macOS
+and Linux. Identity 2 does not.
 
-That same Linux finger does not unlock this Mac. On the 2026-10-04
-macOS boot, `biometrickitd` loaded the one-finger `/Library/Catacomb`
-and `syncTemplateListForUser:` removed the extra SEP identity.
-`bioutil` showed one template for uid 501. Finger 1 still unlocks.
-The Linux Catacomb still holds two identities. The write-up is
-`MACOS_IDENTITY2_UNLOCK_2026-10-04.md`. The Linux confirm is
-`MACOS_IDENTITY2_LINUX_HANDOFF_2026-10-04.md`.
+The Omarchy return loaded `user.kb` and unlocked both handles.
+`t2-touchid-enroll list` exited 2: local and live inventories
+disagree. Linux Catacomb is still 39314 bytes (two identities). SEP
+follows the one-finger macOS archive. Write-up:
+`MACOS_IDENTITY2_LINUX_CONFIRM_2026-10-04.md`. Next:
+`IDENTITY2_NEXT_HANDOFF_2026-10-04.md`.
 
 The enroll that created that identity reached progress 355, then froze
 on a generic ordinal that was not journaled. Status 80 did not freeze
@@ -44,12 +42,13 @@ persisted the SEP identity into the local Catacomb.
 
 | Fact | Evidence |
 | --- | --- |
-| `verify-post-reboot` | `post_reboot_verified` true, identity count 2 |
-| Gate | `unfinished_count` 0, `post_reboot_pending_count` 0, `live_enrollment_blocked` false |
-| `t2-touchid-enroll list` | Finger 1 and Linux enrolled finger, both live |
-| `fprintd-verify` | `verify-match` for the macOS index finger, then `verify-match` for the Linux-enrolled finger |
+| `verify-post-reboot` (enroll reboot) | `post_reboot_verified` true, identity count 2 |
+| Gate now | `unfinished_count` 0, `post_reboot_pending_count` 0, `live_enrollment_blocked` false |
+| `t2-touchid-enroll list` now | exit 2, local and live inventories disagree |
+| Finger 1 | operator `verify-match` on Linux and macOS |
+| Identity 2 | operator fail on Linux after the macOS boot |
 | `fprintd-list` | compatibility name `right-index-finger` only |
-| Enroll start (prior boot) | status 0, continues 70, 160, 220, 275, 339, 341, 345, 355, freeze after 355 |
+| Linux `user_000001f5.cat` | 39314 bytes (two-identity store) |
 | `user.kb` / `native-501.kb` | 1560 and 1540 bytes, unchanged |
 | macOS `bioutil -c -s` | User 501: 1 template. Unlock enabled. |
 | macOS boot | `loadCatacombForUser: 501` then SEP identity removed: not present in biometrickitd. `restoreAndSyncTemplates identities 1` |
@@ -78,26 +77,27 @@ question.
   fingers are the specimen.
 - Opcode 74 is a closed matrix (`SESSION74_VERDICT_2026-09-17.md`).
 - This Air's `fprintd` is verify-only. It cannot enroll.
-- Do not retry unlocking this Mac with the Linux-enrolled finger.
-  The 2026-10-04 boot already deleted that SEP identity for the
-  macOS session (`MACOS_IDENTITY2_UNLOCK_2026-10-04.md`).
+- Do not retry unlocking this Mac, or Linux, with identity 2. SEP
+  no longer holds it (`MACOS_IDENTITY2_LINUX_CONFIRM_2026-10-04.md`).
 - Do not copy the Linux Catacomb onto `/Library/Catacomb`.
+- Do not copy `user.kb` or `native-501.kb` onto macOS as a restore.
 - Do not enroll the Linux finger in System Settings as a debug step.
+- Do not run `reconcile-external-deletion` unless the operator asks.
 
 ## Next
 
-On Omarchy, follow `MACOS_IDENTITY2_LINUX_HANDOFF_2026-10-04.md`:
-load `user.kb`, confirm list count 2, `fprintd-verify` the Linux
-finger. Stop if the count is 1.
+Follow `IDENTITY2_NEXT_HANDOFF_2026-10-04.md`.
 
-Everyday Linux match after that confirm: fingerprint `sudo` or
-`fprintd-verify -f any tim`. Either enrolled finger can match there.
-macOS unlock stays Finger 1.
+**Path L (Linux, everyday):** Finger 1. Optional
+`reconcile-external-deletion` only if the operator asks, then stop.
 
-Optional later: one `t2-touchid-enroll start` to see whether the
-event after 355 is 60, 61, or a finish, and whether the host Catacomb
-persists without `recover-observed`. The live client already has that
-patch. The two existing fingers stay the specimen until that start.
+**Path M (macOS, cross-OS unlock):** decoder-only fixture of a copy
+of the Linux-emitted Catacomb. No `loadCatacomb`, no replace of
+`/Library/Catacomb`, then stop.
+
+Optional later enroll (new identity) waits for an explicit operator
+ask. The next macOS boot will delete that identity unless Path M
+has passed.
 
 ## Dated records below
 
