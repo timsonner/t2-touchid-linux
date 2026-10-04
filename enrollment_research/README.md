@@ -430,8 +430,10 @@ that whole domain for both supported envelope versions.
 Generic statuses `51`, `58`, `60`, `61`, `62`, `65`, `80`, `99`, and `502` do
 change `BKOperation` state. Their 24G830 arms were recovered on 2026-10-03
 from the live cache: seven call `operationEndsWithReason:` and store state 4,
-while 60 and 61 only call `changeState:` with 3 and 2. The client still
-freezes on all nine until the status-80 patch. The table is in
+while 60 and 61 only call `changeState:` with 3 and 2. Status 80 is patched
+(`ddfcdf6`, `operation-finished`). A live MBA91 enroll then reached 100%
+progress and saved a second uid-501 identity; the client still freezes on
+the other eight. The table is in
 [FINDINGS.md](FINDINGS.md), and the disassembly procedure is
 `tools/mba91-aks-macos-capture/BIOMETRICKIT_STATUS_TECHNIQUE_2026-10-03.md`.
 Accessory authorization status `501` remains on its separately blocked path.

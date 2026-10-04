@@ -7,51 +7,49 @@ conducted under **Track A** — independent ownership research
 ([`docs/LAB_PROTOCOL.md`](../../docs/LAB_PROTOCOL.md)); the earlier 2026-09-08
 park is lifted. See `PARKED_2026-09-08.md` for the authorization record.
 
-## Standing state (2026-10-03, enroll stopped on status 80)
+## Standing state (2026-10-03, Linux finger on SEP, E4 pending)
 
 Track A is the approval for this machine (`docs/LAB_PROTOCOL.md`,
 `PARKED_2026-09-08.md`). The halts in this block are results of that
 research. They do not withdraw the approval, and they are not a request
 for another permission check.
 
-The macOS bag is unlocked, fingerprint `sudo` works, and one macOS
-finger verifies. A Linux enroll through `t2-touchid-enroll start`
-accepted the macOS password and the enroll start returned status 0.
-The client then froze on BiometricKit status **80** before any finger
-prompt. `recover-outcome` closed that journal: identity count stayed
-**1**, `fingerprint_mutation_performed` false,
-`persistent_identity_delta` false, and `live_enrollment_blocked` is
-false. The full handoff is `STATUS80_HANDOFF_2026-10-03.md`.
+The status-80 patch (`ddfcdf6`) is installed under `/opt/t2-touchid/src`.
+One Linux enroll ran. Start returned status 0. The client sent
+`enrollContinue` through progress ordinals 70, 160, 220, 275, 339,
+341, 345, and **355**. Then it froze on a protocol error. The event
+after 355 was not journaled. Status 80 did not freeze this start.
 
-Status 80 is a `BKOperation` finish, recovered in
-`STATUS80_SELECTOR_2026-10-03.md`. The other eight fail-closed
-ordinals are recovered in `GENERIC_STATE_SELECTORS_2026-10-03.md`.
-Status 80 is not Mesa opcode 80 and not Catacomb command `0x50`.
-The Linux client still freezes on all nine, so another start will
-stop in the same place until the protocol patch.
+The SEP then had **2** identities for uid 501. The local Catacomb still
+had 1. `recover-outcome` refused (inventories diverge).
+`recover-observed` persisted the new identity. `t2-touchid-enroll list`
+now shows two live names: Finger 1 and Linux enrolled finger.
+`user_000001f5.cat` is 39314 bytes. The outcome-unknown journal is
+closed. Post-reboot verification is pending. The write-up is
+`LINUX_ENROLL_IDENTITY_2026-10-03.md`.
 
 | Fact | Evidence |
 | --- | --- |
-| Enroll start | status 0, protocol v2, 68-byte request. Password prompt appeared. No finger-progress line was printed |
-| Stop | `unmapped generic operation state status 80` |
-| `recover-outcome` | `outcome_unknown_reconciled` true, identity count 1, no fingerprint mutation, no persistent delta |
-| Gate after recovery | `unfinished_count` 0, `live_enrollment_blocked` false |
-| Read-only identity list after the stop, before recovery | count 1, free 2 / capacity 5, both repeats equal, status 0 |
-| `user.kb` / `native-501.kb` | 1560 and 1540 bytes, unchanged by the enroll |
-| Backup | `/var/lib/t2-touchid/backups/<catacomb-sha256>.tar.gz` is installed, mode 0600. The hash is in `EXPORT_RETURN_FINDINGS_2026-10-03.md` |
+| Enroll start | status 0, protocol v2, 68-byte request |
+| Continues | ordinals 70, 160, 220, 275, 339, 341, 345, 355, each continue status 0 |
+| Stop | `ENROLL_OUTCOME_UNKNOWN`, protocol-error, after 355 |
+| `recover-outcome` | refused, host and SEP inventories diverge |
+| `recover-observed` | `observed_identity_recovered` true, local count 2 |
+| Gate | `unfinished_count` 0, `post_reboot_pending_count` 1, `live_enrollment_blocked` true |
+| `user.kb` / `native-501.kb` | 1560 and 1540 bytes, unchanged |
 
 ## Measured halts
 
 These shots have answered. Another copy of the same shot is not a new
 question.
 
-- Do not run `t2-touchid-enroll start` again until status 80 has a
-  recovered `BKOperation` transition in `t2_enrollment_protocol.py`.
-  The 2026-10-03 start already proved the password and the start.
-- Do not map status 80 to a silent no-op or to `IGNORE_PHASE`.
-  The 24G830 handler calls `operationEndsWithReason:` with reason 2,
-  which stores state 4 and does not send `enrollContinue`
-  (`STATUS80_SELECTOR_2026-10-03.md`).
+- Do not run `t2-touchid-enroll start` again until
+  `verify-post-reboot` returns `post_reboot_verified`. That check
+  needs a new Linux boot UUID.
+- Do not name or patch the post-355 freeze from this live log. The
+  eight fail-closed ordinals stay fail-closed
+  (`GENERIC_STATE_SELECTORS_2026-10-03.md`).
+- Do not map 60 or 61 onto the status-80 finish.
 - Do not run `bridge-xpc-enroll-native-501.py`. Its creation-reference
   `0x21` option `0x100` was accepted, and the zero-group start returned
   status **1** (`STATUS1_DIAG_2026-09-30.md`).
@@ -62,32 +60,30 @@ question.
 - Do not run `warm-bringup-mba91.sh` on this boot. It loads
   `native-501.kb`. The live loader is `t2-keybag-load.service`.
 - `0x40`, sensor reset, `no_catacomb`, and `0x48` cleared identities on
-  this Air in earlier approved runs. Leave them unused while this
-  finger is the specimen.
+  this Air in earlier approved runs. Leave them unused while these
+  fingers are the specimen.
 - Opcode 74 is a closed matrix (`SESSION74_VERDICT_2026-09-17.md`).
 - This Air's `fprintd` is verify-only. It cannot enroll.
 
 ## Next
 
-The macOS selector notes and the disassembly procedure are on this
-branch. The Linux agent follows `STATUS80_LINUX_HANDOFF_2026-10-03.md`.
-Enrollment stays on Linux, after the patch. Do not enroll on this
-macOS boot.
+E4 on a new Omarchy boot. The handoff is
+`LINUX_ENROLL_IDENTITY_2026-10-03.md`.
 
-1. Done on macOS 15.7.9 build 24G830. Image UUID
-   `099725C6-A182-39C2-8104-DA810DE9EDD7`. Ordinal 80 calls
-   `operationEndsWithReason:` with reason 2. That stores
-   `BKOperation` state 4, may notify `operation:finishedWithReason:`
-   with reason 2, and does not send `enrollContinue`.
-2. Back on Omarchy, follow `STATUS80_LINUX_HANDOFF_2026-10-03.md`.
-   Load `user.kb` again with `t2-keybag-load.service`. Do not run
-   `warm-bringup-mba91.sh`. Teach only the status-80 finish. Keep the
-   other eight fail-closed. Do not send `enrollContinue`. Do not map
-   80 onto `IGNORE_PHASE` or onto the status 66/67/68 actions.
-3. Only after that patch: `t2-touchid-enroll start` again. The macOS
-   password, then the new finger.
+1. Reboot. Load `user.kb` with `t2-keybag-load.service`. Unlock both
+   handles. Do not run `warm-bringup-mba91.sh`.
+2. `sudo t2-touchid-enroll verify-post-reboot`
+3. Optional: `fprintd-verify -f any tim` for the new finger.
 
 ## Dated records below
+
+## Prior standing state (2026-10-03, enroll stopped on status 80)
+
+The first password-bound `t2-touchid-enroll start` returned status 0
+and froze on BiometricKit status **80** before any finger prompt.
+`recover-outcome` found no identity delta. The selector is
+`STATUS80_SELECTOR_2026-10-03.md`. The Linux patch is `ddfcdf6`. The
+enroll after that patch is the standing state above.
 
 ## Prior standing state (2026-10-03, macOS export return)
 
@@ -550,6 +546,7 @@ EP7 AKS stays muted (separate transport dead-end); fingerprint path is BridgeXPC
 
 | Note | Topic |
 | --- | --- |
+| `LINUX_ENROLL_IDENTITY_2026-10-03.md` | Linux enroll saved a second uid-501 identity; E4 pending |
 | `STATUS80_LINUX_HANDOFF_2026-10-03.md` | Linux patch for status 80, then one enroll |
 | `BIOMETRICKIT_STATUS_TECHNIQUE_2026-10-03.md` | How the 24G830 status arms were read |
 | `GENERIC_STATE_SELECTORS_2026-10-03.md` | Eight fail-closed ordinals: finish reasons, or `changeState:` |

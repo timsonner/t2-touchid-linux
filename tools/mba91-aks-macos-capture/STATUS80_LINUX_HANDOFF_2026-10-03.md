@@ -4,6 +4,13 @@ Branch: `research/mba91-aks-ep7`. The macOS notes are on this branch.
 You are on Omarchy, not on the macOS boot. You patch the client, then
 you run one enroll.
 
+Later the same night: patch `ddfcdf6` was installed under
+`/opt/t2-touchid/src`. One enroll ran. Status 80 did not freeze.
+Progress reached ordinal 355. The SEP then had two identities.
+`recover-observed` persisted the new one. Live order is
+`LINUX_ENROLL_IDENTITY_2026-10-03.md` and the standing block of
+`NEXT_STEPS.md`.
+
 Read these first, and do not rediscover them:
 
 - `STATUS80_SELECTOR_2026-10-03.md` — ordinal 80.

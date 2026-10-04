@@ -10,6 +10,10 @@ Two agents, in order. The macOS agent does the first section and
 stops. The Linux agent does not enroll until that note is back and
 the patch below exists.
 
+Later the same night the Linux patch and one enroll completed. Status
+80 did not freeze that start. The new finger is on the SEP and in the
+local Catacomb. Live order is `LINUX_ENROLL_IDENTITY_2026-10-03.md`.
+
 ## macOS agent — do this, then stop
 
 You are on the MacBookAir9,1 **normal macOS install**. Not Recovery.

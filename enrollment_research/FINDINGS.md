@@ -5830,8 +5830,10 @@ finger-lift, without the presence callback. The operation keeps
 running. The image's log lines are `operationEndsWithReason: %ld` and
 `changeState %ld`; they do not name the integers.
 
-The Linux client still freezes on all nine. The next patch teaches
-status 80 only and leaves the other eight fail-closed. The handoff is
+Status 80 is patched (`ddfcdf6`, `operation-finished`). A live MBA91
+enroll then reached 100% progress and saved a second uid-501 identity
+(`LINUX_ENROLL_IDENTITY_2026-10-03.md`). The client still freezes on
+the other eight. The status-80 handoff is
 `tools/mba91-aks-macos-capture/STATUS80_LINUX_HANDOFF_2026-10-03.md`.
 No other ordinal in this chain changes `BKOperation` state without an
 existing protocol arm or a row in this table. The checked domain is
