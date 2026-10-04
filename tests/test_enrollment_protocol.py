@@ -245,9 +245,10 @@ class EnrollmentProtocolTests(unittest.TestCase):
             87: enrollment.EnrollmentAction.RETRY_SCAN,
             88: enrollment.EnrollmentAction.RETRY_SCAN,
             93: enrollment.EnrollmentAction.DIRTY_SENSOR,
+            80: enrollment.EnrollmentAction.OPERATION_FINISHED,
             98: enrollment.EnrollmentAction.RETRY_SCAN,
         }
-        blocked = {51, 58, 60, 61, 62, 65, 80, 99, 501, 502}
+        blocked = {51, 58, 60, 61, 62, 65, 99, 501, 502}
         for version in (1, 2):
             for status in range(504):
                 machine = self.machine()
@@ -284,7 +285,7 @@ class EnrollmentProtocolTests(unittest.TestCase):
                         )
 
     def test_unmapped_generic_operation_states_remain_fail_closed(self):
-        expected = {51, 58, 60, 61, 62, 65, 80, 99, 502}
+        expected = {51, 58, 60, 61, 62, 65, 99, 502}
         self.assertEqual(
             set(enrollment.EXACT_UNMAPPED_GENERIC_STATE_STATUSES), expected
         )
@@ -449,6 +450,10 @@ class EnrollmentProtocolTests(unittest.TestCase):
             66: (enrollment.EnrollmentAction.CANCELLED, enrollment.EnrollmentState.CANCELLED),
             67: (enrollment.EnrollmentAction.FAILED, enrollment.EnrollmentState.FAILED),
             68: (enrollment.EnrollmentAction.TIMED_OUT, enrollment.EnrollmentState.TIMED_OUT),
+            80: (
+                enrollment.EnrollmentAction.OPERATION_FINISHED,
+                enrollment.EnrollmentState.OPERATION_FINISHED,
+            ),
         }
         for version in (1, 2):
             for status, (action, state) in cases.items():
@@ -460,6 +465,7 @@ class EnrollmentProtocolTests(unittest.TestCase):
                     )
                     self.assertEqual(transition.action, action)
                     self.assertEqual(machine.state, state)
+                    self.assertFalse(transition.continue_required)
 
     def test_v1_result_normalizes_builtin_group_but_is_only_provisional(self):
         identity_uuid = bytes(range(1, 17))

@@ -51,7 +51,7 @@ EXACT_NOOP_PHASE_RANGES = (
     (503, 0xFFFFFFFF),
 )
 EXACT_UNMAPPED_GENERIC_STATE_STATUSES = frozenset(
-    (51, 58, 60, 61, 62, 65, 80, 99, 502)
+    (51, 58, 60, 61, 62, 65, 99, 502)
 )
 
 
@@ -67,6 +67,7 @@ class EnrollmentState(Enum):
     CANCELLED = "cancelled"
     FAILED = "failed"
     TIMED_OUT = "timed-out"
+    OPERATION_FINISHED = "operation-finished"
     FROZEN = "frozen"
 
 
@@ -85,6 +86,7 @@ class EnrollmentAction(Enum):
     CANCELLED = "cancelled"
     FAILED = "failed"
     TIMED_OUT = "timed-out"
+    OPERATION_FINISHED = "operation-finished"
     RESULT_WITNESSED = "result-witnessed"
     IDENTITY_OBSERVED = "identity-observed"
 
@@ -411,6 +413,14 @@ class EnrollmentStateMachine:
         if status == 68:
             self.state = EnrollmentState.TIMED_OUT
             return EnrollmentTransition(EnrollmentAction.TIMED_OUT, self.state)
+        # Exact 24G830 BKOperation calls operationEndsWithReason: with
+        # reason 2. That stores _state 4 and does not send enrollContinue.
+        # Statuses 66-68 are processEnrollFailReason:, a different selector.
+        if status == 80:
+            self.state = EnrollmentState.OPERATION_FINISHED
+            return EnrollmentTransition(
+                EnrollmentAction.OPERATION_FINISHED, self.state
+            )
         if self.state is EnrollmentState.CANCEL_REQUESTED:
             self._freeze("nonterminal event arrived after cancellation was requested")
         # Exact macOS 15.7 / 24G830 BKOperation dispatches these two statuses

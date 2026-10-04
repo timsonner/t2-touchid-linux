@@ -72,7 +72,7 @@ class FprintEnrollmentRuntimeTests(unittest.TestCase):
             state.fail_unknown()
 
     def test_reconciled_terminal_failures_and_ambiguity_are_distinct(self):
-        for outcome in ("cancelled", "failed", "timed-out"):
+        for outcome in ("cancelled", "failed", "timed-out", "operation-finished"):
             state = runtime.EnrollmentRuntime()
             result = coordinator.EnrollmentCoordinatorResult(
                 outcome, True, False, True
@@ -123,6 +123,7 @@ class FprintEnrollmentRuntimeTests(unittest.TestCase):
         for action in (
             protocol.EnrollmentAction.CANCELLED,
             protocol.EnrollmentAction.IDENTITY_OBSERVED,
+            protocol.EnrollmentAction.OPERATION_FINISHED,
         ):
             with self.subTest(action=action), self.assertRaises(
                 runtime.FprintEnrollmentRuntimeError

@@ -214,6 +214,7 @@ class EnrollmentOperation:
                     protocol.EnrollmentAction.CANCELLED,
                     protocol.EnrollmentAction.FAILED,
                     protocol.EnrollmentAction.TIMED_OUT,
+                    protocol.EnrollmentAction.OPERATION_FINISHED,
                 }:
                     try:
                         feedback_result = on_feedback(transition)
@@ -310,6 +311,7 @@ class EnrollmentOperation:
                     protocol.EnrollmentAction.CANCELLED: 66,
                     protocol.EnrollmentAction.FAILED: 67,
                     protocol.EnrollmentAction.TIMED_OUT: 68,
+                    protocol.EnrollmentAction.OPERATION_FINISHED: 80,
                 }.get(transition.action)
                 if terminal_status is not None:
                     self._append_during_active_operation(

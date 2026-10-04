@@ -128,7 +128,8 @@ class EnrollmentRuntime:
             and result.reconciliation_complete is True
         )
         reconciled_failure = (
-            result.outcome in {"cancelled", "failed", "timed-out"}
+            result.outcome
+            in {"cancelled", "failed", "timed-out", "operation-finished"}
             and result.persistence_ready is False
             and result.reconciliation_complete is True
         )
