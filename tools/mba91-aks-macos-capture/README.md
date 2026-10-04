@@ -1,7 +1,8 @@
 # MBA91 session log and macOS capture kit
 
 **Current Air status (2026-10-04):** BridgeXPC Touch ID works on this
-MacBookAir9,1. A Linux-enrolled finger matches after reboot. Read
+MacBookAir9,1. A Linux-enrolled finger matches after reboot **on
+Linux**. It does not unlock this Mac. Read
 [`docs/FINDINGS.md`](../../docs/FINDINGS.md) and
 [`NEXT_STEPS.md`](NEXT_STEPS.md) first. This folder is the dated evidence
 log plus the original macOS os_log capture kit.
@@ -14,6 +15,8 @@ independent of that mailbox.
 | Narrative | [`docs/FINDINGS.md`](../../docs/FINDINGS.md) |
 | Operator standing | [`NEXT_STEPS.md`](NEXT_STEPS.md) |
 | Linux enroll identity | [`LINUX_ENROLL_IDENTITY_2026-10-03.md`](LINUX_ENROLL_IDENTITY_2026-10-03.md) |
+| macOS identity-2 unlock | [`MACOS_IDENTITY2_UNLOCK_2026-10-04.md`](MACOS_IDENTITY2_UNLOCK_2026-10-04.md) |
+| Linux confirm after macOS delete | [`MACOS_IDENTITY2_LINUX_HANDOFF_2026-10-04.md`](MACOS_IDENTITY2_LINUX_HANDOFF_2026-10-04.md) |
 | Generic-state protocol patch | [`GENERIC_STATE_LINUX_PATCH_2026-10-04.md`](GENERIC_STATE_LINUX_PATCH_2026-10-04.md) |
 | Status 80 selector | [`STATUS80_SELECTOR_2026-10-03.md`](STATUS80_SELECTOR_2026-10-03.md) |
 | Generic selectors | [`GENERIC_STATE_SELECTORS_2026-10-03.md`](GENERIC_STATE_SELECTORS_2026-10-03.md) |

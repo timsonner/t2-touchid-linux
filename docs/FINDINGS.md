@@ -1,6 +1,7 @@
 # Findings
 
-Last updated 2026-10-04. Branch `research/mba91-aks-ep7`.
+Last updated 2026-10-04 (macOS identity-2 unlock). Branch
+`research/mba91-aks-ep7`.
 
 This is the current narrative for humans and agents. The protocol ledger
 is [`enrollment_research/FINDINGS.md`](../enrollment_research/FINDINGS.md).
@@ -62,8 +63,16 @@ Air uses BridgeXPC, not EP7. The EP7 scoreboard is
    (`0b81657`): 60 and 61 stay running (`operation-state-changed`);
    51, 58, 62, 65, 80, 99, 502 finish like 80. Journals record the
    event ordinal. That live enroll has not been re-run.
+9. Booting this Mac after the Linux enroll, `biometrickitd` loaded
+   the one-finger `/Library/Catacomb` and
+   `syncTemplateListForUser:` removed the extra SEP identity because
+   it was not in biometrickitd. `bioutil` showed one template for uid
+   501. The Linux finger does not unlock macOS. Finger 1 still does.
+   The Linux Catacomb still holds two identities. Write-up:
+   `MACOS_IDENTITY2_UNLOCK_2026-10-04.md`.
 
 Write-ups: `LINUX_ENROLL_IDENTITY_2026-10-03.md`,
+`MACOS_IDENTITY2_UNLOCK_2026-10-04.md`,
 `GENERIC_STATE_LINUX_PATCH_2026-10-04.md`,
 `STATUS80_SELECTOR_2026-10-03.md`,
 `GENERIC_STATE_SELECTORS_2026-10-03.md`,
@@ -85,6 +94,8 @@ Write-ups: `LINUX_ENROLL_IDENTITY_2026-10-03.md`,
 | `deep` sleep | T2 communication dies until reboot; use `s2idle` |
 | Single-identity deletion | not hardware-tested |
 | Enroll without a Catacomb backup | broker refuses |
+| Unlock this Mac with the Linux-enrolled finger | macOS `loadCatacomb` then `syncTemplateListForUser:` deletes the SEP identity that is missing from `/Library/Catacomb`. `bioutil` count 1. Finger 1 still unlocks. |
+| Copy Linux Catacomb onto `/Library/Catacomb` | decoder gate still closed |
 
 This Air's `fprintd` is verify-only. `fprintd-list` shows a compatibility
 name (`right-index-finger`). SEP can still hold two identities; `-f any`
@@ -111,6 +122,11 @@ not contain `BiometricKit`.
 
 ## Open
 
+- On the next Omarchy boot, confirm identity count 2 and
+  `fprintd-verify` of the Linux finger
+  (`MACOS_IDENTITY2_LINUX_HANDOFF_2026-10-04.md`).
+- Cross-OS unlock of the Linux-enrolled finger. That is Catacomb
+  sync, with the decoder gate still closed.
 - One enroll with the generic-state patch, to see whether the host
   Catacomb persists without `recover-observed`, and to journal the
   ordinal after 355.

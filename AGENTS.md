@@ -18,8 +18,11 @@ log. `docs/FINDINGS.md` is the live story.
 ## This Air (MacBookAir9,1)
 
 BridgeXPC Touch ID works: keybag unlock, PAM, a Linux-enrolled second
-finger, both fingers `verify-match` after reboot. Linux AKS endpoint 7
-is mute; that scoreboard is independent of BridgeXPC Touch ID.
+finger, both fingers `verify-match` after reboot **on Linux**. That
+second finger does not unlock macOS: boot `loadCatacomb` then
+`syncTemplateListForUser:` removes the SEP identity missing from
+`/Library/Catacomb`. Linux AKS endpoint 7 is mute; that scoreboard
+is independent of BridgeXPC Touch ID.
 
 Live bag is `/var/lib/t2-touchid/user.kb` via `t2-keybag-load.service`.
 `native-501.kb` stays unloaded.
@@ -36,6 +39,8 @@ These already answered. Another copy is not a new question.
 - Empty-SEP / macintog installer on this Air
 - Unloading `t2_sep_transport` or `applesmc`
 - Naming a live enroll ordinal from an unjournaled freeze
+- Unlocking this Mac with the Linux-enrolled finger
+- Copying the Linux Catacomb onto `/Library/Catacomb`
 
 Linux enroll is `t2-touchid-enroll` (password-bound policy 1007) and
 needs exactly one hashed Catacomb backup. One numbered T2/SEP step at

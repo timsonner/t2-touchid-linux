@@ -12,19 +12,28 @@ conducted under **Track A** — independent ownership research
 ([`docs/LAB_PROTOCOL.md`](../../docs/LAB_PROTOCOL.md)); the earlier 2026-09-08
 park is lifted. See `PARKED_2026-09-08.md` for the authorization record.
 
-## Standing state (2026-10-04, Linux enrolled finger verifies)
+## Standing state (2026-10-04, Linux finger verifies; macOS unlock is Finger 1)
 
 Track A is the approval for this machine (`docs/LAB_PROTOCOL.md`,
 `PARKED_2026-09-08.md`). The halts in this block are results of that
 research. They do not withdraw the approval, and they are not a request
 for another permission check.
 
-A finger enrolled from Linux on this Air matches. After reboot,
-`t2-keybag-load.service` loaded `user.kb`, both handles unlocked, and
-`verify-post-reboot` returned `post_reboot_verified` true with identity
-count 2. Two `fprintd-verify -f any tim` runs returned `verify-match`:
-the macOS index finger, then the Linux-enrolled finger. The write-up
-is `LINUX_ENROLL_IDENTITY_2026-10-03.md`.
+A finger enrolled from Linux on this Air matches **on Linux**. After
+the Omarchy reboot, `t2-keybag-load.service` loaded `user.kb`, both
+handles unlocked, and `verify-post-reboot` returned
+`post_reboot_verified` true with identity count 2. Two
+`fprintd-verify -f any tim` runs returned `verify-match`: the macOS
+index finger, then the Linux-enrolled finger. The write-up is
+`LINUX_ENROLL_IDENTITY_2026-10-03.md`.
+
+That same Linux finger does not unlock this Mac. On the 2026-10-04
+macOS boot, `biometrickitd` loaded the one-finger `/Library/Catacomb`
+and `syncTemplateListForUser:` removed the extra SEP identity.
+`bioutil` showed one template for uid 501. Finger 1 still unlocks.
+The Linux Catacomb still holds two identities. The write-up is
+`MACOS_IDENTITY2_UNLOCK_2026-10-04.md`. The Linux confirm is
+`MACOS_IDENTITY2_LINUX_HANDOFF_2026-10-04.md`.
 
 The enroll that created that identity reached progress 355, then froze
 on a generic ordinal that was not journaled. Status 80 did not freeze
@@ -42,6 +51,8 @@ persisted the SEP identity into the local Catacomb.
 | `fprintd-list` | compatibility name `right-index-finger` only |
 | Enroll start (prior boot) | status 0, continues 70, 160, 220, 275, 339, 341, 345, 355, freeze after 355 |
 | `user.kb` / `native-501.kb` | 1560 and 1540 bytes, unchanged |
+| macOS `bioutil -c -s` | User 501: 1 template. Unlock enabled. |
+| macOS boot | `loadCatacombForUser: 501` then SEP identity removed: not present in biometrickitd. `restoreAndSyncTemplates identities 1` |
 
 ## Measured halts
 
@@ -67,16 +78,26 @@ question.
   fingers are the specimen.
 - Opcode 74 is a closed matrix (`SESSION74_VERDICT_2026-09-17.md`).
 - This Air's `fprintd` is verify-only. It cannot enroll.
+- Do not retry unlocking this Mac with the Linux-enrolled finger.
+  The 2026-10-04 boot already deleted that SEP identity for the
+  macOS session (`MACOS_IDENTITY2_UNLOCK_2026-10-04.md`).
+- Do not copy the Linux Catacomb onto `/Library/Catacomb`.
+- Do not enroll the Linux finger in System Settings as a debug step.
 
 ## Next
 
-Everyday match: unlock `user.kb`, then fingerprint `sudo` or
-`fprintd-verify -f any tim`. Either enrolled finger can match.
+On Omarchy, follow `MACOS_IDENTITY2_LINUX_HANDOFF_2026-10-04.md`:
+load `user.kb`, confirm list count 2, `fprintd-verify` the Linux
+finger. Stop if the count is 1.
 
-Optional: one `t2-touchid-enroll start` to see whether the event after
-355 is 60, 61, or a finish, and whether the host Catacomb persists
-without `recover-observed`. The live client already has that patch.
-The two existing fingers stay the specimen until that start.
+Everyday Linux match after that confirm: fingerprint `sudo` or
+`fprintd-verify -f any tim`. Either enrolled finger can match there.
+macOS unlock stays Finger 1.
+
+Optional later: one `t2-touchid-enroll start` to see whether the
+event after 355 is 60, 61, or a finish, and whether the host Catacomb
+persists without `recover-observed`. The live client already has that
+patch. The two existing fingers stay the specimen until that start.
 
 ## Dated records below
 
@@ -555,6 +576,8 @@ EP7 AKS stays muted (separate transport dead-end); fingerprint path is BridgeXPC
 
 | Note | Topic |
 | --- | --- |
+| `MACOS_IDENTITY2_LINUX_HANDOFF_2026-10-04.md` | Confirm Linux still restores identity 2 after the macOS boot delete |
+| `MACOS_IDENTITY2_UNLOCK_2026-10-04.md` | macOS boot deleted the Linux SEP identity; unlock is Finger 1 |
 | `GENERIC_STATE_LINUX_PATCH_2026-10-04.md` | Linux client teaches 60/61 and the six remaining finishes |
 | `LINUX_ENROLL_IDENTITY_2026-10-03.md` | Linux enroll saved a second uid-501 identity; E4 and verify-match done |
 | `STATUS80_LINUX_HANDOFF_2026-10-03.md` | Linux patch for status 80, then one enroll |
