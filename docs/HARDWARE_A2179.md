@@ -1,7 +1,8 @@
 # Hardware reference: MacBookAir9,1 (A2179)
 
 Branch: `research/mba91-aks-ep7`
-Status: schematic-derived, connector maps visually verified (2026-10-24)
+Status: schematic-derived, connector maps and interposer pairing verified
+(2026-10-24)
 
 Board-level facts behind the Touch ID work on this Air, plus the Wi-Fi/BT
 module for completeness. Software narrative stays in
@@ -21,13 +22,13 @@ this machine. Those PDFs are **not** committed here — see
 logic board 820-01958   (181 x 44.98 mm, 3,456 components, 2,199 nets)
   U3900  T2 "Gibraltar" + Secure Enclave
   U3701  Wi-Fi/BT "Sapporo"
-  J6100  RIO interposer, 50-pin, Molex 502250-8045
+  J6100  RIO interposer, 45-pin + 4 lugs, Molex 502250-8045
         |
         |  flex 518S00155 (supplier 998-11285, on X1032 RIO flex J0200)
         |
 RIO / audio board 820-01992   (service P/N reported 923-03986 / 923-03987)
-  J0600  interposer, 48-pin, Hirose BM28P0.6-44DS-0.35V
-  J0602  Mesa sensor, 16-pin, Molex 505066-1222
+  J0600  interposer, 44-pin + 4 lugs, Hirose BM28P0.6-44DS-0.35V
+  J0602  Mesa sensor, 12-pin + 4 lugs, Molex 505066-1222
   J0601  right speaker, 7-pin, 78171-0005, cable 518S0588
         |
         |  sensor flex APN 516S00203
@@ -91,14 +92,16 @@ resistor divider on it and expect the sensor to keep working.
 
 ### 2.3 J6100 — logic-board side of the interposer
 
-Verified against a rendered page. All grounds are one rail per side, both
-terminating in ground symbols:
+`J6100` is a Molex `502250-8045`: **45 contacts in two rows plus 4 shell
+lugs**. The `45` suffix is the circuit count, and the rendered page stops
+at pin 45 with 46/48 and 47/49 drawn outside the body as lugs.
 
 | Pins | Net |
 | --- | --- |
-| 1, 2, 3, 4, 5, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49 | GND (46/48 and 47/49 are shell lugs) |
+| 1, 2, 3, 4, 5, 40, 41, 42, 43, 44, 45 | GND — two rails (1/3/5/41/43/45 and 2/4/40/42/44), each ending in a ground symbol |
 | 6 | `PP1V8_SLPS2R` |
-| 7, 8 | `PP3V3_G3S_G3H_RIO` |
+| 7 | `PP3V3_G3S_G3H_RIO` |
+| 8 | `PP3V3_G3S` |
 | 9 | `PP1V8_G3S` |
 | 10 | `CODEC_RESET_L` |
 | 11 | `CODEC_INT_L` |
@@ -127,9 +130,10 @@ terminating in ground symbols:
 | 34 | NC |
 | 35, 36, 37, 38, 39 | `PPBUS_G3H` |
 
-`PP3V3_G3S_G3H_RIO` is made on the logic board by `R6101` (0 Ω) from
-`PP3V3_G3H`, so RIO and its 3.3 V loads hang off the main 3.3 V always-on
-rail.
+The drawing names pin 7 `PP3V3_G3S_G3H_RIO` and pin 8 `PP3V3_G3S`, but RIO
+names both `PP3V3_G3S`. `PP3V3_G3S_G3H_RIO` is made on the logic board by
+`R6101` (0 Ω) from `PP3V3_G3H`, so RIO and its 3.3 V loads hang off the
+main 3.3 V always-on rail either way.
 
 ### 2.4 J0600 — RIO side of the interposer
 
@@ -161,11 +165,70 @@ Odd pins on the left of the symbol, even on the right:
 | 43 | `PP1V8_SLPS2R` | 44 | GND |
 | 45, 46, 47, 48 (shell) | GND | | |
 
-48 pins on the RIO end, 50 on the logic end. The signal set matches
-exactly — **33 signals each**, same power distribution (5× `PPBUS_G3H`,
-2× 3.3 V, 1× `PP1V8_G3S`, 1× `PP1V8_SLPS2R`) — but **the numbering is not
-straight-through**. J0600 pin *n* does not land on J6100 pin *n*; a
-boardview trace is needed for hop-by-hop continuity.
+`J0600` is a Hirose `BM28P0.6-44DS-0.35V`: **44 contacts plus 4 shell
+lugs** (`44DS` = 44 circuits). So the flex carries 44 conductors between a
+45-contact logic connector and a 44-contact RIO connector. Both ends carry
+the same **33 signals and 11 grounds**; `J6100` pin 34 is the one
+no-connect contact, with no flex conductor behind it.
+
+#### Hop-by-hop, J0600 ↔ J6100
+
+The pin numbers are **not** straight-through — J0600 pin *n* does not land
+on J6100 pin *n*. They do not need to be traced in a boardview, though: a
+flex is one conductor per net, so two pins carrying the same net are the
+same copper by construction. Pairing by net name accounts for all 33
+signals:
+
+| J6100 | net (logic) | J0600 | net (RIO) |
+| ---: | --- | ---: | --- |
+| 6 | `PP1V8_SLPS2R` | 43 | `PP1V8_SLPS2R` |
+| 7 | `PP3V3_G3S_G3H_RIO` | 39 | `PP3V3_G3S` |
+| 8 | `PP3V3_G3S` | 41 | `PP3V3_G3S` |
+| 9 | `PP1V8_G3S` | 37 | `PP1V8_G3S` |
+| 10 | `CODEC_RESET_L` | 32 | `CODEC_RESET_L` |
+| 11 | `CODEC_INT_L` | 30 | `CODEC_INT_L` |
+| 12 | `CODEC_WAKE_L` | 28 | `CODEC_WAKE_L` |
+| 13 | `SPKR_ID1` | 26 | `NC_SPKR_ID1` |
+| 14 | `I2C_SPKRAMP_R_SDA` | 35 | `I2C_RIO_SDA` |
+| 15 | `I2C_SPKRAMP_R_SCL` | 33 | `I2C_RIO_SCL` |
+| 16 | `I2S_CODEC_D2R` | 31 | `I2S_CODEC_D2R` |
+| 17 | `I2S_CODEC_BCLK` | 29 | `I2S_CODEC_BCLK` |
+| 18 | `AUD_PWR_EN` | 27 | `AUD_PWR_EN` |
+| 19 | `I2S_CODEC_R2D` | 25 | `I2S_CODEC_R2D` |
+| 20 | `I2S_CODEC_LRCLK` | 23 | `I2S_CODEC_LRCLK` |
+| **21** | **`SPI_MESA_MISO`** | **21** | **`SPI_MESA_MISO`** |
+| **22** | **`MESA_INT`** | **19** | **`MESA_INT`** |
+| 23 | `PMU_ONOFF_R_L_CONN` | 17 | `MESA_MENUKEY_L` |
+| **24** | **`SPI_MESA_MOSI`** | **15** | **`SPI_MESA_MOSI`** |
+| **25** | **`SPI_MESA_CLK`** | **13** | **`SPI_MESA_CLK`** |
+| **26** | **`MESA_PWR_EN`** | **11** | **`MESA_PWR_EN`** |
+| 27 | `SMC_LID_RIGHT` | 9 | `SMC_LID_RIGHT` |
+| 28 | `I2S_SPKRAMP_L_D2R` | 24 | `I2S_SPKRAMP_L_D2R` |
+| 29 | `I2S_SPKRAMP_R_BCLK` | 22 | `I2S_SPKRAMP_R_BCLK` |
+| 30 | `I2S_SPKRAMP_R_R2D` | 20 | `I2S_SPKRAMP_R_R2D` |
+| 31 | `I2S_SPKRAMP_R_LRCLK_R` | 18 | `I2S_SPKRAMP_R_LRCLK_R` |
+| 32 | `SPKRAMP_INT_L` | 16 | `SPKRAMP_INT_L` |
+| 33 | `SPKRAMP_RESET_L` | 14 | `SPKRAMP_RESET_L` |
+| 35–39 | `PPBUS_G3H` | 3–7 | `PPBUS_G3H` |
+| 1,2,3,4,5,40–45 | GND | 1,2,8,10,12,34,36,38,40,42,44 | GND |
+| 34 | NC | — | — |
+
+Four rows are renamed across the flex rather than copied, and are resolved
+by elimination (33 signals, 33 nets, all others exact):
+
+| J6100 | J0600 | why it is the same conductor |
+| --- | --- | --- |
+| 13 `SPKR_ID1` | 26 `NC_SPKR_ID1` | name variant; RIO marks it `NO_TEST=1` |
+| 14 `I2C_SPKRAMP_R_SDA` | 35 `I2C_RIO_SDA` | only SDA on either end; the amp is RIO's sole I²C device |
+| 15 `I2C_SPKRAMP_R_SCL` | 33 `I2C_RIO_SCL` | same |
+| 23 `PMU_ONOFF_R_L_CONN` | 17 `MESA_MENUKEY_L` | only unpaired pair left; button line, renamed at each board edge |
+
+Two details are genuinely unobservable and do not matter: which of
+`J6100` 7/8 lands on `J0600` 39/41 (both are the same 3.3 V node through
+`R6101`), and which specific ground contact pairs with which. The ordering
+that remains — `J0600` odd pins 35→9 against `J6100` 14→27, and even pins
+32→14 against `J6100` 10–13 then 28–33 — is the flex fanning two rows
+apart, not a rule to extrapolate from.
 
 The port arrows on the drawing (`IN` / `OUT` / `BI`) are sheet-relative
 flags, not reliable physical direction indicators. Use §2.5 instead.
@@ -199,6 +262,26 @@ ACPI or in EP7.
 | Boost enable | `MESA_BOOST_EN` at `J0602` pin 6 |
 | Master enable | `MESA_PWR_EN` at `J6100` pin 26 / `J0600` pin 11 |
 | Button press | `PMU_ONOFF_CONN_L` (`J0602` pin 5) and `MESA_MENUKEY_L` (`J0600` pin 17) |
+
+#### Confirming the interposer with a meter
+
+With both boards unpowered and the flex seated, the anchor set above
+should read < 1 Ω end to end:
+
+| J6100 | J0600 | net |
+| ---: | ---: | --- |
+| 21 | 21 | `SPI_MESA_MISO` |
+| 24 | 15 | `SPI_MESA_MOSI` |
+| 25 | 13 | `SPI_MESA_CLK` |
+| 22 | 19 | `MESA_INT` |
+| 26 | 11 | `MESA_PWR_EN` |
+| 6 | 43 | `PP1V8_SLPS2R` |
+
+Then check isolation, which is the part that catches a cracked flex:
+`J6100` 21 must **not** buzz to `J0600` 13, 15 or 19, and `J6100` 26 must
+not buzz to `J0600` 43. If the four SPI anchors pass and the isolation
+checks pass, the interposer is good and any Touch ID fault is on the
+sensor side of `J0602`.
 
 ### 2.7 Why a sensor swap kills Touch ID
 
@@ -240,9 +323,61 @@ signature `Cw`, version `0x12`. `U3750` is an `MX25U4035FZUI` 4 Mbit SPI
 NOR for Bluetooth.
 
 Relevant to Linux: `brcmfmac` + `hci_bcm4377` both need firmware extracted
-from a macOS install (`C-4377__s-B3/fiji.trx` plus hashstore). `wpa_supplicant`
-≥ 2.11 needs `iwd` or `brcmfmac.feature_disable=0x82000`. BT and 2.4 GHz
-Wi-Fi interfere.
+from a macOS install (`C-4377__s-B3/fiji.trx` plus hashstore). BT and
+2.4 GHz Wi-Fi interfere.
+
+### 3.1 Why WPA3-Personal fails under Omarchy
+
+Omarchy ships `install/hardware/apple/fix-brcmfmac-supplicant.sh`, which
+writes this to `/etc/modprobe.d/brcmfmac.conf` on any Mac carrying T2 PCI
+ID `106b:180[12]`:
+
+```
+options brcmfmac feature_disable=0x82000
+```
+
+This Air is `106b:1802`, so the quirk is active here. The script's comment
+says `0x80000` is FWAUTH, but in
+`drivers/net/wireless/broadcom/brcm80211/brcmfmac/feature.h` the bits are:
+
+| bit | value | feature |
+| ---: | ---: | --- |
+| 13 | `0x2000` | `BRCMF_FEAT_FWSUP` (firmware supplicant) |
+| 19 | `0x80000` | `BRCMF_FEAT_SAE` |
+| 20 | `0x100000` | `BRCMF_FEAT_FWAUTH` |
+
+So `0x82000` clears `FWSUP` **and** `SAE`, and leaves `FWAUTH` alone.
+`brcmf_setup_wiphy()` only advertises `NL80211_EXT_FEATURE_SAE_OFFLOAD`
+inside the `FWSUP` check and only when `SAE` is also set. Host-side SAE
+(`NL80211_FEATURE_SAE`) needs the firmware's `sae_ext` capability, which
+the `C-4377__s-B3` firmware does not report. With the quirk in place the
+station therefore has **no** SAE path at all: WPA2/WPA3 transition APs
+associate over PSK, and a WPA3-only AP never completes authentication.
+
+Setting `feature_disable=0` restores `SAE_OFFLOAD`, after which WPA3-SAE
+with PMF required associates normally. That is the opposite of the usual
+"add `0x82000`" advice, which applies to hardware whose firmware *does*
+expose a host SAE path.
+
+Upstream: [omarchy#9802](https://github.com/omacom/omarchy/issues/9802)
+(reproduced on a MacBookPro16,1 / BCM4364 on the same `linux-t2` kernel;
+the collaborator review confirms the bit layout and the `FWSUP` gate).
+PRs #9803 and #13024 would drop the quirk for T2 Macs. Until one lands,
+the option has to be overridden locally, and `omarchy-update` can re-add
+it via `migrations/1786391100.sh`.
+
+**Not yet confirmed on this Air.** Verify on the Linux side with:
+
+```sh
+cat /etc/modprobe.d/brcmfmac.conf
+cat /sys/module/brcmfmac/parameters/feature_disable   # 532480 = 0x82000
+iw phy | grep -i -E 'sae|mfp'                          # want SAE_OFFLOAD, MFP
+journalctl -b -u iwd | tail -40
+```
+
+If `iw phy` still shows no `SAE_OFFLOAD` after the option is cleared, the
+firmware really has no SAE path and the only workaround is a WPA2 or
+transition-mode SSID on the AP.
 
 ---
 
@@ -288,12 +423,16 @@ schematic archives.
 
 ## Open questions
 
-1. J0600 → J6100 hop-by-hop continuity is unproven; needs a net trace in
-   `820-01958.brd`.
-2. The Mesa sensing die itself is unpublished; only module-level P/N
+1. The flex drawing `518S00155` is unpublished, so the *contact geometry*
+   of the interposer is unverified even though its electrical map is
+   settled (§2.4). Only a physical continuity check adds anything.
+2. Whether the `C-4377__s-B3` firmware reports `sae_ext` — if it does not,
+   clearing the Omarchy quirk is necessary but not sufficient for
+   WPA3-SAE on this unit (§3.1).
+3. The Mesa sensing die itself is unpublished; only module-level P/N
    `661-15412` and flex `516S00203` are known.
-3. No Broadcom or Murata datasheet exists publicly for `BCM4377` or
+4. No Broadcom or Murata datasheet exists publicly for `BCM4377` or
    `LBEE5XV1SA-255`; silicon detail is inferred from net names, Apple
    drivers and `ioreg`.
-4. `516S00038` is called out above `J0600` on the RIO drawing; whether it
+5. `516S00038` is called out above `J0600` on the RIO drawing; whether it
    is the same interposer flex as `518S00155` or a distinct APN is unclear.
