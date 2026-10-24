@@ -1,8 +1,10 @@
 # Catacomb decoder fixture, first run — MBA91 (2026-10-24)
 
 Branch: `research/mba91-aks-ep7`
-Status: harness built and validated on the live macOS component; the
-Linux-emitted archive has **not** been through it yet
+Status: harness built and validated on the live macOS component;
+**superseded as a gate on 2026-10-24** — decoding is necessary but not
+sufficient, because a Linux-emitted component is a different SEP
+generation and the `0x3a` hash is not a digest of the archive
 
 No identity UUIDs, keybag handles, hardware UUIDs, or blob bytes.
 

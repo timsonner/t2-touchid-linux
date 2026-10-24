@@ -29,6 +29,14 @@ Do not enroll. Do not `recover-observed`. Do not load
 
 ## Path M — macOS, decoder fixture only (cross-OS unlock)
 
+**Closed 2026-10-24.** A Linux-emitted component is a different SEP
+generation; the 32-byte `0x3a` hash is not a digest of the archive or
+of `CatacombSecureData`, so a copy cannot be made to agree with the
+generation SEP currently holds. The decoder fixture
+(`CATACOMB_DECODER_FIXTURE_2026-10-24.md`) passes on a macOS component
+and would only ever prove schema compatibility. Steps 1-4 below are
+kept as the historical procedure, not as a route to persistence.
+
 Cross-OS unlock needs macOS to accept a Linux-emitted Catacomb so
 `syncTemplateListForUser:` keeps identity 2. The gate is still
 closed (`enrollment_research/FINDINGS.md`).
