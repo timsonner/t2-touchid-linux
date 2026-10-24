@@ -105,7 +105,7 @@ Write-ups: `LINUX_ENROLL_IDENTITY_2026-10-03.md`,
 | Unlock this Mac with the Linux-enrolled finger | macOS `loadCatacomb` then `syncTemplateListForUser:` deletes the SEP identity that is missing from `/Library/Catacomb`. `bioutil` count 1. Finger 1 still unlocks. |
 | Match identity 2 on Linux after that macOS boot | SEP no longer holds it. Linux Catacomb still lists two. `t2-touchid-enroll list` disagrees. Finger 1 still matches. |
 | Copy Linux keybag onto macOS | Linux already uses the macOS `user.kb`. Identity 2 lives in the Catacomb. |
-| Copy Linux Catacomb onto `/Library/Catacomb` | not a decoder problem. A Linux-emitted component belongs to a different SEP generation, and the 32-byte `0x3a` hash is not a digest of the archive or of `CatacombSecureData`, so editing the file cannot make the two agree. macOS loads its own file at every boot and reconciles SEP to it. |
+| Copy Linux Catacomb onto `/Library/Catacomb` | **untested, not proven closed.** The 2026-10-04 boot loaded macOS's *older* one-identity component with status 0 and then removed the extra SEP identity by list reconciliation, so SEP did not enforce a newer generation. The Linux component has never been presented to macOS. |
 
 This Air's `fprintd` is verify-only. `fprintd-list` shows a compatibility
 name (`right-index-finger`). After the macOS boot, SEP holds Finger 1.
@@ -136,13 +136,14 @@ not contain `BiometricKit`.
   `t2-touchid-manage reconcile-external-deletion` (Path L in
   `IDENTITY2_NEXT_HANDOFF_2026-10-04.md`). Drops the stale local
   identity 2. Finger 1 stays.
-- Cross-OS unlock: **closed 2026-10-24.** The decoder fixture runs and
-  passes on a macOS component
-  (`CATACOMB_DECODER_FIXTURE_2026-10-24.md`), but decoding was never the
-  gate. A Linux-emitted component is a different SEP generation and the
-  `0x3a` hash is not a digest of the archive, so the file cannot be made
-  to match. A Linux-enrolled identity survives only until the next macOS
-  boot. For a finger that works in both OSes, enroll it in macOS.
+- Cross-OS unlock: **reopened 2026-10-24, not closed.** The decoder
+  fixture runs and passes on a macOS component
+  (`CATACOMB_DECODER_FIXTURE_2026-10-24.md`), but the Linux component has
+  never been through it or presented to macOS. The 10-04 load accepted an
+  older file with status 0, so the deletion is the list reconciliation
+  after the load, not a generation-hash rejection. A backed-up replace is
+  the only test that settles it; a corrupt component is the error-269
+  path that deletes Catacomb files.
 - One enroll with the generic-state patch, to see whether the host
   Catacomb persists without `recover-observed`, and to journal the
   ordinal after 355. That start mints a new identity. The next macOS

@@ -29,19 +29,24 @@ Do not enroll. Do not `recover-observed`. Do not load
 
 ## Path M — macOS, decoder fixture only (cross-OS unlock)
 
-**Closed 2026-10-24.** A Linux-emitted component is a different SEP
-generation; the 32-byte `0x3a` hash is not a digest of the archive or
-of `CatacombSecureData`, so a copy cannot be made to agree with the
-generation SEP currently holds. The decoder fixture
-(`CATACOMB_DECODER_FIXTURE_2026-10-24.md`) passes on a macOS component
-and would only ever prove schema compatibility. Steps 1-4 below are
-kept as the historical procedure, not as a route to persistence.
+**Reopened 2026-10-24; untested.** This block briefly said "closed" on
+the theory that a Linux-emitted component belongs to a different SEP
+generation. The 2026-10-04 boot contradicts that: macOS loaded its own
+**older** one-identity component with `loadCatacombForUser: 501 → 0`,
+and only then removed the extra SEP identity through
+`syncTemplateListForUser:`. So SEP did not refuse an older file, and
+nothing here shows it would refuse the Linux one. The Linux component
+has never been presented to macOS.
+
+What is established: the 32-byte value behind `0x3a` is SEP state, not
+SHA-256 of the archive or of `CatacombSecureData`
+(`enrollment_research/FINDINGS.md`). That rules out *deriving* the
+value, not *loading* the file.
 
 Cross-OS unlock needs macOS to accept a Linux-emitted Catacomb so
-`syncTemplateListForUser:` keeps identity 2. The gate is still
-closed (`enrollment_research/FINDINGS.md`).
+`syncTemplateListForUser:` keeps identity 2. Two tests, in this order:
 
-macOS agent task, then stop:
+**M1 — decode a copy (safe, read-only).**
 
 1. Normal macOS 15.7.9 build 24G830. Finger 1 still unlocks.
 2. Decode a **copy** of the Linux-emitted archive with the matching
@@ -50,14 +55,31 @@ macOS agent task, then stop:
    any biometric command. Do not replace `/Library/Catacomb`.
 4. Stop.
 
-A later replace, if ever authorized, needs that decoder note first.
-Offline APFS writes from Linux are the same closed gate.
+**M2 — replace, backed up (decisive, destructive risk).**
+
+Only after M1 passes and only with explicit operator approval, because
+a rejected blob is the error-269 path that deletes Catacomb files.
+
+1. Back up the whole `/Library/Catacomb/<dir>/` tree and keep the
+   backup off the machine as well.
+2. Confirm `bioutil -c` is 1 and Finger 1 unlocks.
+3. Replace only `user_000001f5.cat` with the Linux two-identity
+   component, same owner and mode.
+4. Reboot. The question is whether `bioutil -c` reads 2 and
+   `syncTemplateListForUser:` does not fire.
+5. If it fires anyway, the list reconciliation is authoritative and
+   the answer is no. Restore from the backup and record it.
+
+Offline APFS writes from Linux remain closed: the volume is read-only
+there, so M2 is a macOS-side operation.
 
 ## Do-nots (both paths)
 
 - No `t2-touchid-enroll start`.
 - No System Settings enroll of the Linux finger as a debug step.
-- No copy of Linux Catacomb onto `/Library/Catacomb`.
+- No copy of Linux Catacomb onto `/Library/Catacomb` — the sole
+  exception is M2, after M1 passes and the operator approves it and
+  the backup is verified.
 - No copy of `native-501.kb` onto `user.kb` or onto macOS.
 - No `bridge-xpc-enroll-native-501.py`.
 - No `0x40`, sensor reset, `no_catacomb`, or `0x48`.

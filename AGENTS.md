@@ -22,9 +22,10 @@ BridgeXPC Touch ID works for Finger 1: keybag unlock, PAM, and
 matched after a Linux reboot, then the next macOS boot deleted it
 from SEP (`syncTemplateListForUser:`). Linux Catacomb still lists
 two; `t2-touchid-enroll list` disagrees. Cross-OS persistence is
-closed: a Linux-emitted Catacomb is a different SEP generation and
-macOS reconciles to its own file at every boot. For a finger that
-works in both OSes, enroll it in macOS. History:
+untested, not closed: the 10-04 load accepted macOS's older component
+with status 0 and then removed the extra SEP identity by list
+reconciliation, and the Linux component has never been presented to
+macOS. History:
 [`IDENTITY2_NEXT_HANDOFF_2026-10-04.md`](tools/mba91-aks-macos-capture/IDENTITY2_NEXT_HANDOFF_2026-10-04.md).
 Linux AKS endpoint 7 is mute; that scoreboard is independent of
 BridgeXPC Touch ID.
