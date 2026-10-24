@@ -32,3 +32,4 @@ status.
 | `RESEARCH_MBA91_AKS.md` | EP7 mailbox mute scoreboard (historical) |
 | `HANDOFF_MBA91_AKS.md` | EP7 mute handoff for other agents |
 | `HARDWARE_A2179.md` | Board-level reference: Mesa SPI chain, J0602/J0600/J6100 pin maps, RIO rails, Wi-Fi module |
+| `WIFI_WPA3_OMARCHY.md` | WPA3-Personal runbook: Omarchy's `feature_disable=0x82000` quirk, override, join and verification |

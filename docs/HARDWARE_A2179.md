@@ -366,7 +366,10 @@ PRs #9803 and #13024 would drop the quirk for T2 Macs. Until one lands,
 the option has to be overridden locally, and `omarchy-update` can re-add
 it via `migrations/1786391100.sh`.
 
-**Not yet confirmed on this Air.** Verify on the Linux side with:
+**Not yet confirmed on this Air.** Run
+[`../tools/wifi-wpa3-check.sh`](../tools/wifi-wpa3-check.sh) for a read-only
+verdict, and [`WIFI_WPA3_OMARCHY.md`](WIFI_WPA3_OMARCHY.md) for the full
+procedure. The short form:
 
 ```sh
 cat /etc/modprobe.d/brcmfmac.conf
