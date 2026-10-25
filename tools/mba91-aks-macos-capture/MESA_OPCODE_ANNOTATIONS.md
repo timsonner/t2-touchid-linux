@@ -1,5 +1,8 @@
 # Mesa `performCommand` opcode annotations (MBA91)
 
+> Canonical merged table: [`docs/OPCODES.md`](../../docs/OPCODES.md).
+> This note is the dated evidence behind it.
+
 Source: private cold-boot capture `2489129E-…` (2026-09-06 MT), mined from
 `biometrickitd` `Daemon-Mesa` / BridgeXPC logs.
 

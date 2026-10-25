@@ -1,5 +1,8 @@
 # Mesa / BridgeXPC sequence mining (MBA91)
 
+> Canonical merged table: [`docs/OPCODES.md`](../../docs/OPCODES.md).
+> This note is the dated evidence behind it.
+
 Derived from private cold-boot capture `2489129E-…` (2026-09-06 MT).
 No templates, key material, or raw log bodies — opcode/ordering only.
 

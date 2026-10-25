@@ -7,6 +7,7 @@ Start here, then follow one path.
 | Agent start | [`../AGENTS.md`](../AGENTS.md) |
 | Install, PAM, daily use | [`../README.md`](../README.md) |
 | What is proven, and what is not | [`FINDINGS.md`](FINDINGS.md) |
+| Every opcode, in one table | [`OPCODES.md`](OPCODES.md) |
 | How to run tests | [`TESTING.md`](TESTING.md) |
 | Operator standing on this Air | [`../tools/mba91-aks-macos-capture/NEXT_STEPS.md`](../tools/mba91-aks-macos-capture/NEXT_STEPS.md) |
 | Enrollment protocol ledger | [`../enrollment_research/README.md`](../enrollment_research/README.md) |
@@ -24,6 +25,7 @@ status.
 
 | File | Topic |
 | --- | --- |
+| `OPCODES.md` | Canonical opcode reference: BridgeXPC envelopes, Mesa commands, Catacomb shapes, enrollment statuses |
 | `FPRINT_INTEGRATION.md` | Native fprintd enroll/delete gates (not exposed) |
 | `LINUX_BRINGUP_TROUBLESHOOTING.md` | Kernel / T2 bring-up |
 | `OMARCHY_PAM_PRIVILEGE_MISMATCH.md` | Omarchy sudo PAM |

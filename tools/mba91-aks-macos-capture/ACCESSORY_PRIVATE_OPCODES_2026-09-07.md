@@ -1,5 +1,8 @@
 # MBA91 Sequoia private-data Mesa opcodes (2026-09-07 soft reboot)
 
+> Canonical merged table: [`docs/OPCODES.md`](../../docs/OPCODES.md).
+> This note is the dated evidence behind it.
+
 Public-safe. Raw streams under `~/Private/t2-aks-capture/` and
 `/var/log/t2-aks-capture/`. No full UUID dumps / catacomb hashes in git.
 

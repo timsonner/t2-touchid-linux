@@ -1,5 +1,8 @@
 # MBA91 Mesa opcodes ↔ bent `biometric-command` codecs
 
+> Canonical merged table: [`docs/OPCODES.md`](../../docs/OPCODES.md).
+> This note is the dated evidence behind it.
+
 Date: 2026-09-07. Offline only — no live SEP/Bridge traffic.
 
 **Wire path (both sides):** BridgeXPC method **3** `PERFORM_COMMAND` → inner
