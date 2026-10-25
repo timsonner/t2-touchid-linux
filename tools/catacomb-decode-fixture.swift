@@ -3,7 +3,7 @@
 //
 // Read-only Catacomb archive fixture check, macOS side.
 //
-// Answers the cross-OS gate in enrollment_research/FINDINGS.md: does the
+// Answers the cross-OS gate in enrollment_research/PROTOCOL_LEDGER.md: does the
 // matching macOS decoder accept this archive? It never calls loadCatacomb,
 // save, delete, or any biometric command, and it prints no UUIDs, no
 // identity names and no secure-blob bytes -- only counts, key names,

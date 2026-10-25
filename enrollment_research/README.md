@@ -4,10 +4,11 @@ This directory publishes the current reverse-engineering findings for native
 Touch ID enrollment, identity management, multi-user mapping, Catacomb
 persistence, and recovery on Intel Macs with an Apple T2.
 
-- [FINDINGS.md](FINDINGS.md) is a sanitized snapshot of the detailed research
-  ledger. The 2026-10-03 generic-status recovery and the 2026-10-04 Linux
-  patch are in that file. The human narrative is
-  [`docs/FINDINGS.md`](../docs/FINDINGS.md).
+- [PROTOCOL_LEDGER.md](PROTOCOL_LEDGER.md) is the sanitized protocol and
+  identity-model ledger. The 2026-10-03 generic-status recovery and the
+  2026-10-04 Linux patch are in that file. The human narrative is
+  [`docs/FINDINGS.md`](../docs/FINDINGS.md), and the merged command table
+  is [`docs/OPCODES.md`](../docs/OPCODES.md).
 - [EVIDENCE_COLLECTION.md](EVIDENCE_COLLECTION.md) explains the remaining
   evidence gaps and how to collect data for each one later.
 - [`scripts/`](scripts/) contains collection and preflight helpers. They do not
@@ -438,7 +439,7 @@ progress and saved a second uid-501 identity. After reboot that Linux
 finger returned `verify-match`. The other eight are taught:
 60 and 61 stay running (`operation-state-changed`); the finishes join
 status 80 (`operation-finished`). The table is in
-[FINDINGS.md](FINDINGS.md), and the disassembly procedure is
+[PROTOCOL_LEDGER.md](PROTOCOL_LEDGER.md), and the disassembly procedure is
 `tools/mba91-aks-macos-capture/BIOMETRICKIT_STATUS_TECHNIQUE_2026-10-03.md`.
 Accessory authorization status `501` remains on its separately blocked path.
 This exhaustive boundary removes the need for another live attempt merely to

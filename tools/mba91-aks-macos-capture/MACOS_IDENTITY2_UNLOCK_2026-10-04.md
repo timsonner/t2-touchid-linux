@@ -47,7 +47,7 @@ is not in the live list.
 
 - Do not copy the Linux Catacomb onto `/Library/Catacomb`. The
   decoder gate for that replace is still closed
-  (`enrollment_research/FINDINGS.md`).
+  (`enrollment_research/PROTOCOL_LEDGER.md`).
 - Do not enroll the same finger in System Settings as a debug step.
   That would be a new macOS identity, not a restore of the Linux one.
 - No `0x40`, sensor reset, `no_catacomb`, or `0x48`.

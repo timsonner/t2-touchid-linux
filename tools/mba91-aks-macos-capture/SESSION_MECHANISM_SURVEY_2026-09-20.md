@@ -46,7 +46,7 @@ H2 stands). Shapes/statuses/counts only.
   SUID (+ freshness/use-count); enrollment writes `0x0100` flags.
   Binding is enforced inside credential resolution, not carried
   in 74 args.
-- Host policy boundary (from `enrollment_research/FINDINGS.md`):
+- Host policy boundary (from `enrollment_research/PROTOCOL_LEDGER.md`):
   applekeystored derives sid/suid from `xpc_connection_get_asid/euid`
   + audit-token copy; coreauthd `ContextManager` keeps a live map
   (`registerExternalizedContext`/`findContextForExternalizedContext`)

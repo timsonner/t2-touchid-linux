@@ -6,7 +6,7 @@ the project's own static evidence.
 
 ## The three layers (separate systems, separate fates)
 
-From `enrollment_research/FINDINGS.md` ("AKS provisioning boundary"):
+From `enrollment_research/PROTOCOL_LEDGER.md` ("AKS provisioning boundary"):
 
 1. **Apple account + AKS bag provisioning/unlock** — lives in the
    privileged `com.apple.applekeystored` XPC service

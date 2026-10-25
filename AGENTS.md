@@ -8,7 +8,7 @@ Start here, then follow one path. Current narrative:
 | What is proven | [`docs/FINDINGS.md`](docs/FINDINGS.md) |
 | Operator standing on this Air | [`tools/mba91-aks-macos-capture/NEXT_STEPS.md`](tools/mba91-aks-macos-capture/NEXT_STEPS.md) |
 | Tests | [`docs/TESTING.md`](docs/TESTING.md) |
-| Enrollment protocol ledger | [`enrollment_research/FINDINGS.md`](enrollment_research/FINDINGS.md) |
+| Enrollment protocol ledger | [`enrollment_research/PROTOCOL_LEDGER.md`](enrollment_research/PROTOCOL_LEDGER.md) |
 | Lab authorization | [`docs/LAB_PROTOCOL.md`](docs/LAB_PROTOCOL.md) |
 | EP7 mailbox mute (historical) | [`docs/RESEARCH_MBA91_AKS.md`](docs/RESEARCH_MBA91_AKS.md) |
 

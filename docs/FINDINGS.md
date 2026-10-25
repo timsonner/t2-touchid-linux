@@ -4,7 +4,7 @@ Last updated 2026-10-04 (identity-2 Linux return). Branch
 `research/mba91-aks-ep7`.
 
 This is the current narrative for humans and agents. The protocol ledger
-is [`enrollment_research/FINDINGS.md`](../enrollment_research/FINDINGS.md).
+is [`enrollment_research/PROTOCOL_LEDGER.md`](../enrollment_research/PROTOCOL_LEDGER.md).
 Dated MBA91 session notes are under
 [`tools/mba91-aks-macos-capture/`](../tools/mba91-aks-macos-capture/).
 Operator standing is

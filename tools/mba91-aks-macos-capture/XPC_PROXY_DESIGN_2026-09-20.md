@@ -13,7 +13,7 @@ only — no payloads, no keybags, no passwords.
 - The missing session is almost certainly **above Mesa**
   (XPC/framework → keybag-bound session). There is no Mesa
   session-bind opcode to replay (`BRIDGEXPC_PATH.md` method table).
-- Hard constraint from `enrollment_research/FINDINGS.md`: Apple
+- Hard constraint from `enrollment_research/PROTOCOL_LEDGER.md`: Apple
   private entitlements (`com.apple.private.biometrickit.allow-match`,
   `allow-enroll`, `allow-id-mgmt`, `applekeystored.*`,
   `applecredentialmanager.allow`) are enforced host-side against the

@@ -1,7 +1,9 @@
 # Linux-native T2 Touch ID management research
 
-Protocol and identity-model ledger started 2026-08-28. Current narrative
-for humans and agents: [`docs/FINDINGS.md`](../docs/FINDINGS.md).
+Protocol and identity-model ledger started 2026-08-28. This file is the
+detailed ledger, not the narrative. The human story is
+[`docs/FINDINGS.md`](../docs/FINDINGS.md); the merged command table is
+[`docs/OPCODES.md`](../docs/OPCODES.md).
 
 Linux enrollment is hardware-tested on MacBookPro16,2 and MacBookAir9,1.
 This file keeps the recovered event matrix and identity model.

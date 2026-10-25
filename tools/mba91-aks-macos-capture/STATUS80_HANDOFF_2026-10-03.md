@@ -120,7 +120,7 @@ in `EXACT_NOOP_PHASE_RANGES` inside `src/t2_enrollment_protocol.py`.
 Status 80 is in `EXACT_UNMAPPED_GENERIC_STATE_STATUSES`, and
 `_freeze` raises before any finger feedback or `enrollContinue`.
 `enrollment_research/README.md` and the conformance matrix in
-`enrollment_research/FINDINGS.md` are the write-up. This tree does
+`enrollment_research/PROTOCOL_LEDGER.md` are the write-up. This tree does
 not contain the `BiometricKit` binary. The protocol was not changed.
 
 ## Patch shape, after the selector is known

@@ -40,7 +40,7 @@ has never been presented to macOS.
 
 What is established: the 32-byte value behind `0x3a` is SEP state, not
 SHA-256 of the archive or of `CatacombSecureData`
-(`enrollment_research/FINDINGS.md`). That rules out *deriving* the
+(`enrollment_research/PROTOCOL_LEDGER.md`). That rules out *deriving* the
 value, not *loading* the file.
 
 Cross-OS unlock needs macOS to accept a Linux-emitted Catacomb so

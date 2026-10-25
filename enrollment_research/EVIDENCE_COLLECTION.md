@@ -1,7 +1,7 @@
 # Deferred evidence collection
 
 These tasks correspond to the unresolved evidence table in
-[FINDINGS.md](FINDINGS.md). Collection output is private by default and must not
+[PROTOCOL_LEDGER.md](PROTOCOL_LEDGER.md). Collection output is private by default and must not
 be committed to this repository.
 
 ## Recommended one-shot collection
