@@ -69,3 +69,12 @@ or anything at all about the Linux-emitted archive.
 If `secureDecode` fails, the failure message is the finding: it names the
 class or key the macOS decoder would not accept, which is what the Linux
 encoder has to change.
+
+## Follow-up: the blob is stateful
+
+The same harness on the 2026-10-01 export (22963 B) and the live
+component (29921 B) holds the same identity and the same one-entry
+list, yet the secure blob differs in length and hash. See
+[`CATACOMB_BLOB_STATEFUL_2026-10-24.md`](CATACOMB_BLOB_STATEFUL_2026-10-24.md).
+A decode therefore tells you the schema, never that a blob can be
+reproduced.

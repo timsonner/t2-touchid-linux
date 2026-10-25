@@ -106,6 +106,7 @@ Write-ups: `LINUX_ENROLL_IDENTITY_2026-10-03.md`,
 | Match identity 2 on Linux after that macOS boot | SEP no longer holds it. Linux Catacomb still lists two. `t2-touchid-enroll list` disagrees. Finger 1 still matches. |
 | Copy Linux keybag onto macOS | Linux already uses the macOS `user.kb`. Identity 2 lives in the Catacomb. |
 | Copy Linux Catacomb onto `/Library/Catacomb` | **untested, not proven closed.** The 2026-10-04 boot loaded macOS's *older* one-identity component with status 0 and then removed the extra SEP identity by list reconciliation, so SEP did not enforce a newer generation. The Linux component has never been presented to macOS. |
+| Rebuild or edit a Catacomb blob to match | not possible. The blob is stateful, not a function of the identity set: the same identity re-sealed from 21440 to 28394 B and changed hash. Only SEP produces one. `CATACOMB_BLOB_STATEFUL_2026-10-24.md` |
 
 This Air's `fprintd` is verify-only. `fprintd-list` shows a compatibility
 name (`right-index-finger`). After the macOS boot, SEP holds Finger 1.
@@ -143,7 +144,9 @@ not contain `BiometricKit`.
   older file with status 0, so the deletion is the list reconciliation
   after the load, not a generation-hash rejection. A backed-up replace is
   the only test that settles it; a corrupt component is the error-269
-  path that deletes Catacomb files.
+  path that deletes Catacomb files. The replace can only ever be a
+  **replay** of a blob SEP already sealed: the blob is stateful, so it
+  cannot be rebuilt to match (`CATACOMB_BLOB_STATEFUL_2026-10-24.md`).
 - One enroll with the generic-state patch, to see whether the host
   Catacomb persists without `recover-observed`, and to journal the
   ordinal after 355. That start mints a new identity. The next macOS
