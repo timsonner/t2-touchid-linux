@@ -1,5 +1,7 @@
 # Linux handoff — identity 2 after the macOS boot delete (2026-10-04)
 
+Status: superseded — see IDENTITY2_NEXT_HANDOFF
+
 **Confirm completed.** Result:
 [`MACOS_IDENTITY2_LINUX_CONFIRM_2026-10-04.md`](MACOS_IDENTITY2_LINUX_CONFIRM_2026-10-04.md).
 List failed (`local and live identity inventories disagree`). Finger 1

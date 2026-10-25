@@ -147,6 +147,7 @@ not contain `BiometricKit`.
   path that deletes Catacomb files. The replace can only ever be a
   **replay** of a blob SEP already sealed: the blob is stateful, so it
   cannot be rebuilt to match (`CATACOMB_BLOB_STATEFUL_2026-10-24.md`).
+  Runbook: [`CATACOMB_REPLAY_MBA91.md`](CATACOMB_REPLAY_MBA91.md).
 - One enroll with the generic-state patch, to see whether the host
   Catacomb persists without `recover-observed`, and to journal the
   ordinal after 355. That start mints a new identity. The next macOS

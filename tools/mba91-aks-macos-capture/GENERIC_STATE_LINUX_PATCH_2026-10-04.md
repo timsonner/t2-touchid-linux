@@ -1,5 +1,7 @@
 # Generic-state Linux patch — MBA91 (2026-10-04)
 
+Status: live — patch in tree
+
 The eight remaining 24G830 generic ordinals from
 `GENERIC_STATE_SELECTORS_2026-10-03.md` are taught in
 `src/t2_enrollment_protocol.py`. The live copy under

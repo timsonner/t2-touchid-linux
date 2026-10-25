@@ -1,5 +1,7 @@
 # MBA91 warm catacomb / accessory probes (2026-09-07)
 
+Status: closed — probe matrix answered
+
 Follow-on to `WARM_IDENTITY_AB_2026-09-07.md`. Same warm Omarchy session
 (after macOS→Linux handoff; `0x42` count=1 uid=501). Public-safe: status /
 lengths / booleans only.

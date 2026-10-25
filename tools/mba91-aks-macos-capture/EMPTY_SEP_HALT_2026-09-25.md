@@ -1,5 +1,7 @@
 # Whole-user removal: biometric container gone, keybag remains (2026-09-25)
 
+Status: closed — 0x48 cleared uid 501
+
 Branch: `research/mba91-aks-ep7`. One command `0x48` for Apple user 501.
 No retry. No new bag. No enroll.
 

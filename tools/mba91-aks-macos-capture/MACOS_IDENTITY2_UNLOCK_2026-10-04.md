@@ -1,5 +1,7 @@
 # macOS unlock of the Linux-enrolled finger — MBA91 (2026-10-04)
 
+Status: closed — macOS removed identity 2 from SEP
+
 Branch: `research/mba91-aks-ep7`. Normal macOS 15.7.9 build 24G830.
 One macOS finger already unlocks this Mac. The Linux-enrolled second
 finger `verify-match`es on Omarchy. It does not unlock this Mac.

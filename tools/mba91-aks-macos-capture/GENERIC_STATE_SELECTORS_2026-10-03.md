@@ -1,5 +1,7 @@
 # Generic state selectors — eight fail-closed ordinals (24G830)
 
+Status: live — selectors used by the patch
+
 Same boot as `STATUS80_SELECTOR_2026-10-03.md`. Normal macOS 15.7.9
 build 24G830. Cache family `dyld_v1 x86_64h`, cache UUID
 `FDD97301-9818-3865-A1D2-FEC1D3914796`. BiometricKit image UUID

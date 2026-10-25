@@ -1,5 +1,7 @@
 # Linux enroll identity — MBA91 (2026-10-03)
 
+Status: closed — identity 2 gone from SEP
+
 Branch: `research/mba91-aks-ep7`. Protocol patch `ddfcdf6` was installed
 into `/opt/t2-touchid/src` before this start. One macOS finger already
 verified. This start added a second identity for uid 501.

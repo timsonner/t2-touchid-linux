@@ -1,5 +1,7 @@
 # The Catacomb secure blob is stateful, not derivable — MBA91 (2026-10-24)
 
+Status: live — measured 2026-10-24; replay open
+
 Branch: `research/mba91-aks-ep7`
 
 No identity UUIDs, keybag handles, hardware UUIDs, or blob bytes.

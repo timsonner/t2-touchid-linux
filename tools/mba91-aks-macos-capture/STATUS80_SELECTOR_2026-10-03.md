@@ -1,5 +1,7 @@
 # Status 80 selector — MBA91 macOS 15.7.9 (24G830)
 
+Status: closed — selector applied
+
 Branch: `research/mba91-aks-ep7`. Normal macOS install, not Recovery.
 `sw_vers` on this boot: ProductVersion **15.7.9**, BuildVersion
 **24G830**.

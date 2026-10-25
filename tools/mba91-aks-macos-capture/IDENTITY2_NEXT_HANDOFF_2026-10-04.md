@@ -1,5 +1,7 @@
 # Next after identity 2 left SEP — MBA91 (2026-10-04)
 
+Status: live — Path L cleanup; Path M replay
+
 Read `MACOS_IDENTITY2_LINUX_CONFIRM_2026-10-04.md` first. Finger 1
 is the specimen. Identity 2 is gone from SEP. Linux Catacomb still
 has two identities. `t2-touchid-enroll list` fails: local and live

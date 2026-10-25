@@ -79,7 +79,9 @@ question.
 - This Air's `fprintd` is verify-only. It cannot enroll.
 - Do not retry unlocking this Mac, or Linux, with identity 2. SEP
   no longer holds it (`MACOS_IDENTITY2_LINUX_CONFIRM_2026-10-04.md`).
-- Do not copy the Linux Catacomb onto `/Library/Catacomb`.
+- Do not copy the Linux Catacomb onto `/Library/Catacomb`, except the
+  M2 replay in `docs/CATACOMB_REPLAY_MBA91.md` after M1 passes and the
+  operator approves it.
 - Do not copy `user.kb` or `native-501.kb` onto macOS as a restore.
 - Do not enroll the Linux finger in System Settings as a debug step.
 - Do not run `reconcile-external-deletion` unless the operator asks.
@@ -91,9 +93,10 @@ Follow `IDENTITY2_NEXT_HANDOFF_2026-10-04.md`.
 **Path L (Linux, everyday):** Finger 1. Optional
 `reconcile-external-deletion` only if the operator asks, then stop.
 
-**Path M (macOS, cross-OS unlock):** decoder-only fixture of a copy
-of the Linux-emitted Catacomb. No `loadCatacomb`, no replace of
-`/Library/Catacomb`, then stop.
+**Path M (macOS, cross-OS replay):** M1, decode a copy of the
+Linux-emitted Catacomb (`CATACOMB_DECODER_FIXTURE_2026-10-24.md`).
+M2, a backed-up replace and reboot, only after M1 passes and with
+explicit approval. Runbook: `docs/CATACOMB_REPLAY_MBA91.md`.
 
 Optional later enroll (new identity) waits for an explicit operator
 ask. The next macOS boot will delete that identity unless Path M

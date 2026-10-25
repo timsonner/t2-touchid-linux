@@ -1,5 +1,7 @@
 # Linux confirm after macOS deleted identity 2 — MBA91 (2026-10-04)
 
+Status: closed — inventories disagree; see handoff
+
 Branch: `research/mba91-aks-ep7`. Omarchy return after
 `MACOS_IDENTITY2_UNLOCK_2026-10-04.md`. The prior handoff was
 `MACOS_IDENTITY2_LINUX_HANDOFF_2026-10-04.md`.

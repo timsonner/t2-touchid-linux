@@ -1,5 +1,7 @@
 # Status-1 diagnosis: authorized zero-group enroll start (2026-09-30)
 
+Status: closed — status-1 halt explained
+
 Branch: `research/mba91-aks-ep7`. Phase 1 only — docs/code analysis.
 No enroll start, create, `0x21`, reboot, or second bag was sent.
 Shapes/statuses/counts only.

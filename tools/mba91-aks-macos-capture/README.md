@@ -10,18 +10,19 @@ log plus the original macOS os_log capture kit.
 Linux AKS **EP7** on this Air is still mute. BridgeXPC Touch ID is
 independent of that mailbox.
 
-| Current | File |
+| Live | File |
 | --- | --- |
 | Narrative | [`docs/FINDINGS.md`](../../docs/FINDINGS.md) |
 | Operator standing | [`NEXT_STEPS.md`](NEXT_STEPS.md) |
-| Linux enroll identity | [`LINUX_ENROLL_IDENTITY_2026-10-03.md`](LINUX_ENROLL_IDENTITY_2026-10-03.md) |
-| macOS identity-2 unlock | [`MACOS_IDENTITY2_UNLOCK_2026-10-04.md`](MACOS_IDENTITY2_UNLOCK_2026-10-04.md) |
-| Linux confirm (inventories disagree) | [`MACOS_IDENTITY2_LINUX_CONFIRM_2026-10-04.md`](MACOS_IDENTITY2_LINUX_CONFIRM_2026-10-04.md) |
-| Next (Path L Linux / Path M macOS decoder) | [`IDENTITY2_NEXT_HANDOFF_2026-10-04.md`](IDENTITY2_NEXT_HANDOFF_2026-10-04.md) |
+| Next (Path L cleanup / Path M replay) | [`IDENTITY2_NEXT_HANDOFF_2026-10-04.md`](IDENTITY2_NEXT_HANDOFF_2026-10-04.md) |
+| Replay runbook | [`docs/CATACOMB_REPLAY_MBA91.md`](../../docs/CATACOMB_REPLAY_MBA91.md) |
+| Blob is stateful, not derivable | [`CATACOMB_BLOB_STATEFUL_2026-10-24.md`](CATACOMB_BLOB_STATEFUL_2026-10-24.md) |
+| Decoder fixture (Linux archive untested) | [`CATACOMB_DECODER_FIXTURE_2026-10-24.md`](CATACOMB_DECODER_FIXTURE_2026-10-24.md) |
 | Generic-state protocol patch | [`GENERIC_STATE_LINUX_PATCH_2026-10-04.md`](GENERIC_STATE_LINUX_PATCH_2026-10-04.md) |
-| Status 80 selector | [`STATUS80_SELECTOR_2026-10-03.md`](STATUS80_SELECTOR_2026-10-03.md) |
 | Generic selectors | [`GENERIC_STATE_SELECTORS_2026-10-03.md`](GENERIC_STATE_SELECTORS_2026-10-03.md) |
-| Status-1 halt | [`STATUS1_DIAG_2026-09-30.md`](STATUS1_DIAG_2026-09-30.md) |
+
+Closed notes (identity 2, status 1 and 80) are not deleted. They carry
+`Status: closed` and are listed newest-first in [`INDEX.md`](INDEX.md).
 
 Inventory `INVENTORY_RO_*.json` / `.log` / `_REPORT.txt` files are
 gitignored (DMA). Keep only `*_PUBLIC_SUMMARY.md` in git.
