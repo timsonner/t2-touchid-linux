@@ -909,9 +909,10 @@ requires a separate macOS host-Catacomb synchronization design.
 
 - Matching is scoped to the configured macOS user ID and the identity records
   returned by SEP.
-- Success requires the enrolled 16-byte identity UUID to occur in SEP's
-  protocol-v2 match-result event.
-- Missing, malformed, rejected, or timeout results fail closed.
+- Success requires a length-checked match result whose leading 20-byte
+  identity record is an enrolled identity for the configured user. A UUID
+  elsewhere in that body is not a match.
+- Missing, malformed, rejected, ignored, or timeout results fail closed.
 - The service never emits UUIDs, fingerprint images, or biometric payloads.
 - The installed fprintd service keeps native enrollment default-off and
   deletion disabled; the experimental mutation workers remain separately gated

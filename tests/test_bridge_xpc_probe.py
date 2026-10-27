@@ -22,6 +22,34 @@ import t2_fprint_match_gate as match_gate
 from tests.test_catacomb_codec import fixture
 
 
+def match_result_event(
+    identity_record: bytes,
+    *,
+    version: int = 2,
+    lotl_count: int = 0,
+    flags: int = 0x60,
+    opaque_uuid: bytes | None = None,
+) -> bytes:
+    """Build one length-checked match result without publishing identifiers."""
+
+    if version == 1:
+        body = bytearray(0xC84)
+    else:
+        body = bytearray(0xC88 + 4 * lotl_count)
+        struct.pack_into("<I", body, 0xC84, lotl_count)
+    body[: len(identity_record)] = identity_record
+    struct.pack_into("<I", body, 0x14, flags)
+    if opaque_uuid is not None:
+        # Plant a UUID past the leading identity record, inside the body
+        # that the old substring search treated as authoritative.
+        body[0x80 : 0x80 + len(opaque_uuid)] = opaque_uuid
+    return (
+        struct.pack("<QIIQ", 0, 0xE3FF8002, version, 1)
+        + struct.pack("<I4xQ", 0, len(body))
+        + body
+    )
+
+
 class ReplyTests(unittest.TestCase):
     def test_full_inventory_retries_missing_initial_protocol_payload(self):
         successful = [0, struct.pack("<I", 2)]
@@ -94,8 +122,7 @@ class ReplyTests(unittest.TestCase):
     def test_match_summary_distinguishes_selected_from_other_enrolled_identity(self):
         selected = struct.pack("<I", 501) + uuid.UUID(int=11).bytes
         other = struct.pack("<I", 501) + uuid.UUID(int=12).bytes
-        raw = struct.pack("<QIIQ", 0, 0xE3FF8002, 2, 1)
-        raw += other[4:20] + b"\0" * (0xC70 - 16)
+        raw = match_result_event(other)
         summary = MODULE.summarize_event(
             [9, 0xE3FF8000, raw, None, None],
             (selected, other),
@@ -111,11 +138,11 @@ class ReplyTests(unittest.TestCase):
     def test_match_summary_accepts_only_selected_identity_boolean(self):
         selected = struct.pack("<I", 501) + uuid.UUID(int=11).bytes
         other = struct.pack("<I", 501) + uuid.UUID(int=12).bytes
-        raw = struct.pack("<QIIQ", 0, 0xE3FF8002, 2, 1)
-        raw += selected[4:20] + b"\0" * (0xC70 - 16)
+        raw = match_result_event(selected)
         summary = MODULE.summarize_event(
             [9, 0xE3FF8000, raw, None, None],
             (selected, other),
+            expected_user_id=501,
             selected_identity_record=selected,
         )
         self.assertTrue(summary["matches_selected_identity"])
@@ -153,11 +180,11 @@ class ReplyTests(unittest.TestCase):
             records,
             global_records,
         )
-        raw = struct.pack("<QIIQ", 0, 0xE3FF8002, 2, 1)
-        raw += records[1][4:20] + b"\0" * (0xC70 - 16)
+        raw = match_result_event(records[1])
         summary = MODULE.summarize_event(
             [9, 0xE3FF8000, raw, None, None],
             records,
+            expected_user_id=501,
             all_match_gate=gate,
         )
         self.assertTrue(summary["matched_finger_name_present"])
@@ -191,17 +218,100 @@ class ReplyTests(unittest.TestCase):
             records,
             global_records,
         )
-        raw = struct.pack("<QIIQ", 0, 0xE3FF8002, 2, 1)
-        raw += records[0][4:20] + b"\0" * (0xC70 - 16)
+        raw = match_result_event(records[0])
         summary = MODULE.summarize_event(
             [9, 0xE3FF8000, raw, None, None],
             records,
+            expected_user_id=501,
             slot_match_gate=gate,
         )
         self.assertTrue(summary["matched_identity_slot_present"])
         self.assertIn(summary["matched_identity_slot"], (1, 2))
         self.assertNotIn(records[0].hex(), str(summary))
         self.assertNotIn("finger_name", str(summary))
+
+    def test_enrolled_leading_record_matches_including_no_touch_length(self):
+        enrolled = struct.pack("<I", 501) + uuid.UUID(int=11).bytes
+        raw = match_result_event(enrolled, lotl_count=5)
+        self.assertEqual(len(raw), 3268)
+        summary = MODULE.summarize_event(
+            [9, 0xE3FF8000, raw, None, None],
+            (enrolled,),
+            expected_user_id=501,
+        )
+        self.assertTrue(summary["result_structure_valid"])
+        self.assertTrue(summary["result_valid"])
+        self.assertTrue(summary["matched"])
+        self.assertTrue(summary["matches_enrolled_identity"])
+        self.assertFalse(summary["no_match"])
+        self.assertNotIn(enrolled.hex(), str(summary))
+
+    def test_no_touch_opaque_uuid_is_not_a_match(self):
+        """3268-byte no-touch shape: UUID in the body, sentinel identity.
+
+        The old classifier set matched from ``identity_uuid in event_data``.
+        That is true for this payload and must not authorize.
+        """
+
+        enrolled = struct.pack("<I", 501) + uuid.UUID(int=11).bytes
+        raw = match_result_event(
+            struct.pack("<i", -1) + bytes(16),
+            lotl_count=5,
+            flags=0,
+            opaque_uuid=enrolled[4:20],
+        )
+        self.assertEqual(len(raw), 3268)
+        self.assertIn(enrolled[4:20], raw)
+        summary = MODULE.summarize_event(
+            [9, 0xE3FF8000, raw, None, None],
+            (enrolled,),
+            expected_user_id=501,
+        )
+        self.assertTrue(summary["result_structure_valid"])
+        self.assertTrue(summary["no_match"])
+        self.assertFalse(summary["matched"])
+        self.assertFalse(summary["contains_enrolled_identity_uuid"])
+        self.assertFalse(summary["matches_enrolled_identity"])
+        self.assertNotIn(enrolled.hex(), str(summary))
+        self.assertNotIn(enrolled[4:20].hex(), str(summary))
+
+    def test_uuid_outside_the_leading_record_is_not_a_match(self):
+        enrolled = struct.pack("<I", 501) + uuid.UUID(int=11).bytes
+        other = struct.pack("<I", 501) + uuid.UUID(int=12).bytes
+        raw = match_result_event(
+            other, lotl_count=5, opaque_uuid=enrolled[4:20]
+        )
+        self.assertIn(enrolled[4:20], raw)
+        summary = MODULE.summarize_event(
+            [9, 0xE3FF8000, raw, None, None],
+            (enrolled,),
+            expected_user_id=501,
+        )
+        self.assertTrue(summary["result_structure_valid"])
+        self.assertFalse(summary["no_match"])
+        self.assertFalse(summary["matched"])
+        self.assertFalse(summary["result_valid"])
+        self.assertFalse(summary["contains_enrolled_identity_uuid"])
+
+    def test_ignored_result_and_short_body_fail_closed(self):
+        enrolled = struct.pack("<I", 501) + uuid.UUID(int=11).bytes
+        ignored = match_result_event(enrolled, flags=0x60 | 0x200)
+        summary = MODULE.summarize_event(
+            [9, 0xE3FF8000, ignored, None, None],
+            (enrolled,),
+            expected_user_id=501,
+        )
+        self.assertTrue(summary["result_ignored"])
+        self.assertFalse(summary["matched"])
+        truncated = match_result_event(enrolled)[:-4]
+        summary = MODULE.summarize_event(
+            [9, 0xE3FF8000, truncated, None, None],
+            (enrolled,),
+            expected_user_id=501,
+        )
+        self.assertFalse(summary["result_structure_valid"])
+        self.assertFalse(summary["matched"])
+        self.assertIn(enrolled[4:20], truncated)
 
     def test_strict_identity_records_rejects_status_shape_and_events(self):
         record = struct.pack("<I", 501) + uuid.UUID(int=11).bytes
