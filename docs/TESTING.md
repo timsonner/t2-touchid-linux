@@ -40,7 +40,10 @@ fprintd-verify -f any "$USER"
 ```
 
 Expect `verify-match` for either enrolled finger. `fprintd-list` may
-show only `right-index-finger`; that is a compatibility alias.
+show only `right-index-finger`; that is a compatibility alias. Run
+the same command once without touching the sensor. That window must
+not print `verify-match`; expect `verify-no-match` or
+`verify-unknown-error`.
 
 **Enroll**
 

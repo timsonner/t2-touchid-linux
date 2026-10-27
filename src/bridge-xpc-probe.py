@@ -44,7 +44,11 @@ from t2_bridge_wire import (
     send_helo,
     send_message,
 )
-from t2_enrollment_protocol import parse_service_event
+from t2_enrollment_protocol import (
+    BRIDGE_SERVICE_STATUS,
+    STATUS_PAYLOAD_HEADER,
+    parse_service_event,
+)
 import t2_catacomb_codec
 import t2_catacomb_store
 import t2_fprint_match_gate
@@ -52,6 +56,123 @@ import t2_fprint_projection
 
 
 CATACOMB_ROOT = Path("/var/lib/t2-touchid/catacomb")
+# Protocol-v2 match results reuse the generic 16-byte status prefix, then a
+# fixed body.  Version 1 ends at 0xc84.  Version 2 stores a LOTL count at
+# body offset 0xc84 and appends that many 4-byte words.  The leading 20
+# bytes are the result identity (signed user ID, then UUID).  User ID -1
+# is the no-match sentinel.  The rest of the body is opaque and can
+# contain an enrolled UUID without being a match.  A live MBA91 no-touch
+# capture is 3268 bytes, which is exactly one version-2 result with five
+# LOTL words (24-byte service header + 16-byte prefix + 0xc88 + 20).
+MATCH_RESULT_V1_BODY_LENGTH = 0xC84
+MATCH_RESULT_V2_FIXED_LENGTH = 0xC88
+MATCH_RESULT_LOTL_OFFSET = 0xC84
+MATCH_RESULT_FLAGS_OFFSET = 0x14
+MATCH_RESULT_IGNORED_FLAG = 0x200
+
+
+def _match_result_summary(
+    payload: list,
+    event_data: bytes,
+    version: int,
+    *,
+    parsed_common_event: object,
+    enrolled_identity_records: tuple[bytes, ...],
+    expected_user_id: int | None,
+    selected_identity_record: bytes | None,
+    all_match_gate: object | None,
+    slot_match_gate: object | None,
+) -> dict:
+    """Classify one match result from its leading identity, never the body."""
+
+    summary = {
+        "result_structure_valid": False,
+        "host_accepted_result": False,
+        "result_valid": False,
+        "result_ignored": False,
+        "no_match": False,
+        "contains_enrolled_identity_uuid": False,
+        "matched": False,
+        "matches_enrolled_identity": False,
+    }
+    enrolled = tuple(
+        record
+        for record in enrolled_identity_records
+        if type(record) is bytes and len(record) == 20
+    )
+    result_data = b""
+    if (
+        parsed_common_event is not None
+        and payload[1] == BRIDGE_SERVICE_STATUS
+        and version in (1, 2)
+        and len(event_data) >= STATUS_PAYLOAD_HEADER.size
+    ):
+        result_status, result_length = STATUS_PAYLOAD_HEADER.unpack_from(event_data)
+        if (
+            result_status == 0
+            and event_data[4:8] == b"\0" * 4
+            and result_length == len(event_data) - STATUS_PAYLOAD_HEADER.size
+        ):
+            result_data = event_data[STATUS_PAYLOAD_HEADER.size :]
+    structure_valid = False
+    if version == 1:
+        structure_valid = len(result_data) == MATCH_RESULT_V1_BODY_LENGTH
+    elif version == 2 and len(result_data) >= MATCH_RESULT_V2_FIXED_LENGTH:
+        lotl_count = struct.unpack_from("<I", result_data, MATCH_RESULT_LOTL_OFFSET)[0]
+        structure_valid = (
+            len(result_data) == MATCH_RESULT_V2_FIXED_LENGTH + 4 * lotl_count
+        )
+    summary["result_structure_valid"] = structure_valid
+    if not structure_valid:
+        return summary
+    signed_user_id = struct.unpack_from("<i", result_data)[0]
+    flags = struct.unpack_from("<I", result_data, MATCH_RESULT_FLAGS_OFFSET)[0]
+    result_ignored = bool(flags & MATCH_RESULT_IGNORED_FLAG)
+    summary["result_ignored"] = result_ignored
+    if signed_user_id == -1:
+        summary["no_match"] = True
+        summary["host_accepted_result"] = not result_ignored
+        summary["result_valid"] = not result_ignored
+        return summary
+    identity_record = result_data[:20]
+    identity_uuid = identity_record[4:20]
+    expected_identity = (
+        not result_ignored
+        and any(identity_uuid)
+        and expected_user_id is not None
+        and signed_user_id == expected_user_id
+        and struct.unpack_from("<I", identity_record)[0] == expected_user_id
+        and identity_record in enrolled
+    )
+    summary["contains_enrolled_identity_uuid"] = expected_identity
+    summary["matches_enrolled_identity"] = expected_identity
+    summary["matched"] = expected_identity
+    summary["host_accepted_result"] = expected_identity
+    summary["result_valid"] = expected_identity
+    if type(selected_identity_record) is bytes and len(selected_identity_record) == 20:
+        summary["matches_selected_identity"] = (
+            expected_identity and identity_record == selected_identity_record
+        )
+    if not expected_identity:
+        return summary
+    # Name and slot resolution see only the accepted UUID.  The opaque
+    # body is not a search space.
+    exact_event = identity_uuid + b"\0" * (0xC70 - 16)
+    if all_match_gate is not None:
+        matched_name = t2_fprint_match_gate.resolve_all_match_event(
+            all_match_gate, exact_event
+        )
+        summary["matched_finger_name_present"] = matched_name is not None
+        if matched_name is not None:
+            summary["matched_finger_name"] = matched_name
+    if slot_match_gate is not None:
+        matched_slot = t2_fprint_match_gate.resolve_slot_match_event(
+            slot_match_gate, exact_event
+        )
+        summary["matched_identity_slot_present"] = matched_slot is not None
+        if matched_slot is not None:
+            summary["matched_identity_slot"] = matched_slot
+    return summary
 
 
 def summarize_event(
@@ -104,63 +225,23 @@ def summarize_event(
                     )[0]
             elif embedded_type == 0xE3FF8002:
                 summary["event_kind"] = "match_result"
-                # Apple validates at least 0xc70 bytes before parsing this
-                # structure.  Protocol v2 does not identify a successful
-                # template in its first signed word: controlled scans showed
-                # that word remains -1 for both outcomes.  Instead, a success
-                # contains the selected identity UUID, while a negative scan
-                # does not.  Never emit the UUID, image metrics, or biometric
-                # payload itself.
-                if len(event_data) >= 0xC70:
-                    # identity_record_v1_t is a four-byte user ID followed by
-                    # a 16-byte UUID.  Match-result layouts vary by protocol
-                    # version, so compare only the opaque UUID inside this
-                    # already authenticated event and expose a boolean—not
-                    # the identifier or biometric payload.
-                    enrolled_uuids = tuple(
-                        record[4:20]
-                        for record in enrolled_identity_records
-                        if len(record) == 20
+                # Never emit the UUID, image metrics, or biometric payload.
+                # Success is only the leading 20-byte identity record inside
+                # a length-checked body.  Searching the rest of the body for
+                # an enrolled UUID false-matches no-touch results.
+                summary.update(
+                    _match_result_summary(
+                        payload,
+                        event_data,
+                        version,
+                        parsed_common_event=parsed_common_event,
+                        enrolled_identity_records=enrolled_identity_records,
+                        expected_user_id=expected_user_id,
+                        selected_identity_record=selected_identity_record,
+                        all_match_gate=all_match_gate,
+                        slot_match_gate=slot_match_gate,
                     )
-                    summary["contains_enrolled_identity_uuid"] = any(
-                        identity_uuid in event_data
-                        for identity_uuid in enrolled_uuids
-                    )
-                    summary["matched"] = summary[
-                        "contains_enrolled_identity_uuid"
-                    ]
-                    summary["matches_enrolled_identity"] = summary[
-                        "contains_enrolled_identity_uuid"
-                    ]
-                    if (
-                        type(selected_identity_record) is bytes
-                        and len(selected_identity_record) == 20
-                    ):
-                        summary["matches_selected_identity"] = (
-                            selected_identity_record[4:20] in event_data
-                        )
-                    if all_match_gate is not None:
-                        matched_name = (
-                            t2_fprint_match_gate.resolve_all_match_event(
-                                all_match_gate, event_data
-                            )
-                        )
-                        summary["matched_finger_name_present"] = (
-                            matched_name is not None
-                        )
-                        if matched_name is not None:
-                            summary["matched_finger_name"] = matched_name
-                    if slot_match_gate is not None:
-                        matched_slot = (
-                            t2_fprint_match_gate.resolve_slot_match_event(
-                                slot_match_gate, event_data
-                            )
-                        )
-                        summary["matched_identity_slot_present"] = (
-                            matched_slot is not None
-                        )
-                        if matched_slot is not None:
-                            summary["matched_identity_slot"] = matched_slot
+                )
             elif embedded_type == 0xE3FF8004:
                 summary["event_kind"] = "statistics"
             elif embedded_type == 0xE3FF800A:

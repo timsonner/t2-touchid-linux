@@ -1,6 +1,6 @@
 # Findings
 
-Last updated 2026-10-04 (identity-2 Linux return). Branch
+Last updated 2026-10-27 (MBA91 verify fail-closed). Branch
 `research/mba91-aks-ep7`.
 
 This is the current narrative for humans and agents. The protocol ledger
@@ -12,6 +12,15 @@ Operator standing is
 
 No identity UUIDs, keybag handles, DMA addresses, or biometric payloads
 belong in this file.
+
+## Match verdict
+
+`verify-match` requires a length-checked match result whose leading
+20-byte record is an enrolled identity. Signed user ID -1 is an
+explicit no-match. A 16-byte UUID anywhere else in the body, including
+the 3268-byte version-2 result seen with no finger on the sensor, is
+not a match. Summaries that only claim `matched` without that
+structure fail closed as unknown.
 
 ## What this software is
 

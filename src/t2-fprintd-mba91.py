@@ -23,11 +23,14 @@ configured Apple user". It performs verification only:
   Those methods are absent from the interface.
 
 Match verdicts come from the standard bridge-xpc-probe token-free
-path under the shared operation lock: a terminal match_result event
-carrying an enrolled template means verify-match; a terminal
-match_result without one means verify-no-match; no terminal verdict
-at all means the outcome is unknown (finger absent, locked bags, or
-transport fault) and must not be presented as a rejection.
+path under the shared operation lock. verify-match requires a
+length-checked match_result whose leading 20-byte identity is an
+enrolled record for the configured user (result_structure_valid,
+result_valid, matched, and matches_enrolled_identity). An explicit
+no-match sentinel (signed user ID -1) is verify-no-match. A UUID
+anywhere else in the body, a no-touch or timeout payload, or any
+summary that only claims matched without that structure is unknown
+and must not unlock.
 """
 
 import argparse
@@ -75,6 +78,58 @@ if not LINUX_USER:
     raise RuntimeError("T2_TOUCHID_USER is not configured")
 if not 0 <= MACOS_USER_ID <= 0xFFFFFFFF:
     raise RuntimeError("T2_TOUCHID_MACOS_USER_ID is outside uint32 range")
+
+
+def _structural_match(event: dict) -> bool:
+    """True only for a length-checked enrolled identity result."""
+
+    return (
+        event.get("matched") is True
+        and event.get("matches_enrolled_identity") is True
+        and event.get("result_valid") is True
+        and event.get("result_structure_valid") is True
+        and event.get("no_match") is not True
+        and event.get("result_ignored") is not True
+    )
+
+
+def _explicit_no_match(event: dict) -> bool:
+    """True for a parsed no-match sentinel, not an ambiguous body."""
+
+    return (
+        event.get("result_structure_valid") is True
+        and event.get("no_match") is True
+        and event.get("matched") is False
+        and event.get("matches_enrolled_identity") is not True
+        and event.get("result_ignored") is not True
+    )
+
+
+def verdict_from_result(result: object) -> str:
+    """Map probe JSON to a fail-closed MBA91 verify verdict.
+
+    A summary that says ``matched`` because an enrolled UUID occurred
+    somewhere in the result body is not enough.  The attached no-touch
+    capture has that shape and must not become verify-match.
+    """
+
+    if not isinstance(result, dict):
+        raise RuntimeError("malformed probe result")
+    events = result.get("match_events")
+    if not isinstance(events, list):
+        raise RuntimeError("probe returned no match events")
+    verdicts = [
+        event
+        for event in events
+        if isinstance(event, dict) and event.get("event_kind") == "match_result"
+    ]
+    if not verdicts:
+        raise RuntimeError("match produced no terminal verdict")
+    if any(_structural_match(event) for event in verdicts):
+        return "verify-match"
+    if all(_explicit_no_match(event) for event in verdicts):
+        return "verify-no-match"
+    raise RuntimeError("match result is ambiguous")
 
 
 class MBA91Backend:
@@ -197,19 +252,7 @@ class MBA91Backend:
     async def verify(self) -> tuple[str, dict]:
         async with self.operation_lock:
             result = await self._probe_with_rediscovery(match=True)
-        events = result.get("match_events")
-        if not isinstance(events, list):
-            raise RuntimeError("probe returned no match events")
-        verdicts = [
-            event for event in events
-            if isinstance(event, dict)
-            and event.get("event_kind") == "match_result"
-        ]
-        if not verdicts:
-            raise RuntimeError("match produced no terminal verdict")
-        if any(event.get("matched") is True for event in verdicts):
-            return "verify-match", result
-        return "verify-no-match", result
+        return verdict_from_result(result), result
 
     async def cancel(self) -> None:
         process = self.process
